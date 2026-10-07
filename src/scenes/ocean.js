@@ -8,9 +8,11 @@ export function oceanScene() {
   let renderer, scene, camera, water, loading = null, failed = false;
   async function boot() {
     try {
-      const THREE = await import(/* @vite-ignore */ 'three');
-      const { Water } = await import(/* @vite-ignore */ 'three/addons/objects/Water.js');
-      const { Sky } = await import(/* @vite-ignore */ 'three/addons/objects/Sky.js');
+      // The specifiers are kept out of literal form so Vite leaves them to the browser's import map.
+      const cdn = s => import(/* @vite-ignore */ s);
+      const THREE = await cdn('three');
+      const { Water } = await cdn('three/addons/objects/Water.js');
+      const { Sky } = await cdn('three/addons/objects/Sky.js');
       renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, preserveDrawingBuffer: true });
       renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .42;
       scene = new THREE.Scene();
