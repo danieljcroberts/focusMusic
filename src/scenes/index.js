@@ -5,7 +5,9 @@ import { glow } from '../util.js';
 import { img, ok } from '../assets.js';
 import { canopyScene, driveScene, hearthScene, tideScene, auroraScene } from './drawn.js';
 import { parallaxScene, driftScene, skyExtras } from './parallax.js';
-import { oceanScene } from './ocean.js';
+import { oceanScene, snowfallScene, starfieldScene } from './three-scenes.js';
+import { lighthouseScene, trainScene, stormScene, cloudsScene, pondScene, aquariumScene } from './places.js';
+import { videoScene } from './video.js';
 import { rainImprovedScene, snowScene } from './glass.js';
 import { rainPlusScene, rainGLScene, rainShaderScene, rainFilmScene } from './lab.js';
 
@@ -13,12 +15,20 @@ const FACTORIES = {
   rain: () => rainImprovedScene({ bg: 'tokyo' }),
   snow: () => snowScene({ bg: 'toronto' }),
   cafe: () => rainImprovedScene({ mode: 'cafe', bg: 'tokyo' }),
+  windscreen: () => rainImprovedScene({ mode: 'car', bg: 'traffic' }),
+  greenhouse: () => rainImprovedScene({ mode: 'greenhouse', bg: 'foliage' }),
 
   canopy: canopyScene,
   drive: driveScene,
   hearth: hearthScene,
   tide: tideScene,
   aurora: auroraScene,
+  lighthouse: lighthouseScene,
+  train: trainScene,
+  storm: stormScene,
+  clouds: cloudsScene,
+  pond: pondScene,
+  aquarium: aquariumScene,
 
   woods: () => parallaxScene({ bw: 272, bh: 160, bg: '#2a170c', layers: [
     { src: 'woods-back.png', v: 2 }, { src: 'woods-lights.png', v: 4, alpha: t => .65 + .35 * Math.sin(t * 1.3) },
@@ -48,8 +58,39 @@ const FACTORIES = {
   cityNight: () => driftScene({ src: 'city-night.jpg', bg: '#05070f' }),
   nightSky: () => { const fx = skyExtras(); return driftScene({ src: 'night-sky.jpg', bg: '#03040c', setup: fx.setup, extra: fx.extra }); },
   forestDusk: () => ({ kind: 'image', init() {}, draw() {} }),
+  reef: () => parallaxScene({ bw: 256, bh: 192, bg: '#2a62d8', layers: [
+    { src: 'reef-far.png', v: .6 }, { src: 'reef-sand.png', v: 2 }, { src: 'reef-fore-2.png', v: 5 }, { src: 'reef-fore-1.png', v: 9 }],
+    extra(t, dt, b) {
+      // Light from the surface and a few bubbles on their way up.
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const x0 = W * (.15 + .22 * i) + Math.sin(t * .13 + i * 2) * 50, a = .05 + .035 * Math.sin(t * .5 + i);
+        const sg = ctx.createLinearGradient(0, 0, 0, H); sg.addColorStop(0, `rgba(190,230,255,${a})`); sg.addColorStop(.75, 'rgba(190,230,255,0)');
+        ctx.fillStyle = sg; ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + 60, 0); ctx.lineTo(x0 + 190, H); ctx.lineTo(x0 - 10, H); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = 'rgba(220,240,255,.6)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 9; i++) {
+        const p = ((t * .12 + i * .37) % 1), x = W * (.1 + .1 * i) + Math.sin(t * 2 + i) * 6 * b.s, y = H - p * H * .9, r = (1 + (i % 3)) * b.s * .6;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+      }
+    } }),
+  summits: () => parallaxScene({ bw: 576, bh: 324, bg: '#9ab0c0', layers: [
+    { src: 'summit-5.png' }, { src: 'summit-4.png', v: .8 }, { src: 'summit-3.png', v: 2.5 }, { src: 'summit-2.png', v: 6 }, { src: 'summit-1.png', v: 12 }],
+    extra(t, dt, b) {
+      // Snow blowing off the ridges.
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      for (let i = 0; i < 60; i++) {
+        const p = (t * (.08 + .04 * (i % 5)) + i * .173) % 1, x = (W * (1.1 - p * 1.2) + Math.sin(i) * 40) % (W + 20), y = H * (.1 + .8 * ((i * .618) % 1)) + Math.sin(t * 1.5 + i) * 8 * b.s;
+        ctx.fillRect(Math.round(x), Math.round(y), b.s, b.s);
+      }
+    } }),
 
   ocean: oceanScene,
+  snowfall: snowfallScene,
+  starfield: starfieldScene,
+
+  earth: () => videoScene({ src: 'earth-night.mp4' }),
 
   labCanvas: () => rainPlusScene({ bg: 'drawn' }),
   labGL: () => rainGLScene({ bg: 'drawn' }),

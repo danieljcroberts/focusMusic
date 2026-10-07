@@ -1,7 +1,8 @@
 // Rain lab: the alternative rain renderers kept for comparison. Shown only when the page is opened with #lab.
 import { W, H, DPR, ctx } from '../view.js';
 import { rand, layer, plain, glow, wipe } from '../util.js';
-import { A, img } from '../assets.js';
+import { img } from '../assets.js';
+import { videoScene } from './video.js';
 import { addStage, blurCanvas, BGS, bgPending, paintBg, makeSim, stretchOf, glKit, glFailed, dropSprite } from './glass-shared.js';
 
 /* Alternative 1: Canvas+ — the 2D approach with a sharper clear-glass layer, uneven condensation, irregular drops and gusts */
@@ -285,19 +286,4 @@ export function rainShaderScene(opts = {}) {
 }
 
 /* Alternative 4: filmed footage (CC0) as a seamless 16-second loop */
-export function rainFilmScene() {
-  let v;
-  return {
-    kind: 'video',
-    get canvas() { return v; },
-    init() {
-      if (v) return;
-      v = document.createElement('video');
-      Object.assign(v, { muted: true, loop: true, playsInline: true, preload: 'auto', poster: A + 'rain-window-poster.jpg' });
-      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
-      v.src = A + 'rain-window.mp4';
-      addStage(v);
-    },
-    draw() {}
-  };
-}
+export const rainFilmScene = () => videoScene({ src: 'rain-window.mp4', poster: 'rain-window-poster.jpg' });

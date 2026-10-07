@@ -4,7 +4,7 @@ Licences checked on 2026-10-06. Recheck before shipping.
 
 ## Scenes drawn in code (original)
 
-Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
+Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
 
 ## Photographs and footage
 
@@ -16,6 +16,21 @@ Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/
 | Rain · Film | Raindrops against the window in the night city, Las Palmas (cut to a 16 s loop, re-encoded) | slavikfi | CC0 | https://commons.wikimedia.org/wiki/File:Raindrops_against_the_window_in_the_night_city,_Las_Palmas.webm |
 
 CC BY-SA requires credit and that any adapted version of the image is shared under the same licence. Blurring the photo in the scene counts as an adaptation, so if the app ships with the waterfront background, the credit must name the licence and link to it. The CC0 items need no credit, though it is given on screen anyway.
+
+## Attribution-licensed art (credit required)
+
+Both licences allow commercial use and modification as long as the author is credited. The credit is shown on screen in the scene and listed here.
+
+| Scene | Asset | Author | Licence | Source |
+|---|---|---|---|---|
+| Underwater Reef | Underwater Fantasy (the four layer PNGs, unmodified) | Luis Zuno (ansimuz) | CC BY 3.0 | https://opengameart.org/content/underwater-fantasy |
+| Snowy Summits | Snowy Summits Pixel Art Winter Background (five layer PNGs, unmodified) | CraftPix.net | OGA-BY 3.0 | https://opengameart.org/content/snowy-summits-pixel-art-winter-background |
+
+## NASA footage
+
+| Scene | Asset | Source | Terms |
+|---|---|---|---|
+| Earth at Night | GOLD Resources: ISS Airglow (`~small` encode, unmodified, 30 s) | https://images.nasa.gov/details/GSFC_20180124_m12825_ISS_Airglow | NASA content is generally not copyrighted and may be used without permission; NASA asks for a credit ("NASA" or "NASA/Goddard") and must not be shown as endorsing the app. See https://www.nasa.gov/nasa-brand-center/images-and-media/ |
 
 ## CC0 art (public domain, credit optional)
 
@@ -38,6 +53,7 @@ Files are in `public/assets/scenes/`. Some were resized or converted, which CC0 
 | Scene | Asset | Licence | Source |
 |---|---|---|---|
 | Open Water | three.js r169: `Water.js`, `Sky.js`, and the `waternormals.jpg` texture | MIT, © three.js authors | https://github.com/mrdoob/three.js |
+| Snowfall, Starfield | three.js r169 core (point sprites; the cabin backdrop and sprite textures are drawn in code) | MIT, © three.js authors | https://github.com/mrdoob/three.js |
 
 three.js is loaded from jsDelivr at runtime. If the files are bundled into the app instead, the MIT notice must be kept with them.
 

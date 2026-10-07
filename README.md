@@ -16,6 +16,8 @@ npm run dev           # http://localhost:5173
 
 Add `#lab` to the URL to see the rain lab: the alternative rain renderers kept for comparison.
 
+Lighthouse, Above the Clouds, Pond, Low Tide and Aurora follow your clock: daylight from about 06:00, dusk around 18:00 to 19:30, night after. There is no location lookup, so the times are fixed.
+
 ## Check it
 
 ```sh

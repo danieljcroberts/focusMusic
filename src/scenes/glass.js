@@ -9,7 +9,9 @@ import { addStage, blurCanvas, BGS, bgPending, paintBg, makeSim, glKit, glFailed
 /* Improved: procedural droplets and runs for density, plus up to 16 simulated drops that merge and wipe real trails */
 const FS_IMPROVED = `precision highp float;
 uniform sampler2D uSharp, uSoft, uMist, uFog, uBeads;
-uniform vec2 uRes; uniform float uT, uRain, uMistAmt, uWarm, uRunsOn;
+uniform vec2 uRes; uniform float uT, uRain, uMistAmt, uRunsOn, uBladeOn;
+uniform vec3 uTintMul, uTintAdd;
+uniform vec4 uBlade[2];
 uniform vec4 uRun[24];
 uniform vec4 uD[16];
 float h21(vec2 p){ p = fract(p * vec2(233.34, 851.73)); p += dot(p, p + 23.45); return fract(p.x * p.y); }
@@ -102,7 +104,7 @@ float cond = mix(.8, 1., smoothstep(.65, 0., uv.y)) * (.92 + .08 * sin(p.x * 3.1
 float clearAmt = max(procClear * .55, 1. - fogMask);
 // Wiped glass is lifted slightly so trails read as clearer, not darker.
 vec3 mistC = texture2D(uMist, uv).rgb;
-mistC = mix(mistC, mistC * vec3(1.1, .98, .84) + vec3(.07, .035, 0.), uWarm);   // café steam picks up the warm room light
+mistC = mistC * uTintMul + uTintAdd;   // steam picks up the room light: warm in the café, green in the greenhouse
 vec3 base = mix(texture2D(uSoft, uv).rgb * 1.03 + .015, mistC, clamp(cond * (1. - clearAmt * .85), 0., 1.));
 vec3 refr = texture2D(uSharp, clamp(uv + off, 0., 1.)).rgb * mix(.55, 1.35, th) + .04;
 vec3 N = normalize(vec3(n, th + .15));
@@ -110,13 +112,25 @@ vec3 L = normalize(vec3(-.4, .6, .7));
 float spec = pow(max(dot(reflect(-L, N), vec3(0., 0., 1.)), 0.), 18.);
 float caustic = smoothstep(.25, .95, -n.y) * smoothstep(0., .45, th) * .4;
 float rim = smoothstep(.5, 0., th) * .6;
-gl_FragColor = vec4(mix(base, refr * (1. - rim) + spec * 1.3 + caustic * vec3(1., .95, .85), mask), 1.);
+vec3 col = mix(base, refr * (1. - rim) + spec * 1.3 + caustic * vec3(1., .95, .85), mask);
+// Wiper blades: a dark rubber edge with a wet highlight behind it.
+for (int i = 0; i < 2; i++) {
+  vec4 B = uBlade[i]; vec2 a = B.xy, b = B.zw, ab = b - a;
+  float h = clamp(dot(fp - a, ab) / max(dot(ab, ab), 1.), 0., 1.);
+  float dist = length(fp - (a + ab * h));
+  col *= 1. - uBladeOn * .9 * smoothstep(4.5, 1.5, dist);
+  col += uBladeOn * vec3(.12, .13, .16) * smoothstep(12., 4.5, dist) * step(4.5, dist);
+}
+gl_FragColor = vec4(col, 1.);
 }`;
 export function rainImprovedScene(opts = {}) {
-  const cafe = opts.mode === 'cafe';
+  // rain: outside the glass, with shader runs and gusts. cafe and greenhouse: condensation inside, slower mist; the café is
+  // wiped by a hand now and then, the greenhouse drips from the roof. car: rain on a windscreen with wipers.
+  const mode = opts.mode || 'rain', cafe = mode === 'cafe', greenhouse = mode === 'greenhouse', car = mode === 'car', steam = cafe || greenhouse;
   let stage, kit, failed = false, built = false, bg = opts.bg || 'tokyo', sim, fogC, fogG, beadC, beadG;
-  let uT, uRes, uRain, uD, uRunU, uMistAmt, uWarm, uRunsOn, rain = .6, gust = 0, nextGust = 20, maxDrops = 16;
+  let uT, uRes, uRain, uD, uRunU, uMistAmt, uTintMul, uTintAdd, uRunsOn, uBladeOn, uBladeU, rain = .6, gust = 0, nextGust = 20, maxDrops = 16;
   let wipeTimer = rand(40, 90), wiping = 0, wipeX = 0, wipeY = 0, wipeDir = 1;
+  let wiperTimer = 6, wiper = 0; const WIPE = 1.5, bladeData = new Float32Array(8);
   const FSc = .25, BS = .5, MAX = 16, packed = new Float32Array(MAX * 4);
   // Shader runs live here so the simulation can see them. Columns are indexed -12..11 around the screen centre.
   const COLS = 9, NCOL = 24, runs = Array.from({ length: NCOL }, () => ({ phase: 'wait', wait: rand(0, 12), ph: 0, rate: .05, y: 1.06, r0: .1, n2: 0, alive: 0 }));
@@ -125,7 +139,7 @@ export function rainImprovedScene(opts = {}) {
   function build() {
     let [sharp, g] = layer(W, H); paintBg(g, bg);
     const [soft] = blurCanvas(sharp, BGS[bg].file ? 3 : 2.4);
-    const [mist, mg] = blurCanvas(sharp, 14); mg.fillStyle = cafe ? 'rgba(190,170,150,.22)' : 'rgba(150,164,190,.18)'; mg.fillRect(0, 0, W, H);
+    const [mist, mg] = blurCanvas(sharp, 14); mg.fillStyle = cafe ? 'rgba(190,170,150,.22)' : greenhouse ? 'rgba(160,190,160,.2)' : 'rgba(150,164,190,.18)'; mg.fillRect(0, 0, W, H);
     kit.tex('uSharp', 0, sharp); kit.tex('uSoft', 1, soft); kit.tex('uMist', 2, mist);
   }
   function spawn(top) {
@@ -186,7 +200,8 @@ export function rainImprovedScene(opts = {}) {
         try { kit = glKit(stage, FS_IMPROVED); } catch (e) { console.warn(e); }
         if (!kit) { failed = true; return; }
         uT = kit.u('uT'); uRes = kit.u('uRes'); uRain = kit.u('uRain'); uD = kit.u('uD[0]') || kit.u('uD'); uRunU = kit.u('uRun[0]') || kit.u('uRun');
-        uMistAmt = kit.u('uMistAmt'); uWarm = kit.u('uWarm'); uRunsOn = kit.u('uRunsOn');
+        uMistAmt = kit.u('uMistAmt'); uTintMul = kit.u('uTintMul'); uTintAdd = kit.u('uTintAdd'); uRunsOn = kit.u('uRunsOn');
+        uBladeOn = kit.u('uBladeOn'); uBladeU = kit.u('uBlade[0]') || kit.u('uBlade');
       }
       if (failed) return;
       const r = Math.min(DPR, lowPower ? .8 : 1.5); stage.width = Math.round(W * r); stage.height = Math.round(H * r);
@@ -194,21 +209,21 @@ export function rainImprovedScene(opts = {}) {
       [fogC, fogG] = plain(W * FSc, H * FSc); fogG.fillStyle = '#fff'; fogG.fillRect(0, 0, fogC.width, fogC.height);
       [beadC, beadG] = plain(W * BS, H * BS);
       // Every big drop runs and leaves a trail; still drops are condensation gathering until they are heavy enough to go.
-      sim = makeSim(cafe
+      sim = makeSim(steam
         ? { maxR: 5.2, beadChance: 1, beadGap: [6, 13], moveR: 2.4, speed: 1.2, pauseRate: .6, gather: .004, beadCost: .015, stillGrow: .04 }
         : { maxR: 5.2, beadChance: 1, beadGap: [6, 13], moveR: 2.4, speed: 1.8, pauseRate: .4, gather: .004, beadCost: .015, stillGrow: .03 });
-      for (let i = 0; i < 8; i++) spawn(!cafe && i < 3);
+      for (let i = 0; i < 8; i++) spawn(!steam && i < 3);
       built = false; if (BGS[bg].file) img(BGS[bg].file);
     },
     draw(t, dt) {
       if (failed) { glFailed(stage); return; }
       if (!built) { if (bgPending(bg)) return; build(); built = true; }
-      const level = cafe ? .5 : Math.min(1, weather * (.8 + .45 * musicLevel));
+      const level = steam ? .5 : Math.min(1, weather * ((car ? .95 : .8) + .45 * musicLevel));
       // Mist returns (slowly for steam), old beads evaporate.
-      fogG.fillStyle = `rgba(255,255,255,${Math.min(1, dt / (cafe ? 26 : 11))})`; fogG.fillRect(0, 0, fogC.width, fogC.height);
+      fogG.fillStyle = `rgba(255,255,255,${Math.min(1, dt / (steam ? 26 : 11))})`; fogG.fillRect(0, 0, fogC.width, fogC.height);
       beadG.globalCompositeOperation = 'destination-out'; beadG.fillStyle = `rgba(0,0,0,${Math.min(1, dt / 40)})`;
       beadG.fillRect(0, 0, beadC.width, beadC.height); beadG.globalCompositeOperation = 'source-over';
-      if (!cafe) {
+      if (!steam) {
         // Gusts come more often in heavy weather; the music's loudness also lifts the rain a little.
         nextGust -= dt;
         if (nextGust <= 0) { gust = rand(3, 5); nextGust = rand(25, 45) / (.5 + weather); for (let i = 0; i < 3; i++) spawn(true); }
@@ -219,9 +234,10 @@ export function rainImprovedScene(opts = {}) {
       } else {
         rain += (.45 - rain) * Math.min(1, dt);
         if (Math.random() < dt * .25) spawn(false);
+        if (greenhouse && Math.random() < dt * .4) spawn(true);   // drips from the roof glass
         // Every minute or two a hand wipes an arc through the steam, which slowly fogs back over.
         wipeTimer -= dt;
-        if (wipeTimer <= 0) { wiping = 1.2; wipeTimer = rand(90, 180); wipeX = rand(.3, .7) * W; wipeY = rand(.35, .6) * H; wipeDir = Math.random() < .5 ? 1 : -1; }
+        if (cafe && wipeTimer <= 0) { wiping = 1.2; wipeTimer = rand(90, 180); wipeX = rand(.3, .7) * W; wipeY = rand(.35, .6) * H; wipeDir = Math.random() < .5 ? 1 : -1; }
         if (wiping > 0) {
           const p0 = 1 - wiping / 1.2; wiping -= dt; const p1 = 1 - Math.max(0, wiping) / 1.2;
           const arc = p => ({ x: wipeX + wipeDir * (p - .5) * W * .55, y: wipeY - Math.sin(p * Math.PI) * H * .12 });
@@ -232,6 +248,27 @@ export function rainImprovedScene(opts = {}) {
       sim.step(dt,
         (x0, y0, x1, y1, r) => { wipe(fogG, FSc, x0, y0, x1, y1, r * 2, .25); wipe(fogG, FSc, x0, y0, x1, y1, r * 1.1, .55); wipe(beadG, BS, x0, y0, x1, y1, r * 2, 1); },
         (x, y, r) => { const sz = Math.max(1.4, r * 1.35); beadG.drawImage(dropSprite(), (x - sz) * BS, (y - sz) * BS, sz * 2 * BS, sz * 2 * BS); });
+      // Wipers: both blades sweep out and back, clearing mist and beads and taking any drops in their path.
+      bladeData.fill(0); let bladeOn = 0;
+      if (car) {
+        wiperTimer -= dt;
+        if (wiper <= 0 && wiperTimer <= 0) { wiper = WIPE; wiperTimer = rand(3, 7) / (.25 + level); }
+        if (wiper > 0) {
+          wiper -= dt; bladeOn = 1;
+          const sweep = Math.sin((1 - Math.max(0, wiper) / WIPE) * Math.PI);   // out, then back
+          const len = H * .78, w = Math.max(18, H * .03), k = stage.width / W;
+          [W * .28, W * .7].forEach((px, i) => {
+            const py = H * 1.04, ang = -Math.PI * .5 + (sweep - .5) * Math.PI * .72;
+            const tx = px + Math.cos(ang) * len, ty = py + Math.sin(ang) * len;
+            wipe(fogG, FSc, px, py, tx, ty, w, .95); wipe(beadG, BS, px, py, tx, ty, w, 1);
+            for (let j = sim.drops.length - 1; j >= 0; j--) {
+              const d = sim.drops[j], ax = d.x - px, ay = d.y - py, h = Math.max(0, Math.min(1, (ax * (tx - px) + ay * (ty - py)) / (len * len)));
+              if (Math.hypot(ax - (tx - px) * h, ay - (ty - py) * h) < w * .7) sim.drops.splice(j, 1);
+            }
+            bladeData.set([px * k, (H - py) * k, tx * k, (H - ty) * k], i * 4);
+          });
+        }
+      }
       const sc = stage.width / W;
       packed.fill(0);
       sim.drops.slice(0, MAX).forEach((d, i) => {
@@ -241,8 +278,12 @@ export function rainImprovedScene(opts = {}) {
       const gl = kit.gl;
       gl.uniform1f(uT, t); gl.uniform2f(uRes, stage.width, stage.height); gl.uniform1f(uRain, rain);
       gl.uniform4fv(uD, packed); gl.uniform4fv(uRunU, runData);
-      gl.uniform1f(uMistAmt, (musicPlaying ? .8 + .35 * (1 - musicLevel) : 1) * (cafe ? 1.15 : 1));   // quiet passages let the mist thicken
-      gl.uniform1f(uWarm, cafe ? 1 : 0); gl.uniform1f(uRunsOn, cafe ? 0 : 1);
+      gl.uniform1f(uMistAmt, (musicPlaying ? .8 + .35 * (1 - musicLevel) : 1) * (steam ? 1.15 : 1));   // quiet passages let the mist thicken
+      if (cafe) { gl.uniform3f(uTintMul, 1.1, .98, .84); gl.uniform3f(uTintAdd, .07, .035, 0); }
+      else if (greenhouse) { gl.uniform3f(uTintMul, .9, 1.06, .9); gl.uniform3f(uTintAdd, .02, .06, .02); }
+      else { gl.uniform3f(uTintMul, 1, 1, 1); gl.uniform3f(uTintAdd, 0, 0, 0); }
+      gl.uniform1f(uRunsOn, steam ? 0 : 1);
+      gl.uniform1f(uBladeOn, bladeOn); gl.uniform4fv(uBladeU, bladeData);
       kit.tex('uFog', 3, fogC); kit.tex('uBeads', 4, beadC);
       kit.draw();
     }

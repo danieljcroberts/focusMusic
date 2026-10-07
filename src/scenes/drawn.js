@@ -1,6 +1,10 @@
 // Scenes drawn entirely in code on the 2D canvas.
 import { W, H, ctx } from '../view.js';
 import { rand, hash, mix, rgb, layer, glow, stars } from '../util.js';
+import { daylight, skyMix } from '../daylight.js';
+
+// Low Tide and Aurora follow the viewer's clock and rebuild their sky when the light has moved.
+const stale = built => Math.abs(daylight() - built) > .04;
 
 /* 2. Canopy */
 export function canopyScene() {
@@ -228,20 +232,33 @@ export function hearthScene() {
 
 /* 5. Low Tide */
 export function tideScene() {
-  let sky, clouds;
+  let sky, clouds, built = 0;
   return {
     init() {
-      const hy = H * .6;
+      const hy = H * .6, d = daylight(); built = d;
       let g; [sky, g] = layer(W, H);
       const gr = g.createLinearGradient(0, 0, 0, hy);
-      gr.addColorStop(0, '#2a2c52'); gr.addColorStop(.55, '#7a5a8c'); gr.addColorStop(1, '#efa67c');
+      gr.addColorStop(0, rgb(skyMix([6, 8, 26], [42, 44, 82], [88, 148, 220], d)));
+      gr.addColorStop(.55, rgb(skyMix([16, 20, 44], [122, 90, 140], [150, 198, 235], d)));
+      gr.addColorStop(1, rgb(skyMix([34, 30, 56], [239, 166, 124], [222, 232, 240], d)));
       g.fillStyle = gr; g.fillRect(0, 0, W, hy + 1);
+      if (d < .5) { g.globalAlpha = 1 - d * 2; stars(g, Math.round(W * hy / 3000), hy * .85); g.globalAlpha = 1; }
       const sg = g.createLinearGradient(0, hy, 0, H);
-      sg.addColorStop(0, '#6c5277'); sg.addColorStop(.25, '#433a62'); sg.addColorStop(1, '#17172d');
+      sg.addColorStop(0, rgb(skyMix([24, 26, 52], [108, 82, 119], [70, 130, 170], d)));
+      sg.addColorStop(.25, rgb(skyMix([14, 16, 36], [67, 58, 98], [44, 96, 136], d)));
+      sg.addColorStop(1, rgb(skyMix([5, 6, 16], [23, 23, 45], [18, 40, 68], d)));
       g.fillStyle = sg; g.fillRect(0, hy, W, H - hy);
-      const sx = W * .62, sr = Math.min(W, H) * .045;
-      glow(g, sx, hy - sr * .6, Math.max(W, H) * .45, [255, 190, 140], .45);
-      g.fillStyle = '#ffd9a8'; g.beginPath(); g.arc(sx, hy - sr * .6, sr, Math.PI, 0); g.lineTo(sx + sr, hy); g.lineTo(sx - sr, hy); g.fill();
+      // The sun sits on the horizon at dusk and dawn, climbs by day, and gives way to a moon at night.
+      const sx = W * .62, sr = Math.min(W, H) * .045, lift = Math.max(0, d - .5) * 2 * H * .3;
+      if (d > .05) {
+        g.globalAlpha = Math.min(1, d * 3);
+        glow(g, sx, hy - sr * .6 - lift, Math.max(W, H) * .45, [255, 190, 140], .45 * (1 - lift / (H * .3)) + .15);
+        g.fillStyle = '#ffd9a8'; g.beginPath(); g.arc(sx, hy - sr * .6 - lift, sr, Math.PI, 0); g.lineTo(sx + sr, hy); g.lineTo(sx - sr, hy); g.fill();
+        g.globalAlpha = 1;
+      } else {
+        glow(g, W * .3, hy - H * .3, Math.min(W, H) * .25, [200, 210, 255], .35);
+        g.fillStyle = '#e6e9ff'; g.beginPath(); g.arc(W * .3, hy - H * .3, sr * .6, 0, Math.PI * 2); g.fill();
+      }
       clouds = Array.from({ length: 8 }, (_, i) => {
         const cw = rand(240, 480) * Math.max(.6, W / 1400), chh = cw * .32;
         const [c, cg] = layer(cw, chh);
@@ -257,8 +274,9 @@ export function tideScene() {
       });
     },
     draw(t, dt) {
-      const hy = H * .6, sx = W * .62;
-      ctx.drawImage(sky, 0, 0, W, H);
+    if (stale(built)) this.init();
+    const hy = H * .6, sx = daylight() > .05 ? W * .62 : W * .3;
+    ctx.drawImage(sky, 0, 0, W, H);
       for (const c of clouds) { c.x += c.v * dt; if (c.x > W + 10) c.x = -c.w; ctx.drawImage(c.c, c.x, c.y, c.w, c.h); }
       const rows = 46;
       ctx.lineCap = 'round';
@@ -285,15 +303,18 @@ export function tideScene() {
 
 /* 6. Aurora */
 export function auroraScene() {
-  let sky, hills, strips;
+  let sky, hills, strips, built = 0;
   const cols = [[110, 255, 170], [90, 215, 255], [190, 120, 255]];
   return {
     init() {
+      const d = daylight(); built = d;
       let g; [sky, g] = layer(W, H);
       const gr = g.createLinearGradient(0, 0, 0, H);
-      gr.addColorStop(0, '#02050e'); gr.addColorStop(.6, '#081a26'); gr.addColorStop(1, '#0f2a33');
+      gr.addColorStop(0, rgb(skyMix([2, 5, 14], [30, 30, 70], [80, 140, 215], d)));
+      gr.addColorStop(.6, rgb(skyMix([8, 26, 38], [120, 80, 110], [160, 200, 230], d)));
+      gr.addColorStop(1, rgb(skyMix([15, 42, 51], [200, 130, 110], [200, 220, 225], d)));
       g.fillStyle = gr; g.fillRect(0, 0, W, H);
-      stars(g, Math.round(W * H / 2200), H * .75);
+      if (d < .5) { g.globalAlpha = 1 - d * 2; stars(g, Math.round(W * H / 2200), H * .75); g.globalAlpha = 1; }
       strips = cols.map(c => {
         const s = document.createElement('canvas'); s.width = 1; s.height = 256;
         const sg = s.getContext('2d'), lg = sg.createLinearGradient(0, 0, 0, 256);
@@ -321,14 +342,16 @@ export function auroraScene() {
       ridge(H * .9, H * .07, '#03090d', 4.1, true);
     },
     draw(t) {
-      ctx.drawImage(sky, 0, 0, W, H);
-      ctx.globalCompositeOperation = 'lighter';
-      const step = 3;
+    if (stale(built)) this.init();
+    const night = 1 - daylight();   // the lights are there by day too, just washed out
+    ctx.drawImage(sky, 0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    const step = 3;
       for (let i = 0; i < 3; i++) {
         for (let x = 0; x < W; x += step) {
           const y = H * (.32 + i * .07) + Math.sin(x * .0035 + t * .12 + i * 1.9) * H * .07 + Math.sin(x * .011 - t * .2 + i) * H * .022;
           const h = H * (.2 + .1 * Math.sin(x * .006 + t * .27 + i * 2.3));
-          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6);
+          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6) * (.08 + .92 * night);
           if (a < .02) continue;
           ctx.globalAlpha = a;
           ctx.drawImage(strips[i], x, y - h, step + .5, h);
