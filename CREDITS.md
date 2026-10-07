@@ -4,7 +4,7 @@ Licences checked on 2026-10-06. Recheck before shipping.
 
 ## Scenes drawn in code (original)
 
-Rain on Glass, Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `slow-windows.html`. They use no third-party art. The Rain lab scenes (Canvas+, WebGL, Shader, Improved and their variants), Snow on Glass and Café Window are also original code; the ones marked "Photo" use the photographs listed below as their background.
+Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
 
 ## Photographs and footage
 
@@ -19,7 +19,7 @@ CC BY-SA requires credit and that any adapted version of the image is shared und
 
 ## CC0 art (public domain, credit optional)
 
-Files are in `assets/scenes/`. Some were resized or converted, which CC0 permits. The original downloads are in `assets/originals/` (gitignored).
+Files are in `public/assets/scenes/`. Some were resized or converted, which CC0 permits. The original downloads are in `originals/` (gitignored).
 
 | Scene | Asset | Author | Source |
 |---|---|---|---|
@@ -55,9 +55,9 @@ These Shadertoy shaders are licensed CC BY-NC-SA 3.0. That licence requires cred
 
 ## Music
 
-The full list of Creative Commons tracks from the Music For Programming mixes is in the `TRACKS` array in `slow-windows.html`. It has 39 confirmed and 5 likely, each with its licence, episode numbers and source link. Each scene links to one of those tracks.
+The full list of Creative Commons tracks from the Music For Programming mixes is in `src/data/tracks.json`. It has 39 confirmed and 5 likely, each with its licence, episode numbers and source link. Each scene in `src/data/scenes.js` is paired with one of them; `npm run check` verifies the pairing.
 
-### Bundled (in `assets/music/`, gitignored)
+### Bundled (in `public/assets/music/`, gitignored)
 
 These are the original files from the netlabel releases on archive.org, unmodified, because most are no-derivatives (ND).
 
@@ -72,7 +72,7 @@ These are the original files from the netlabel releases on archive.org, unmodifi
 | Quiet View | Zen Savauge | CC BY-NC-ND 2.0 | https://www.subsource.de/sub/054 (Subsource) |
 | I Was Everything You Wanted Until I Quit | Khonnor | CC BY-NC-ND 1.0 | https://archive.org/details/pls001 (Please Do Something) |
 
-To fetch them again, download the files linked from each archive.org item into `assets/music/`, using the file names in `TRACKS`.
+`npm run fetch-music` downloads them from the `stream` URL of each track that has a `file` name in `tracks.json`.
 
 ### Streamed
 

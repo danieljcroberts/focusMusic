@@ -1,0 +1,23 @@
+{
+  "name": "slow-windows",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Ambient focus scenes with Creative Commons music.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint",
+    "check": "node scripts/check.mjs",
+    "fetch-music": "node scripts/fetch-music.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "npm run lint && npm run check && npm run build && npm run smoke"
+  },
+  "devDependencies": {
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "playwright": "^1.63.0",
+    "vite": "^8.3.3"
+  }
+}

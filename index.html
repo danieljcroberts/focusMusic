@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slow Windows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="scene" aria-label="Animated ambient scene"></canvas>
+<canvas id="gl" hidden aria-hidden="true"></canvas>
+<img id="still" hidden alt="">
+<canvas id="fade" aria-hidden="true"></canvas>
+<div id="dim" aria-hidden="true"></div>
+<div class="shade"></div>
+<div class="chrome">
+  <div class="top">
+    <div class="brand"><b>Slow Windows</b> · focus scenes</div>
+    <div class="top-right">
+      <span class="clock" id="clock">--:--</span>
+      <div class="timer">
+        <button type="button" class="icon-btn tog" id="tStart" aria-pressed="false" aria-label="Start or pause the focus timer">Focus 25:00</button>
+        <button type="button" class="icon-btn" id="tMore" aria-label="Timer options" aria-expanded="false">⋯</button>
+        <div class="tmenu" id="tMenu" hidden>
+          <span class="lbl">Focus / break</span>
+          <button type="button" data-f="25" data-b="5">25 / 5 min</button>
+          <button type="button" data-f="50" data-b="10">50 / 10 min</button>
+          <button type="button" data-f="90" data-b="15">90 / 15 min</button>
+          <button type="button" id="tReset">Reset</button>
+        </div>
+      </div>
+      <button type="button" class="icon-btn tog" id="lowBtn" aria-pressed="false">Low power</button>
+      <button class="icon-btn" id="fs" type="button">Full screen</button>
+    </div>
+  </div>
+  <div class="bottom">
+    <p class="eyebrow" id="eyebrow">Scene 1</p>
+    <h1 id="title">Rain on Glass</h1>
+    <p class="desc" id="desc"></p>
+    <div class="credits">
+      <p class="pair art">Art <span class="who" id="art"></span><span class="lic" id="artlic"></span></p>
+      <p class="pair">Music from the mixes <button type="button" class="suggest" id="who"></button><span class="lic" id="lic"></span></p>
+    </div>
+    <div class="bgrow" id="bgRow" hidden>
+      <span class="eyebrow">Background</span>
+      <div class="seg" id="bgSeg" role="group" aria-label="Background"></div>
+    </div>
+    <div class="player">
+      <button type="button" class="pbtn primary" id="play">Play</button>
+      <button type="button" class="pbtn" id="next">Next</button>
+      <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span></div>
+      <div class="seg" role="group" aria-label="Music source">
+        <button type="button" id="srcMix" aria-pressed="true">From the mixes</button>
+        <button type="button" id="srcLive" aria-pressed="false">Internet Archive live</button>
+      </div>
+      <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+      <button type="button" class="pbtn tog" id="follow" aria-pressed="false" title="When the scene changes, crossfade to its track">Scene picks music</button>
+      <button type="button" class="pbtn" id="libBtn">Library</button>
+    </div>
+    <p class="status" id="status"></p>
+    <nav id="nav" aria-label="Scenes"></nav>
+    <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · T timer · L library · F full screen</p>
+  </div>
+</div>
+
+<aside class="lib" id="lib" hidden aria-label="Music library">
+  <header><h2>Music from the mixes</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
+  <p class="intro">Tracks from Music For Programming mixes released under Creative Commons. Credit the artist, keep the app non-commercial for NC licences, and play ND tracks unedited. Episode numbers show where each track appeared.</p>
+  <div class="list" id="libList"></div>
+</aside>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

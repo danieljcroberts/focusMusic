@@ -1,3 +1,8 @@
+# Music For Programming episodes, kept for reference only
 music/
-prototypes/assets/originals/
-prototypes/assets/music/
+# Original downloads of the scene art; the processed copies are in public/assets/scenes
+originals/
+# Bundled CC tracks: run `npm run fetch-music` to download them
+public/assets/music/
+node_modules/
+dist/
