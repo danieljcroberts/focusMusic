@@ -6,7 +6,7 @@ The app is free and will stay free (decided 2026-10-08). That is what makes the 
 
 ## Scenes drawn in code (original)
 
-Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. Nebula is a shader in `src/scenes/trip.js`. The Trip scenes (`src/scenes/trip.js`) are original shaders; their colour palettes use the cosine-palette technique described by Inigo Quilez, which is a method, not a licensed asset. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
+Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. Nebula is a shader in `src/scenes/trip.js`. The Trip scenes (`src/scenes/trip.js`) are original shaders; their colour palettes use the cosine-palette technique described by Inigo Quilez, which is a method, not a licensed asset. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
 
 ## Photographs and footage
 
@@ -15,7 +15,7 @@ Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/
 | Background "Blue-hour waterfront" | City lighting (resized, blurred in the scene) | Maria Eklind | CC BY-SA 2.0 | https://commons.wikimedia.org/wiki/File:City_lighting_(explore)_-_Flickr_-_Maria_Eklind.jpg |
 | Background "Tokyo at night" | Roppongi at night seen from Shibuya Stream (resized) | Syced | CC0 | https://commons.wikimedia.org/wiki/File:Roppongi_at_night_seen_from_Shibuya_Stream.jpg |
 | Background "Toronto skyline" | Night skyline of Toronto, Canada (resized) | Andrew Gosine | CC0 | https://commons.wikimedia.org/wiki/File:Night_skyline_of_Toronto,_Canada_374759.jpg |
-| Rain · Film | Raindrops against the window in the night city, Las Palmas (cut to a 16 s loop, re-encoded) | slavikfi | CC0 | https://commons.wikimedia.org/wiki/File:Raindrops_against_the_window_in_the_night_city,_Las_Palmas.webm |
+| Rain on Film | Raindrops against the window in the night city, Las Palmas (cut to a 16 s loop, re-encoded) | slavikfi | CC0 | https://commons.wikimedia.org/wiki/File:Raindrops_against_the_window_in_the_night_city,_Las_Palmas.webm |
 
 CC BY-SA requires credit and that any adapted version of the image is shared under the same licence. Blurring the photo in the scene counts as an adaptation, so if the app ships with the waterfront background, the credit must name the licence and link to it. The CC0 items need no credit, though it is given on screen anyway.
 

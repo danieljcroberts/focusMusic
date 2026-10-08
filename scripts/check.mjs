@@ -43,6 +43,7 @@ for (const s of SCENES) {
   }
   if (!s.desc) err(`scene "${s.name}" has no description`);
   if (!SOUNDS.has(s.sound)) err(`scene "${s.name}" has an unknown sound "${s.sound}"`);
+  if (!['day', 'night', 'any'].includes(s.mood)) err(`scene "${s.name}" has an unknown mood "${s.mood}"`);
   if (!/^#[0-9a-f]{6}$/i.test(s.sw || '')) err(`scene "${s.name}" has no swatch colour`);
   if (s.src && !existsSync(join(SCENE_DIR, s.src))) err(`scene "${s.name}" image is missing: ${s.src}`);
 }

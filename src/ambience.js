@@ -6,7 +6,7 @@ import { state, saveState } from './state.js';
 
 export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space'];
 
-let ctx = null, master = null, buffers = {}, live = [], timers = [], kind = 'none', tick = null;
+let ctx = null, master = null, buffers = {}, live = [], timers = [], kind = 'none';
 export let level = typeof state.ambience === 'number' ? state.ambience : .35;
 
 function buffer(type) {
@@ -86,7 +86,7 @@ function ensure() {
   if (ctx) return true;
   ctx = audioCtx(); if (!ctx) return false;
   master = ctx.createGain(); master.gain.value = level; master.connect(ctx.destination);
-  tick = setInterval(() => {
+  setInterval(() => {
     const t = performance.now() / 1000, w = weather;
     for (const L of live) if (L.mod && !L.fading) { const [g, f] = L.mod(t, w); L.g.gain.setTargetAtTime(L.base * g, ctx.currentTime, .15); if (L.f && f) L.f.frequency.setTargetAtTime(f, ctx.currentTime, .3); }
   }, 100);
@@ -114,5 +114,8 @@ export function setAmbienceLevel(v) {
   if (master) master.gain.setTargetAtTime(level, ctx.currentTime, .2);
   if (level > 0 && !live.length) build(); else if (level <= 0 && live.length) { fadeOut(live); live = []; timers.forEach(clearTimeout); timers = []; }
 }
+// The sleep timer mutes the layers over a long ramp without forgetting the level.
+export function setAmbienceMute(on, seconds = 1) { if (master) master.gain.setTargetAtTime(on ? 0 : level, ctx.currentTime, Math.max(.05, seconds / 3)); }
+export const ambienceState = () => ({ kind, level, layers: live.length });
 // Called from the first pointer or key event: browsers only let sound start after a gesture.
 export function startAmbience() { if (armed) return; armed = true; build(); }

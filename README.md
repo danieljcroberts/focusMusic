@@ -1,5 +1,11 @@
 # Slow Windows
 
+**Open it: https://danieljcroberts.github.io/focusMusic/** (installs to a phone's home screen; works offline after the first visit)
+
+| ![Windscreen](docs/Windscreen.jpg) | ![Lighthouse](docs/Lighthouse.jpg) | ![Aquarium](docs/Aquarium.jpg) |
+|---|---|---|
+| ![Snowfall](docs/Snowfall.jpg) | ![Aurora from Orbit](docs/Aurora-from-Orbit.jpg) | ![Kaleidoscope](docs/Kaleidoscope.jpg) |
+
 Ambient scenes to work beside: rain on a window, a pixel-art forest, an ocean at dusk. Each scene is paired with a Creative Commons track from the [Music For Programming](https://musicforprogramming.net) mixes, and there is a focus timer that dims the scene for breaks.
 
 Everything in it is either drawn in code or licensed for reuse. `CREDITS.md` lists every asset, its author and its licence.
@@ -16,8 +22,6 @@ npm run dev           # http://localhost:5173
 
 `npm run build` writes a static site to `dist/`. Open it from any web server; the page uses relative paths.
 
-Add `#lab` to the URL to see the rain lab: the alternative rain renderers kept for comparison.
-
 Lighthouse, Above the Clouds, Pond, Low Tide and Aurora follow your clock: daylight from about 06:00, dusk around 18:00 to 19:30, night after. There is no location lookup, so the times are fixed.
 
 Each scene has an ambient sound layer (rain, wind, sea, fire, a café, a train, a storm, bubbles, a low hum) generated in Web Audio from filtered noise, with nothing to download. The **Ambience** slider sets its level; it follows the weather where that makes sense and starts after your first click or key, as browsers require.
@@ -31,6 +35,14 @@ scripts/deploy-pages.sh   # lint, check, build, then push dist/ to the gh-pages 
 ```
 
 GitHub Pages serves that branch once it is chosen in the repository's Settings → Pages (Deploy from a branch, `gh-pages`, root). `scripts/github-pages.workflow.yml` is an equivalent GitHub Actions workflow for when a credential with the `workflow` scope is at hand.
+
+## Add music
+
+```sh
+node scripts/find-music.mjs ambient piano     # Creative Commons tracks on archive.org, printed as tracks.json entries
+```
+
+Confirm each licence on the item page, then paste the entries into `src/data/tracks.json`. Tracks with a `file` name are bundled by `npm run fetch-music`; the rest stream.
 
 ## Check it
 
@@ -48,7 +60,7 @@ src/main.js           boot, scene switching, timer, keys, swipe, idle and wake l
 src/music.js          players, crossfades, the library and the Internet Archive live source
 src/data/scenes.js    scene metadata: names, descriptions, art credits, paired tracks
 src/data/tracks.json  the Creative Commons tracks with licence, episodes and source
-src/scenes/           the renderers: drawn.js, parallax.js, glass.js, ocean.js, lab.js
+src/scenes/           the renderers: drawn.js, places.js, glass.js, parallax.js, three-scenes.js, trip.js, video.js
 public/assets/scenes  scene art (in git)
 public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke
@@ -58,6 +70,6 @@ Every scene has a link: the address bar follows the scene (`#aurora-from-orbit`)
 
 Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen.
 
-Star scenes with **Favourite**; **Drift** then moves between them (or all scenes, if none are starred) every 10, 20 or 30 minutes. **Settings** holds the weather and time-of-day overrides, the drift interval, and "Save music for offline use", which fetches the bundled tracks into the browser cache.
+Star scenes with **Favourite**; **Drift** then moves between them (or all scenes, if none are starred) every 10, 20 or 30 minutes, preferring scenes that suit the hour, with the next track starting a few seconds ahead of the switch. Tracks crossfade into each other rather than stopping. **Settings** holds the weather and time-of-day overrides, the drift interval, a sleep timer (music and ambience fade over the last two minutes, then the scene dims), **Use my location** (Open-Meteo: rain outside means rain on the glass, and sunrise and sunset follow your sky; coordinates are rounded and stay in your browser), this week's focus blocks, "Save music for offline use", the shortcut list (also `?`) and a diagnostics overlay (also `` ` ``) with frame rate, render scale, music bands and the last errors, for reporting what feels wrong.
 
 The built site is an installable PWA: a service worker caches the page, code and scene assets as they are seen, so scenes work offline after one visit; the music works offline once saved from Settings. On touch, swipe to change scenes.

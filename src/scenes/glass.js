@@ -2,6 +2,7 @@
 import { W, H, DPR, lowPower } from '../view.js';
 import { rand, layer, plain, wipe } from '../util.js';
 import { img } from '../assets.js';
+import { report } from '../diag.js';
 import { weather } from '../weather.js';
 import { musicLevel, musicPlaying } from '../music.js';
 import { addStage, blurCanvas, BGS, bgPending, paintBg, makeSim, glKit, glFailed, dropSprite } from './glass-shared.js';
@@ -197,7 +198,7 @@ export function rainImprovedScene(opts = {}) {
     init() {
       if (!stage) {
         stage = addStage(document.createElement('canvas'));
-        try { kit = glKit(stage, FS_IMPROVED); } catch (e) { console.warn(e); }
+        try { kit = glKit(stage, FS_IMPROVED); } catch (e) { report(e); }
         if (!kit) { failed = true; return; }
         uT = kit.u('uT'); uRes = kit.u('uRes'); uRain = kit.u('uRain'); uD = kit.u('uD[0]') || kit.u('uD'); uRunU = kit.u('uRun[0]') || kit.u('uRun');
         uMistAmt = kit.u('uMistAmt'); uTintMul = kit.u('uTintMul'); uTintAdd = kit.u('uTintAdd'); uRunsOn = kit.u('uRunsOn');
@@ -368,7 +369,7 @@ export function snowScene(opts = {}) {
     init() {
       if (!stage) {
         stage = addStage(document.createElement('canvas'));
-        try { kit = glKit(stage, FS_SNOW); } catch (e) { console.warn(e); }
+        try { kit = glKit(stage, FS_SNOW); } catch (e) { report(e); }
         if (!kit) { failed = true; return; }
         uT = kit.u('uT'); uRes = kit.u('uRes'); uSnow = kit.u('uSnow'); uMistAmt = kit.u('uMistAmt'); uPile = kit.u('uPile'); uFogAmt = kit.u('uFogAmt');
       }

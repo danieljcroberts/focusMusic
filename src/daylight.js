@@ -3,14 +3,16 @@
 // Scenes that follow the clock rebuild their sky when this moves by more than a few percent.
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-let override = null;
+let override = null, sun = null;
+// Today's sunrise and sunset as decimal hours (from local.js), or null for the fixed times.
+export function setSunTimes(rise, set) { sun = rise != null && set != null ? [rise, set] : null; }
 // A fixed amount of daylight from the settings panel (0 night, .5 dusk, 1 day), or null to follow the clock.
 export function setDaylightOverride(v) { override = v; }
 
 export function daylight(date = new Date()) {
   if (override !== null) return override;
-  const h = date.getHours() + date.getMinutes() / 60;
-  return smooth(6, 7.5, h) * (1 - smooth(18, 19.5, h));
+  const h = date.getHours() + date.getMinutes() / 60, [rise, set] = sun || [6.75, 18.75];
+  return smooth(rise - .75, rise + .75, h) * (1 - smooth(set - .75, set + .75, h));
 }
 
 // 1 around dawn and dusk, 0 at noon and midnight: the warm band in the sky.

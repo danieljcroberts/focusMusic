@@ -1,4 +1,4 @@
-// Opens the built app in headless Chromium, steps through every scene (including the rain lab)
+// Opens the built app in headless Chromium, steps through every scene
 // and fails on any page error or console error. Run `npm run build` first; `npm test` does both.
 // Set SMOKE_SHOTS=<dir> to also save a screenshot of each scene, SMOKE_CHROMIUM=<path> to use a particular Chromium.
 /* global document */ // inside page.evaluate callbacks, which run in the browser
@@ -38,7 +38,7 @@ const page = await browser.newPage({ viewport: { width: 960, height: 540 }, redu
 page.on('pageerror', e => problems.push(`page error: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error' && !/three|jsdelivr|archive\.org|fonts\.g|net::ERR/.test(m.text())) problems.push(`console error: ${m.text()}`); });
 
-await page.goto(url + '#lab', { waitUntil: 'load' });
+await page.goto(url, { waitUntil: 'load' });
 await page.waitForTimeout(600);
 const total = await page.evaluate(() => document.querySelectorAll('#nav button').length);
 const names = [];

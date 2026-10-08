@@ -3,6 +3,7 @@
 import { W, H, DPR, glc, gctxFallback, requestRender } from '../view.js';
 import { A } from '../assets.js';
 import { rand } from '../util.js';
+import { report } from '../diag.js';
 import { bands, musicLevel } from '../music.js';
 
 let THREE = null, ADDONS = null, renderer = null, loading = null, failed = false;
@@ -11,7 +12,7 @@ async function load() {
     const m = await import('./three-lib.js');
     THREE = m.THREE; ADDONS = { Water: m.Water, Sky: m.Sky };
     renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, preserveDrawingBuffer: true });
-  } catch (e) { failed = true; }
+  } catch (e) { failed = true; report(e); }
   requestRender();
 }
 

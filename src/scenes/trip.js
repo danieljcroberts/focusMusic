@@ -3,6 +3,7 @@
 import { W, H, DPR, lowPower, lively } from '../view.js';
 import { bands, spectrum, musicLevel } from '../music.js';
 import { setStatus } from '../status.js';
+import { report } from '../diag.js';
 import { addStage, glKit, glFailed } from './glass-shared.js';
 
 const PRELUDE = `precision highp float;
@@ -30,7 +31,7 @@ function shaderScene(fs, o = {}) {
     init() {
       if (!stage) {
         stage = addStage(document.createElement('canvas'));
-        try { kit = glKit(stage, PRELUDE + fs); } catch (e) { console.warn(e); }
+        try { kit = glKit(stage, PRELUDE + fs); } catch (e) { report(e); }
         if (!kit) { failed = true; return; }
         for (const n of ['uT', 'uBass', 'uMid', 'uTreble', 'uLevel', 'uLively', 'uHue', 'uRes', 'uA', 'uB']) u[n] = kit.u(n);
         specC = document.createElement('canvas'); specC.width = 256; specC.height = 1; specG = specC.getContext('2d'); specIm = specG.createImageData(256, 1);

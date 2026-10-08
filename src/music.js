@@ -87,6 +87,7 @@ let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal 
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
 const playable = t => !!(t.file || (t.stream && iaOnline));
+export const canPlay = playable;
 const eps = t => t.ep && t.ep.length ? 'MFP ' + t.ep.map(e => '#' + e).join(', ') : '';
 const BLOCKED = "archive.org can't be reached from here, so streamed tracks and the live source are off. They work when the page runs with a connection outside the artifact sandbox.";
 function link(href, text) { const a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = text; return a; }
@@ -123,7 +124,7 @@ export async function probe() {
 }
 
 function start(url) {
-  hasSrc = true;
+  hasSrc = true; queued = false;
   const cors = corsOk(url), prev = audio;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
@@ -201,8 +202,16 @@ async function nextLive() {
 }
 
 export function nextTrack() { source === 'live' ? nextLive() : nextMix(); }
+// Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
+let queued = false;
+setInterval(() => {
+  if (!hasSrc || audio.paused || queued || source !== 'mix' || !isFinite(audio.duration) || !audio.duration) return;
+  if (audio.duration - audio.currentTime < 8) { queued = true; nextMix(); }
+}, 500);
+// The sleep timer fades everything out over `seconds` and stops it.
+export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }
 export function togglePlay() {
-  if (hasSrc && !audio.ended) { audio.paused ? audio.play().catch(() => {}) : audio.pause(); return; }
+  if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
   if (source === 'live') nextLive();
   else { const t = sceneTrack(); playTrack(t && playable(t) ? t : TRACKS.find(playable)); }
 }

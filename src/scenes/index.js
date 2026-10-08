@@ -10,7 +10,6 @@ import { lighthouseScene, trainScene, stormScene, cloudsScene, pondScene, aquari
 import { videoScene } from './video.js';
 import { lavaScene, kaleidoScene, marbleScene, mandelScene, tunnelScene, spectrumScene, mandalaScene, plasmaScene, nebulaScene } from './trip.js';
 import { rainImprovedScene, snowScene } from './glass.js';
-import { rainPlusScene, rainGLScene, rainShaderScene, rainFilmScene } from './lab.js';
 
 const FACTORIES = {
   rain: () => rainImprovedScene({ bg: 'tokyo' }),
@@ -107,18 +106,10 @@ const FACTORIES = {
   mandala: mandalaScene,
   plasma: plasmaScene,
 
-  labCanvas: () => rainPlusScene({ bg: 'drawn' }),
-  labGL: () => rainGLScene({ bg: 'drawn' }),
-  labShader: () => rainShaderScene({ bg: 'drawn' }),
-  labFilm: rainFilmScene,
-  labPhotoGL: () => rainGLScene({ bg: 'waterfront' }),
-  labPhotoShader: () => rainShaderScene({ bg: 'tokyo' }),
-  labPhotoGL2: () => rainGLScene({ bg: 'toronto', v2: true }),
+  rainFilm: () => videoScene({ src: 'rain-window.mp4', poster: 'rain-window-poster.jpg' }),
 };
 
-// Open the page with #lab to compare the rain renderers.
-export const LAB = location.hash === '#lab';
-export const SCENES = META.filter(s => LAB || !s.lab);
+export const SCENES = META;
 
 export function makeScene(s) {
   const inst = FACTORIES[s.key]();

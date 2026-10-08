@@ -8,7 +8,11 @@ import { setDaylightOverride } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { TRACKS, sampleMusic, tickFades, audioCtx, setSceneKey, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen, setDuck, announce, setArtworkSource } from './music.js';
-import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience } from './ambience.js';
+import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, setAmbienceMute, ambienceState } from './ambience.js';
+import { bands, musicLevel, musicPlaying, playTrack, canPlay, fadeOutAll } from './music.js';
+import { daylight } from './daylight.js';
+import { localOn, enableLocal, disableLocal } from './local.js';
+import { report, gpuName, diagOn, toggleDiag, setDiag } from './diag.js';
 
 const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
@@ -123,7 +127,7 @@ function updateText() {
   el('lic').textContent = mt ? mt.lic + (mt.file ? '' : ' · streams') : '';
   cards.forEach((c, i) => c.b.setAttribute('aria-pressed', String(i === cur)));
   groupChips.forEach(c => c.b.setAttribute('aria-selected', String(c.g === s.group)));
-  if (location.hash !== '#lab') history.replaceState(null, '', '#' + slug(s));
+  history.replaceState(null, '', '#' + slug(s));
   announce();
   cards[cur].b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
   drawFav();
@@ -189,12 +193,18 @@ let drift = !!state.drift, driftMin = state.driftMin || 20, driftLast = performa
 function setDrift(v) { drift = v; driftBtn.setAttribute('aria-pressed', String(v)); saveState({ drift: v }); driftLast = performance.now(); }
 driftBtn.addEventListener('click', () => setDrift(!drift));
 setDrift(drift);
-function driftNext() {
-  const all = SCENES.map((s, i) => i).filter(i => i !== cur && !SCENES[i].lab);
-  const pool = all.filter(i => favs.has(SCENES[i].name));
-  const list = pool.length ? pool : all;
-  go(list[Math.floor(Math.random() * list.length)]);
+// Drift prefers favourites, and among those the scenes that suit the hour (bright by day, dark at night).
+let driftPick = -1;
+function pickDrift() {
+  const all = SCENES.map((s, i) => i).filter(i => i !== cur);
+  const favPool = all.filter(i => favs.has(SCENES[i].name));
+  const base = favPool.length ? favPool : all;
+  const want = daylight() > .5 ? 'day' : 'night';
+  const suited = base.filter(i => (SCENES[i].mood || 'any') === 'any' || SCENES[i].mood === want);
+  const list = suited.length ? suited : base;
+  return list[Math.floor(Math.random() * list.length)];
 }
+function driftNext() { const i = driftPick >= 0 ? driftPick : pickDrift(); driftPick = -1; go(i); }
 
 /* Low power: lower render resolution, fewer drops, lighter rain. Turns itself on if the frame rate stays low. */
 const lowBtn = el('lowBtn');
@@ -216,11 +226,11 @@ if (navigator.getBattery) navigator.getBattery().then(b => {
   const check = () => { if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off in the top bar.'); } };
   check(); b.addEventListener('levelchange', check); b.addEventListener('chargingchange', check);
 }).catch(() => {});
-let fpsAcc = 0, fpsN = 0, slowFor = 0, autoLow = false;
+let fpsAcc = 0, fpsN = 0, slowFor = 0, autoLow = false, lastFps = 0, diagAt = 0;
 function watchFps(real) {
   fpsAcc += real; fpsN++;
   if (fpsAcc < 1) return;
-  const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
+  const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; lastFps = fps;
   if (fps < 22 && !lowPower && !autoLow && !document.hidden) {
     if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off in the top bar.'); }
   } else slowFor = 0;
@@ -228,7 +238,13 @@ function watchFps(real) {
 function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
-  if (drift && now - driftLast > driftMin * 60000) driftNext();
+  if (drift) {
+    const left = driftMin * 60000 - (now - driftLast);
+    if (left < 3000 && driftPick < 0) { driftPick = pickDrift(); const mt = byKey[SCENES[driftPick].music]; if (follow && mt && canPlay(mt)) playTrack(mt); }   // the music leads the scene by a few seconds
+    if (left <= 0) driftNext();
+  }
+  tickSleep(now);
+  if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
   render(dt);
   requestAnimationFrame(frame);
 }
@@ -275,7 +291,64 @@ el('offlineBtn').addEventListener('click', async () => {
 setBtn.addEventListener('click', () => {
   const open = setMenu.hidden; closeMenus(); setMenu.hidden = !open; setBtn.setAttribute('aria-expanded', String(!setMenu.hidden));
   if (!setMenu.hidden && wxAuto.getAttribute('aria-pressed') === 'true') wx.value = weather;
+  if (!setMenu.hidden) el('weekLine').textContent = weekLine();
 });
+// Sleep timer: music and ambience fade over the last two minutes, then the scene dims until the next tap or key.
+let sleepAt = 0, winding = false;
+const sleepButtons = [...el('sleepSeg').querySelectorAll('button')];
+function setSleep(min) {
+  sleepAt = min ? performance.now() + min * 60000 : 0; winding = false;
+  sleepButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.sleep === min)));
+  if (!min) { setAmbienceMute(false); document.body.classList.remove('sleep'); }
+  else setStatus(`Stopping in ${min} minutes.`);
+}
+sleepButtons.forEach(b => b.addEventListener('click', () => setSleep(+b.dataset.sleep)));
+function tickSleep(now) {
+  if (!sleepAt) return;
+  const left = sleepAt - now;
+  if (!winding && left < 120000) { winding = true; fadeOutAll(110); setAmbienceMute(true, 110); setStatus('Winding down: the music fades over two minutes.'); }
+  if (left <= 0) { sleepAt = 0; document.body.classList.add('sleep'); sleepButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sleep === '0'))); setStatus('Stopped. Tap or press a key to wake the scene; press Play for music.'); }
+}
+// Local weather and sun, opt in: one location prompt, then Open-Meteo hourly. Coordinates are rounded and kept only in this browser.
+const localBtn = el('localBtn'), localNote = el('localNote');
+function drawLocal(info) {
+  localBtn.setAttribute('aria-pressed', String(localOn)); localBtn.textContent = localOn ? 'Using my location' : 'Use my location';
+  if (info) localNote.textContent = `${info.mm > 0 ? `${info.mm.toFixed(1)} mm/h of rain` : `${info.cloud}% cloud, dry`} · sunrise ${info.sunrise}, sunset ${info.sunset}`;
+}
+localBtn.addEventListener('click', async () => {
+  if (localOn) { disableLocal(); drawLocal(); localNote.textContent = 'Off. Weather follows the cycle; the sun keeps the fixed times.'; return; }
+  localNote.textContent = 'Asking for your location…';
+  try { drawLocal(await enableLocal()); wxAuto.setAttribute('aria-pressed', 'false'); }
+  catch (e) { localNote.textContent = /denied|permission/i.test(String(e && e.message)) ? 'Location was refused. Allow it in the browser to use this.' : "Couldn't fetch the weather. Try again later."; drawLocal(); }
+});
+drawLocal();
+// Completed focus blocks, kept locally, summarised as a line in Settings.
+function weekLine() {
+  const log = state.sessions || [], week = Date.now() - 7 * 86400000, recent = log.filter(s => s.at > week);
+  if (!recent.length) return 'No focus blocks this week yet.';
+  const day = ts => new Date(ts).toDateString(), days = new Set(log.map(s => day(s.at)));
+  let streak = 0; for (let d = new Date(); days.has(d.toDateString()); d.setDate(d.getDate() - 1)) streak++;
+  if (!streak && days.has(day(Date.now() - 86400000))) { streak = 1; for (let d = new Date(Date.now() - 86400000); days.has(d.toDateString()); d.setDate(d.getDate() - 1)) streak++; }
+  return `${recent.length} block${recent.length === 1 ? '' : 's'} · ${recent.reduce((a, s) => a + s.min, 0)} min · ${streak} day streak`;
+}
+// Shortcuts overlay and the diagnostics toggle.
+const help = el('help');
+function showHelp(on = help.hidden) { help.hidden = !on; if (on) el('helpClose').focus(); }
+el('helpBtn').addEventListener('click', () => { closeMenus(); showHelp(true); });
+el('helpClose').addEventListener('click', () => showHelp(false));
+const diagBtn = el('diagBtn');
+function setDiagOn(on) { toggleDiag(on); diagBtn.setAttribute('aria-pressed', String(on)); if (on) drawDiag(); }
+diagBtn.addEventListener('click', () => setDiagOn(!diagOn()));
+function drawDiag() {
+  const s = SCENES[cur], inst = instances[cur], st = stageOf(inst), amb = ambienceState();
+  setDiag([
+    `${s.name} · ${inst.kind} ${st.width || st.videoWidth || '?'}×${st.height || st.videoHeight || '?'} · DPR ${DPR}${lowPower ? ' · low power' : ''}${lively ? ' · lively' : ''}`,
+    `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}`,
+    `weather ${weather.toFixed(2)} · daylight ${daylight().toFixed(2)}${localOn ? ' (local)' : ''}`,
+    `music ${musicPlaying ? 'playing' : 'off'} · level ${musicLevel.toFixed(2)} · bass ${bands.bass.toFixed(2)} mid ${bands.mid.toFixed(2)} treble ${bands.treble.toFixed(2)}`,
+    `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
+  ]);
+}
 
 /* Focus timer: a focus block, then a break that dims the scene; the break starts on its own, the next block waits for you.
    It survives a reload: a running block picks up where the clock says it should be. */
@@ -328,7 +401,7 @@ setInterval(() => {
   if (!timer.running) return;
   const now = performance.now(); timer.left -= (now - timer.last) / 1000; timer.last = now;
   if (timer.left <= 0) {
-    if (timer.mode === 'focus') { timer.mode = 'break'; timer.left = timer.b * 60; chime([660, 880]); setStatus('Focus block done. Break started.'); notify('Focus block done', `Break for ${timer.b} minutes.`); setDuck(true); }
+    if (timer.mode === 'focus') { const log = (state.sessions || []).slice(-499); log.push({ at: Date.now(), min: timer.f, scene: SCENES[cur].name }); saveState({ sessions: log }); timer.mode = 'break'; timer.left = timer.b * 60; chime([660, 880]); setStatus('Focus block done. Break started.'); notify('Focus block done', `Break for ${timer.b} minutes.`); setDuck(true); }
     else { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; chime([660]); setStatus('Break over. Press the timer to start the next focus block.'); notify('Break over', 'Press the timer to start the next focus block.'); setDuck(false); }
     saveTimer();
   }
@@ -354,6 +427,7 @@ tick(); setInterval(tick, 10000);
 /* The controls fade after five quiet seconds; any movement, key or focus brings them back. */
 let idleTimer;
 function wake() {
+  if (document.body.classList.contains('sleep')) { document.body.classList.remove('sleep'); setAmbienceMute(false); }
   document.body.classList.remove('idle');
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => document.body.classList.add('idle'), 5000);
@@ -364,6 +438,7 @@ function wake() {
 /* Ambient sound: starts on the first gesture, follows the scene, its level is remembered */
 const amb = el('amb'); amb.value = ambienceLevel;
 amb.addEventListener('input', () => setAmbienceLevel(Number(amb.value)));
+for (const r of [amb, el('vol'), wx]) { const say = () => r.setAttribute('aria-valuetext', Math.round(r.value * 100) + '%'); r.addEventListener('input', say); say(); }
 ['pointerdown', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, startAmbience, { once: true, passive: true }));
 
 /* Keep the screen on while a scene is showing. The lock drops when the tab is hidden and is taken again when it returns. */
@@ -402,7 +477,9 @@ window.addEventListener('keydown', e => {
     case 'v': case 'V': setLively(!lively); break;
     case 's': case 'S': toggleFav(); break;
     case 'd': case 'D': setDrift(!drift); break;
-    case 'Escape': if (libOpen()) openLib(false); else closeMenus(); break;
+    case '?': showHelp(); break;
+    case '`': setDiagOn(!diagOn()); break;
+    case 'Escape': if (!help.hidden) showHelp(false); else if (libOpen()) openLib(false); else closeMenus(); break;
   }
 });
 
@@ -417,11 +494,8 @@ window.addEventListener('touchend', e => {
   if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
 }, { passive: true });
 
-// A scene link in the hash switches scenes; entering or leaving the lab changes the scene list, so that reloads.
-window.addEventListener('hashchange', () => {
-  const i = SCENES.findIndex(s => '#' + slug(s) === location.hash);
-  if (i >= 0) go(i); else if (location.hash === '#lab' || (location.hash === '' && SCENES.some(s => s.lab))) location.reload();
-});
+// A scene link in the hash switches scenes (so the back button walks through them).
+window.addEventListener('hashchange', () => { const i = SCENES.findIndex(s => '#' + slug(s) === location.hash); if (i >= 0) go(i); });
 
 // Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
