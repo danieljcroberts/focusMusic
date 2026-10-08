@@ -12,7 +12,7 @@ import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbienc
 import { bands, musicLevel, musicPlaying, playTrack, canPlay, fadeOutAll } from './music.js';
 import { daylight } from './daylight.js';
 import { localOn, enableLocal, disableLocal } from './local.js';
-import { report, gpuName, diagOn, toggleDiag, setDiag } from './diag.js';
+import { gpuName, diagOn, toggleDiag, setDiag } from './diag.js';
 
 const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
