@@ -4,7 +4,7 @@ Licences checked on 2026-10-06. Recheck before shipping.
 
 ## Scenes drawn in code (original)
 
-Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
+Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. The Trip scenes (`src/scenes/trip.js`) are original shaders; their colour palettes use the cosine-palette technique described by Inigo Quilez, which is a method, not a licensed asset. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
 
 ## Photographs and footage
 

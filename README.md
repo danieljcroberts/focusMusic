@@ -18,6 +18,8 @@ Add `#lab` to the URL to see the rain lab: the alternative rain renderers kept f
 
 Lighthouse, Above the Clouds, Pond, Low Tide and Aurora follow your clock: daylight from about 06:00, dusk around 18:00 to 19:30, night after. There is no location lookup, so the times are fixed.
 
+The Trip group is eight full-screen shaders that move with the music (bass, mid and treble from the analyser; a gentle pulse when the player can't be analysed). They are slow and never flash. **Lively** (top bar, or V) speeds them up and lets the music push harder.
+
 ## Check it
 
 ```sh
@@ -40,4 +42,4 @@ public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke
 ```
 
-Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · T timer · L library · F full screen. On touch, swipe to change scenes.
+Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · V lively · T timer · L library · F full screen. On touch, swipe to change scenes.

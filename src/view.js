@@ -10,9 +10,12 @@ export const still = window.matchMedia('(prefers-reduced-motion: reduce)').match
 
 export let W = 0, H = 0, DPR = 1;
 export let lowPower = false;
+// Lively: faster, more music-reactive motion in the scenes that offer it.
+export let lively = false;
 
 export function setSize(w, h, dpr) { W = w; H = h; DPR = dpr; }
 export function setLowPowerFlag(v) { lowPower = v; }
+export function setLivelyFlag(v) { lively = v; }
 
 export function gctxFallback(msg) {
   glc.hidden = true; cv.hidden = false;

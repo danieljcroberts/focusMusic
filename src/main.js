@@ -1,5 +1,5 @@
 import './style.css';
-import { cv, ctx, glc, stillImg, fadeCv, fctx, still, W, H, DPR, lowPower, setSize, setLowPowerFlag } from './view.js';
+import { cv, ctx, glc, stillImg, fadeCv, fctx, still, W, H, DPR, lowPower, lively, setSize, setLowPowerFlag, setLivelyFlag } from './view.js';
 import { A, ok } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
@@ -128,6 +128,10 @@ function setLowPower(v, note) {
 setLowPowerFlag(!!state.lowPower);
 lowBtn.addEventListener('click', () => setLowPower(!lowPower));
 lowBtn.setAttribute('aria-pressed', String(lowPower));
+const liveBtn = document.getElementById('liveBtn');
+function setLively(v) { setLivelyFlag(v); liveBtn.setAttribute('aria-pressed', String(v)); saveState({ lively: v }); }
+setLively(!!state.lively);
+liveBtn.addEventListener('click', () => setLively(!lively));
 let fpsAcc = 0, fpsN = 0, slowFor = 0, autoLow = false;
 function watchFps(real) {
   fpsAcc += real; fpsN++;
@@ -250,6 +254,7 @@ window.addEventListener('keydown', e => {
     case 'm': case 'M': setFollow(!follow); break;
     case 't': case 'T': toggleTimer(); break;
     case 'f': case 'F': toggleFs(); break;
+    case 'v': case 'V': setLively(!lively); break;
     case 'Escape': if (libOpen()) openLib(false); break;
   }
 });

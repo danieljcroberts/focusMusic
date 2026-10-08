@@ -27,7 +27,13 @@ function wireAnalyser() {
 }
 
 // musicLevel (0–1) follows the loudness of what is playing; scenes use it for rain intensity and mist.
+// bands splits it into bass, mid and treble for the scenes that move with the music.
 export let musicLevel = 0, musicPlaying = false;
+export const bands = { bass: 0, mid: 0, treble: 0 };
+const SILENCE = new Uint8Array(256);
+// The analyser's 256 bins, or silence when nothing is on the graph.
+export const spectrum = () => (analyser && musicPlaying && players.slice(0, 2).some(p => !p.paused && p.readyState > 2)) ? fdata : SILENCE;
+function average(a, from, to) { let s = 0; for (let i = from; i < to; i++) s += a[i]; return s / (to - from) / 255; }
 export function sampleMusic(dt) {
   musicPlaying = players.some(p => !p.paused && !p.ended && p.readyState > 2);
   let target = 0;
@@ -41,6 +47,11 @@ export function sampleMusic(dt) {
     } else target = .45; // a plain player gives no data, so sit in the middle
   }
   musicLevel += (target - musicLevel) * Math.min(1, dt * (target > musicLevel ? 6 : 1.2));
+  const d = spectrum(), now = performance.now() / 1000;
+  const want = d !== SILENCE
+    ? { bass: Math.min(1, average(d, 1, 6) * 1.4), mid: Math.min(1, average(d, 6, 48) * 1.9), treble: Math.min(1, average(d, 48, 160) * 2.8) }
+    : { bass: musicLevel * (.5 + .3 * Math.sin(now * 2.1)), mid: musicLevel * (.45 + .25 * Math.sin(now * 3.3)), treble: musicLevel * (.3 + .2 * Math.sin(now * 5.1)) }; // a plain player: a gentle pulse instead
+  for (const k of ['bass', 'mid', 'treble']) bands[k] += (want[k] - bands[k]) * Math.min(1, dt * (want[k] > bands[k] ? 14 : 3.5));
 }
 
 const FADE = 2.5;
