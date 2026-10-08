@@ -94,6 +94,7 @@ const FACTORIES = {
   earth: () => videoScene({ src: 'earth-night.mp4' }),
   blackMarble: () => videoScene({ src: 'black-marble.mp4' }),
   sun: () => videoScene({ src: 'sdo-sun.mp4' }),
+  issAurora: () => videoScene({ src: 'iss-aurora.mp4' }),
   cliffs: () => driftScene({ src: 'cosmic-cliffs.jpg', bg: '#05070f' }),
   nebula: nebulaScene,
 

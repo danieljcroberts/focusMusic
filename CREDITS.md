@@ -32,7 +32,8 @@ Both licences allow commercial use and modification as long as the author is cre
 |---|---|---|---|
 | Earth at Night | GOLD Resources: ISS Airglow (`~small` encode, unmodified, 30 s) | https://images.nasa.gov/details/GSFC_20180124_m12825_ISS_Airglow | NASA content is generally not copyrighted and may be used without permission; NASA asks for a credit ("NASA" or "NASA/Goddard") and must not be shown as endorsing the app. See https://www.nasa.gov/nasa-brand-center/images-and-media/ |
 | Black Marble | Black Marble 2016 (Rotating Globe), 720p encode, unmodified, 146 s | https://svs.gsfc.nasa.gov/30878/ | As above. SVS asks for the credit "NASA's Scientific Visualization Studio". |
-| The Sun | SDO Sun This Week, 24-hour rolling view, 2048p encode, unmodified | https://svs.gsfc.nasa.gov/5577/ | As above (NASA/SDO and the AIA science team). |
+| The Sun | SDO Sun This Week, 24-hour rolling view, re-encoded from 2048p to 1080p | https://svs.gsfc.nasa.gov/5577/ | As above (NASA/SDO and the AIA science team). |
+| Aurora from Orbit | ISS views Aurora from the November 11-13, 2025 Geomagnetic Storm, re-encoded from 1080p to 720p with the timestamp strip cropped off | https://svs.gsfc.nasa.gov/31375/ | As above. |
 | Cosmic Cliffs | Webb NIRCam image of the Cosmic Cliffs in the Carina Nebula, `~large` JPEG (1920×1111), unmodified | https://images.nasa.gov/details/carina_nebula | Credit NASA, ESA, CSA, STScI. STScI Webb images are public domain unless noted. |
 
 ## CC0 art (public domain, credit optional)
