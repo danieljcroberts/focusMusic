@@ -115,13 +115,13 @@ export function paintTraffic(g) {
 // Daylight through a greenhouse: pale glass, dense leaves lit from above, a few flowers.
 export function paintFoliage(g) {
   const sky = g.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, '#e8f0e4'); sky.addColorStop(.5, '#b9d2b0'); sky.addColorStop(1, '#5b7c52');
+  sky.addColorStop(0, '#e2ebdc'); sky.addColorStop(.5, '#9dbb93'); sky.addColorStop(1, '#34502e');
   g.fillStyle = sky; g.fillRect(0, 0, W, H);
   glow(g, W * .25, 0, W * .5, [255, 250, 225], .7);
   const s = Math.min(W, H) / 800;
   for (let i = 0; i < 220; i++) {
     const y = rand(H * .1, H * 1.05), depth = y / H, x = rand(-40, W + 40), r = rand(26, 70) * s * (.6 + depth * .7);
-    const base = [40 + 90 * (1 - depth) * Math.random(), 90 + 110 * (1 - depth * .6), 40 + 50 * Math.random()].map(Math.round);
+    const base = [28 + 70 * (1 - depth) * Math.random(), 70 + 100 * (1 - depth * .6), 28 + 40 * Math.random()].map(Math.round);
     g.save(); g.translate(x, y); g.rotate(rand(-1.2, 1.2));
     g.fillStyle = rgb(base, .92); g.beginPath(); g.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = rgb(base.map(v => Math.min(255, v + 45)), .5); g.beginPath(); g.ellipse(-r * .2, -r * .12, r * .5, r * .16, 0, 0, Math.PI * 2); g.fill();

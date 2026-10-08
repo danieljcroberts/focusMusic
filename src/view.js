@@ -17,6 +17,12 @@ export function setSize(w, h, dpr) { W = w; H = h; DPR = dpr; }
 export function setLowPowerFlag(v) { lowPower = v; }
 export function setLivelyFlag(v) { lively = v; }
 
+// With reduced motion the page draws once per scene change, so anything that finishes loading later
+// (an image, a video poster, three.js) asks for one more frame through here.
+let onInvalidate = null;
+export function setInvalidate(fn) { onInvalidate = fn; }
+export function requestRender() { if (onInvalidate) onInvalidate(); }
+
 export function gctxFallback(msg) {
   glc.hidden = true; cv.hidden = false;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);

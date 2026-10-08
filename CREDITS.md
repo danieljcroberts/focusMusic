@@ -4,7 +4,7 @@ Licences checked on 2026-10-06. Recheck before shipping.
 
 ## Scenes drawn in code (original)
 
-Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. The Trip scenes (`src/scenes/trip.js`) are original shaders; their colour palettes use the cosine-palette technique described by Inigo Quilez, which is a method, not a licensed asset. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
+Canopy, Night Drive, Hearth, Low Tide and Aurora are drawn procedurally in `src/scenes/drawn.js`; Lighthouse, Night Train, Storm on the Plain, Above the Clouds, Pond and Aquarium in `src/scenes/places.js`. Windscreen and Greenhouse use backdrops drawn in `src/scenes/glass-shared.js`. Nebula is a shader in `src/scenes/trip.js`. The Trip scenes (`src/scenes/trip.js`) are original shaders; their colour palettes use the cosine-palette technique described by Inigo Quilez, which is a method, not a licensed asset. They use no third-party art. Rain on Glass, Snow on Glass and Café Window (`src/scenes/glass.js`) and the rain lab renderers (`src/scenes/lab.js`, shown with `#lab`) are also original code; over the "Drawn city" background they use no third-party art, and the photo backgrounds are listed below.
 
 ## Photographs and footage
 
@@ -31,6 +31,9 @@ Both licences allow commercial use and modification as long as the author is cre
 | Scene | Asset | Source | Terms |
 |---|---|---|---|
 | Earth at Night | GOLD Resources: ISS Airglow (`~small` encode, unmodified, 30 s) | https://images.nasa.gov/details/GSFC_20180124_m12825_ISS_Airglow | NASA content is generally not copyrighted and may be used without permission; NASA asks for a credit ("NASA" or "NASA/Goddard") and must not be shown as endorsing the app. See https://www.nasa.gov/nasa-brand-center/images-and-media/ |
+| Black Marble | Black Marble 2016 (Rotating Globe), 720p encode, unmodified, 146 s | https://svs.gsfc.nasa.gov/30878/ | As above. SVS asks for the credit "NASA's Scientific Visualization Studio". |
+| The Sun | SDO Sun This Week, 24-hour rolling view, 2048p encode, unmodified | https://svs.gsfc.nasa.gov/5577/ | As above (NASA/SDO and the AIA science team). |
+| Cosmic Cliffs | Webb NIRCam image of the Cosmic Cliffs in the Carina Nebula, `~large` JPEG (1920×1111), unmodified | https://images.nasa.gov/details/carina_nebula | Credit NASA, ESA, CSA, STScI. STScI Webb images are public domain unless noted. |
 
 ## CC0 art (public domain, credit optional)
 

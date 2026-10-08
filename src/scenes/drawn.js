@@ -254,7 +254,10 @@ export function tideScene() {
       if (d > .05) {
         g.globalAlpha = Math.min(1, d * 3);
         glow(g, sx, hy - sr * .6 - lift, Math.max(W, H) * .45, [255, 190, 140], .45 * (1 - lift / (H * .3)) + .15);
-        g.fillStyle = '#ffd9a8'; g.beginPath(); g.arc(sx, hy - sr * .6 - lift, sr, Math.PI, 0); g.lineTo(sx + sr, hy); g.lineTo(sx - sr, hy); g.fill();
+        g.fillStyle = '#ffd9a8'; g.beginPath();
+        if (lift > 1) g.arc(sx, hy - sr * .6 - lift, sr, 0, Math.PI * 2);   // clear of the horizon by day
+        else { g.arc(sx, hy - sr * .6, sr, Math.PI, 0); g.lineTo(sx + sr, hy); g.lineTo(sx - sr, hy); }   // half set at dusk
+        g.fill();
         g.globalAlpha = 1;
       } else {
         glow(g, W * .3, hy - H * .3, Math.min(W, H) * .25, [200, 210, 255], .35);
@@ -352,7 +355,7 @@ export function auroraScene() {
         for (let x = 0; x < W; x += step) {
           const y = H * (.32 + i * .07) + Math.sin(x * .0035 + t * .12 + i * 1.9) * H * .07 + Math.sin(x * .011 - t * .2 + i) * H * .022;
           const h = H * (.2 + .1 * Math.sin(x * .006 + t * .27 + i * 2.3)) * (1 + bands.mid * .3);
-          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6) * (.08 + .92 * night) * (1 + bands.bass * .5);
+          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6)          * (.02 + .98 * night) * (1 + bands.bass * .5);
           if (a < .02) continue;
           ctx.globalAlpha = a;
           ctx.drawImage(strips[i], x, y - h, step + .5, h);

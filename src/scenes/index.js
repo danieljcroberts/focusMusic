@@ -8,7 +8,7 @@ import { parallaxScene, driftScene, skyExtras } from './parallax.js';
 import { oceanScene, snowfallScene, starfieldScene } from './three-scenes.js';
 import { lighthouseScene, trainScene, stormScene, cloudsScene, pondScene, aquariumScene } from './places.js';
 import { videoScene } from './video.js';
-import { lavaScene, kaleidoScene, marbleScene, mandelScene, tunnelScene, spectrumScene, mandalaScene, plasmaScene } from './trip.js';
+import { lavaScene, kaleidoScene, marbleScene, mandelScene, tunnelScene, spectrumScene, mandalaScene, plasmaScene, nebulaScene } from './trip.js';
 import { rainImprovedScene, snowScene } from './glass.js';
 import { rainPlusScene, rainGLScene, rainShaderScene, rainFilmScene } from './lab.js';
 
@@ -92,6 +92,10 @@ const FACTORIES = {
   starfield: starfieldScene,
 
   earth: () => videoScene({ src: 'earth-night.mp4' }),
+  blackMarble: () => videoScene({ src: 'black-marble.mp4' }),
+  sun: () => videoScene({ src: 'sdo-sun.mp4' }),
+  cliffs: () => driftScene({ src: 'cosmic-cliffs.jpg', bg: '#05070f' }),
+  nebula: nebulaScene,
 
   lava: lavaScene,
   kaleido: kaleidoScene,

@@ -1,5 +1,5 @@
 import './style.css';
-import { cv, ctx, glc, stillImg, fadeCv, fctx, still, W, H, DPR, lowPower, lively, setSize, setLowPowerFlag, setLivelyFlag } from './view.js';
+import { cv, ctx, glc, stillImg, fadeCv, fctx, still, W, H, DPR, lowPower, lively, setSize, setLowPowerFlag, setLivelyFlag, setInvalidate } from './view.js';
 import { A, M, ok } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
@@ -14,7 +14,7 @@ const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
 const instances = SCENES.map(makeScene);
 SCENES.forEach((s, i) => { const k = state.bgs && state.bgs[s.name]; if (k && BGS[k] && instances[i].setBg) instances[i].setBg(k); });
 const ready = new Array(SCENES.length).fill(false);
-let cur = Math.max(0, SCENES.findIndex(s => s.name === state.scene)), fade = 0, t = 8, last = performance.now();
+let cur = Math.max(0, SCENES.findIndex(s => s.name === state.scene)), fade = 0, fadeAt = 0, t = 8, last = performance.now();
 const favs = new Set(state.favs || []);
 
 /* Scene navigation: a strip of cards, each with a thumbnail once the scene has been seen */
@@ -135,7 +135,7 @@ function go(i) {
   i = (i + SCENES.length) % SCENES.length;
   if (i === cur) return;
   snapshot();
-  fade = still ? 0 : 1; fadeCv.style.opacity = fade;
+  fade = still ? 0 : 1; fadeAt = performance.now(); fadeCv.style.opacity = fade;
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); onSceneChange();
   driftLast = performance.now(); scheduleThumb();
@@ -148,7 +148,7 @@ function render(dt) {
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
   inst.draw(t, dt);
-  if (fade > 0) { fade = Math.max(0, fade - dt / 1.4); fadeCv.style.opacity = fade; }
+  if (fade > 0) { fade = Math.max(0, 1 - (performance.now() - fadeAt) / 1400); fadeCv.style.opacity = fade; }
 }
 
 /* Favourites and Drift: star the scenes you like; Drift moves between them every so often */
@@ -202,6 +202,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); }, 100);
+setInvalidate(() => { if (still) render(0); });
 
 /* Settings: weather and time of day overrides, the drift interval, music saved for offline */
 const setBtn = el('setBtn'), setMenu = el('setMenu'), wx = el('wx'), wxAuto = el('wxAuto');

@@ -70,11 +70,11 @@ void main(){
     float ph = fract(t * (.35 + .3 * fract(fi * .618)) + fi * .37);
     float y = -.36 + .72 * (.5 - .5 * cos(ph * 2. * PI));
     float x = sin(t * (.9 + .4 * fi) + fi * 2.1) * .1;
-    float r = .06 + .05 * fract(fi * .73) + uBass * .025;
+    float r = .036 + .028 * fract(fi * .73) + uBass * .015;
     vec2 d = uv - vec2(x, y);
     f += r * r / (dot(d, d) + .0004);
   }
-  f += .9 * smoothstep(-.3, -.44, uv.y);
+  f += .7 * smoothstep(-.34, -.46, uv.y);
   float blob = smoothstep(.85, 1.05, f);
   float grad = clamp((uv.y + .45) / .9, 0., 1.);
   vec3 wax = mix(vec3(1., .28, .14), vec3(1., .78, .28), grad) + uMid * .12;
@@ -132,7 +132,7 @@ void main(){
 export const mandelScene = () => shaderScene(`
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
-  float cyc = mod(uT * .011, 1.);
+  float cyc = mod(uT * .011 + .3, 1.);   // open part-way in, not on the fade
   float zoom = exp(cyc * 7.);
   vec2 c = vec2(-.74364388, .13182590) + uv * 2.4 / zoom;
   vec2 z = vec2(0.); float n = 0.;
@@ -154,7 +154,7 @@ void main(){
   r *= 1. + uBass * .12 * sin(a * 3. + t);
   vec2 st = vec2(a / PI * 3., 1. / (r + .02) + t);
   float grid = smoothstep(.02, .08, abs(fract(st.x) - .5)) * smoothstep(.02, .08, abs(fract(st.y * .5) - .5));
-  float n = fbm(st * vec2(1., .5) + t * .1);
+  float n = fbm(vec2(cos(a), sin(a)) * 1.5 + vec2(0., st.y * .5) + t * .1);   // periodic around the tube, so no seam
   vec3 col = pal(st.y * .05 + n + uHue, vec3(.45), vec3(.5), vec3(1.), vec3(0., .25, .5));
   col = mix(col * .4, col, grid);
   col *= smoothstep(0., .25, r) * (1. - .5 * uTreble * (1. - grid));
@@ -208,6 +208,33 @@ void main(){
     }
   });
 };
+
+/* Nebula: layered gas lit from within, with stars behind it, drifting slowly */
+export const nebulaScene = () => shaderScene(`
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
+  float t = uT * .02;
+  vec2 p = uv * 1.6 + vec2(t * .6, t * .25);
+  float n1 = fbm(p + fbm(p * 1.7 - t));
+  float n2 = fbm(p * 2.3 + vec2(3.1, 7.7) + fbm(p * 3.1 + t * .7));
+  float n3 = fbm(p * .7 - vec2(9.2, 2.4) + t * .3);
+  vec3 col = vec3(.01, .01, .03);
+  col += vec3(.55, .12, .45) * smoothstep(.35, .85, n1) * .8;
+  col += vec3(.1, .35, .75) * smoothstep(.4, .9, n2) * .7;
+  col += vec3(.95, .55, .25) * pow(smoothstep(.55, 1., n3 * n1 * 2.), 1.5) * (1. + uBass * .6);
+  col += vec3(.9, .85, 1.) * pow(smoothstep(.6, 1., n1 * n2 * 2.2), 3.) * .6;
+  // dark dust lanes
+  col *= .5 + .5 * smoothstep(.2, .6, fbm(p * 2.8 + vec2(4.4, 1.9)));
+  // stars behind the gas, dimmed where it is thick
+  vec2 sp = gl_FragCoord.xy / uRes.y * 90.;
+  vec2 id = floor(sp), f = fract(sp) - .5;
+  float h = h21(id);
+  float star = smoothstep(.08, .0, length(f - (vec2(h, fract(h * 9.3)) - .5) * .8)) * step(.93, h);
+  float twinkle = .6 + .4 * sin(uT * (1. + h * 3.) + h * 20.);
+  col += vec3(.9, .95, 1.) * star * twinkle * (1. - smoothstep(.3, .8, n1 + n2 * .5)) * 1.2;
+  col = mix(col, hsv(uHue, .5, 1.) * length(col) * .6, .12 * uLively);
+  gl_FragColor = vec4(col, 1.);
+}`, { speed: 1 });
 
 /* Plasma: the old sine-sum plasma, slowed down and softened */
 export const plasmaScene = () => shaderScene(`

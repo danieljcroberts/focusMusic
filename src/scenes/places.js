@@ -43,10 +43,20 @@ export function lighthouseScene() {
       g.fillStyle = sea; g.fillRect(0, hy(), W, H - hy());
       [land, g] = layer(W, H);
       const s = Math.min(W, H) / 800, ridgeY = x => hy() - H * .18 * Math.pow(Math.max(0, (x - W * .55) / (W * .45)), .6) + Math.sin(x * .02) * 3 * s;
-      const rock = skyMix([8, 9, 14], [26, 20, 30], [60, 62, 58], d);
-      g.fillStyle = rgb(rock); g.beginPath(); g.moveTo(W * .55, H);
+      const rock = skyMix([8, 9, 14], [26, 20, 30], [58, 60, 56], d), grass = skyMix([10, 16, 12], [40, 48, 30], [86, 120, 62], d);
+      const rg = g.createLinearGradient(0, hy() - H * .2, 0, H);
+      rg.addColorStop(0, rgb(grass)); rg.addColorStop(.3, rgb(rock)); rg.addColorStop(1, rgb(rock.map(v => v * .45)));
+      g.fillStyle = rg; g.beginPath(); g.moveTo(W * .55, H);
       for (let x = W * .55; x <= W + 2; x += 6) g.lineTo(x, ridgeY(x));
       g.lineTo(W + 2, H); g.fill();
+      g.save(); g.beginPath(); g.moveTo(W * .55, H); for (let x = W * .55; x <= W + 2; x += 6) g.lineTo(x, ridgeY(x)); g.lineTo(W + 2, H); g.clip();
+      g.strokeStyle = rgb(rock.map(v => v * .7), .7); g.lineWidth = 2;   // strata in the cliff face
+      for (let k = 0; k < 14; k++) {
+        g.beginPath();
+        for (let x = W * .55; x <= W + 2; x += 20) g.lineTo(x, hy() - H * .02 + k * H * .04 + Math.sin(x * .03 + k) * 4 + (x - W * .55) * .02);
+        g.stroke();
+      }
+      g.restore();
       const tx = W * .82, ty = ridgeY(tx), th = H * .22, tw = 15 * s;
       lamp = { x: tx, y: ty - th - 6 * s };
       const body = g.createLinearGradient(tx - tw, 0, tx + tw, 0);

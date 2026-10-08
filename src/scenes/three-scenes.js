@@ -1,6 +1,6 @@
 // three.js scenes (MIT). three.js is bundled as its own chunk (src/scenes/three-lib.js) and loaded the first time one of
 // these scenes is opened. All of them share one renderer on the #gl canvas.
-import { W, H, DPR, glc, gctxFallback } from '../view.js';
+import { W, H, DPR, glc, gctxFallback, requestRender } from '../view.js';
 import { A } from '../assets.js';
 import { rand } from '../util.js';
 import { bands, musicLevel } from '../music.js';
@@ -12,6 +12,7 @@ async function load() {
     THREE = m.THREE; ADDONS = { Water: m.Water, Sky: m.Sky };
     renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, preserveDrawingBuffer: true });
   } catch (e) { failed = true; }
+  requestRender();
 }
 
 // build(THREE, ADDONS) returns { scene, camera, update(t, dt), tone?, exposure? }.
