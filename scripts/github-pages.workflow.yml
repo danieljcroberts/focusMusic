@@ -1,0 +1,51 @@
+# Kept outside .github/workflows because the token used from the phone session cannot push workflow files.
+# To switch from the gh-pages branch to Actions-based deploys: copy this to .github/workflows/pages.yml,
+# push it from a credential with the `workflow` scope, and set Settings > Pages > Source to "GitHub Actions".
+
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # The bundled tracks are not in git; they come from archive.org. The data check then confirms the set is complete.
+      - run: npm run fetch-music
+      - run: npm run check
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

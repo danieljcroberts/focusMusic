@@ -24,6 +24,14 @@ Each scene has an ambient sound layer (rain, wind, sea, fire, a café, a train, 
 
 The Trip group is eight full-screen shaders that move with the music (bass, mid and treble from the analyser; a gentle pulse when the player can't be analysed). They are slow and never flash. **Lively** (top bar, or V) speeds them up and lets the music push harder.
 
+## Publish it
+
+```sh
+scripts/deploy-pages.sh   # lint, check, build, then push dist/ to the gh-pages branch
+```
+
+GitHub Pages serves that branch once it is chosen in the repository's Settings → Pages (Deploy from a branch, `gh-pages`, root). `scripts/github-pages.workflow.yml` is an equivalent GitHub Actions workflow for when a credential with the `workflow` scope is at hand.
+
 ## Check it
 
 ```sh
