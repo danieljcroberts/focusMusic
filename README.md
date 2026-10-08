@@ -20,6 +20,8 @@ Add `#lab` to the URL to see the rain lab: the alternative rain renderers kept f
 
 Lighthouse, Above the Clouds, Pond, Low Tide and Aurora follow your clock: daylight from about 06:00, dusk around 18:00 to 19:30, night after. There is no location lookup, so the times are fixed.
 
+Each scene has an ambient sound layer (rain, wind, sea, fire, a café, a train, a storm, bubbles, a low hum) generated in Web Audio from filtered noise, with nothing to download. The **Ambience** slider sets its level; it follows the weather where that makes sense and starts after your first click or key, as browsers require.
+
 The Trip group is eight full-screen shaders that move with the music (bass, mid and treble from the analyser; a gentle pulse when the player can't be analysed). They are slow and never flash. **Lively** (top bar, or V) speeds them up and lets the music push harder.
 
 ## Check it

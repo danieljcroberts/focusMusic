@@ -8,6 +8,7 @@ import { setDaylightOverride } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { TRACKS, sampleMusic, tickFades, audioCtx, setSceneKey, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen } from './music.js';
+import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience } from './ambience.js';
 
 const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
@@ -106,6 +107,7 @@ function updateText() {
   el('bgRow').hidden = !s.bgs;
   if (s.bgs) bgButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === instances[cur].bg)));
   setSceneKey(s.music);
+  setAmbienceKind(s.sound || 'none');
   const mt = byKey[s.music];
   el('who').textContent = mt ? `${mt.t} — ${mt.a}` : '';
   el('lic').textContent = mt ? mt.lic + (mt.file ? '' : ' · streams') : '';
@@ -317,6 +319,11 @@ function wake() {
   keepAwake();
 }
 ['pointermove', 'pointerdown', 'keydown', 'touchstart', 'focusin'].forEach(e => window.addEventListener(e, wake, { passive: true }));
+
+/* Ambient sound: starts on the first gesture, follows the scene, its level is remembered */
+const amb = el('amb'); amb.value = ambienceLevel;
+amb.addEventListener('input', () => setAmbienceLevel(Number(amb.value)));
+['pointerdown', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, startAmbience, { once: true, passive: true }));
 
 /* Keep the screen on while a scene is showing. The lock drops when the tab is hidden and is taken again when it returns. */
 let wakeLock = null;

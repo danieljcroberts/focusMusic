@@ -9,6 +9,8 @@ const { SCENES } = await import(join(root, 'src/data/scenes.js'));
 const TRACKS = JSON.parse(readFileSync(join(root, 'src/data/tracks.json'), 'utf8'));
 const SCENE_DIR = join(root, 'public/assets/scenes');
 const MUSIC_DIR = join(root, 'public/assets/music');
+// Mirrors KINDS in src/ambience.js, which cannot be imported here because it touches the audio API.
+const SOUNDS = new Set(['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space']);
 
 const errors = [], warnings = [];
 const err = m => errors.push(m);
@@ -40,6 +42,7 @@ for (const s of SCENES) {
     else if (s.art.who !== 'Original, drawn in code' && !s.art.lic) err(`scene "${s.name}" credits art without a licence`);
   }
   if (!s.desc) err(`scene "${s.name}" has no description`);
+  if (!SOUNDS.has(s.sound)) err(`scene "${s.name}" has an unknown sound "${s.sound}"`);
   if (!/^#[0-9a-f]{6}$/i.test(s.sw || '')) err(`scene "${s.name}" has no swatch colour`);
   if (s.src && !existsSync(join(SCENE_DIR, s.src))) err(`scene "${s.name}" image is missing: ${s.src}`);
 }

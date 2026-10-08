@@ -77,7 +77,8 @@
         <button type="button" id="srcMix" aria-pressed="true">From the mixes</button>
         <button type="button" id="srcLive" aria-pressed="false">Internet Archive live</button>
       </div>
-      <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+      <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume" title="Music">
+      <label class="amb" for="amb">Ambience <input type="range" id="amb" min="0" max="1" step="0.01" value="0.35" title="Ambient sound: rain, wind, sea, fire, matched to the scene"></label>
       <button type="button" class="pbtn tog" id="follow" aria-pressed="false" title="When the scene changes, crossfade to its track">Scene picks music</button>
       <button type="button" class="pbtn tog" id="favBtn" aria-pressed="false">☆ Favourite</button>
       <button type="button" class="pbtn tog" id="driftBtn" aria-pressed="false" title="Move between your favourite scenes every so often">Drift</button>
