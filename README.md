@@ -4,6 +4,8 @@ Ambient scenes to work beside: rain on a window, a pixel-art forest, an ocean at
 
 Everything in it is either drawn in code or licensed for reuse. `CREDITS.md` lists every asset, its author and its licence.
 
+**Slow Windows is free and will stay free.** Most of the music is Creative Commons non-commercial (BY-NC, BY-NC-SA, BY-NC-ND), which rules out selling the app, charging for access, or running ads. Any contribution has to fit that: no NC-incompatible monetisation, ever.
+
 ## Run it
 
 ```sh
