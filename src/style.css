@@ -110,6 +110,12 @@ nav button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--ch
 .seg button { border: 0; border-radius: 0; background: transparent; padding: 8px 12px; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .seg button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--chip-on-text); }
 #vol { width: 84px; accent-color: var(--accent); }
+#seek { width: 100%; max-width: 260px; height: 4px; margin-top: 4px; accent-color: var(--accent); }
+.groups { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.groups::-webkit-scrollbar { display: none; }
+.groups button { flex: none; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; padding: 5px 10px; }
+.groups button[aria-selected="true"] { background: var(--chip-on-bg); color: var(--chip-on-text); border-color: transparent; }
+.only-phone { display: none; }
 .amb { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .amb input { width: 84px; accent-color: var(--accent); }
 .status { font-size: 11px; color: var(--accent); margin: 0; min-height: 1em; }
@@ -154,4 +160,25 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
 @media (max-width: 520px) {
   nav button .k { display: none; }
   .hint { display: none; }
+}
+/* Phone layout: the scene stays visible. Title, one row of controls and the strip; everything else behind More. */
+@media (max-width: 640px) {
+  .chrome { padding-inline: 14px; }
+  .top { gap: 8px 10px; font-size: 11px; }
+  .brand { display: none; }
+  #fs { display: none; }
+  h1 { font-size: clamp(30px, 9vw, 42px); }
+  .bottom { gap: 10px; }
+  .only-phone { display: inline-flex; }
+  body:not(.more) .desc, body:not(.more) .credits, body:not(.more) .bgrow, body:not(.more) .np, body:not(.more) .player .seg,
+  body:not(.more) #vol, body:not(.more) .amb, body:not(.more) #follow, body:not(.more) #driftBtn, body:not(.more) #libBtn, body:not(.more) #shareBtn { display: none; }
+  body.more .bottom { max-height: 72vh; overflow-y: auto; padding: 14px; margin-inline: -14px; border-radius: 18px 18px 0 0;
+    background: rgba(9, 10, 14, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+  body.more .chrome, body.more .shade { opacity: 1 !important; visibility: visible !important; }
+  nav button.card { width: 88px; padding: 5px 5px 7px; }
+  nav .thumb { width: 78px; height: 44px; }
+  nav .lbl { font-size: 10px; }
+  .tmenu { position: fixed; left: 10px; right: 10px; top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); max-height: 70vh; overflow-y: auto; }
+  .tmenu.wide { min-width: 0; }
+  .lib { width: 100%; }
 }

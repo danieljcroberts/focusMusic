@@ -7,7 +7,7 @@ import { weather, tickWeather, setWeatherOverride } from './weather.js';
 import { setDaylightOverride } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { TRACKS, sampleMusic, tickFades, audioCtx, setSceneKey, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen } from './music.js';
+import { TRACKS, sampleMusic, tickFades, audioCtx, setSceneKey, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen, setDuck, announce, setArtworkSource } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience } from './ambience.js';
 
 const el = id => document.getElementById(id);
@@ -15,7 +15,9 @@ const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
 const instances = SCENES.map(makeScene);
 SCENES.forEach((s, i) => { const k = state.bgs && state.bgs[s.name]; if (k && BGS[k] && instances[i].setBg) instances[i].setBg(k); });
 const ready = new Array(SCENES.length).fill(false);
-let cur = Math.max(0, SCENES.findIndex(s => s.name === state.scene)), fade = 0, fadeAt = 0, t = 8, last = performance.now();
+const slug = s => s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const fromHash = SCENES.findIndex(s => '#' + slug(s) === location.hash);
+let cur = Math.max(0, fromHash >= 0 ? fromHash : SCENES.findIndex(s => s.name === state.scene)), fade = 0, fadeAt = 0, t = 8, last = performance.now();
 const favs = new Set(state.favs || []);
 
 /* Scene navigation: a strip of cards, each with a thumbnail once the scene has been seen */
@@ -40,6 +42,13 @@ const cards = SCENES.map((s, i) => {
   nav.appendChild(b);
   return { b, im, star };
 });
+// Group chips above the strip scroll to the first card of a group.
+const groupsEl = el('groups');
+const groupChips = [...new Set(SCENES.map(s => s.group))].map(g => {
+  const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false'); b.textContent = g;
+  b.addEventListener('click', () => { const i = SCENES.findIndex(s => s.group === g); cards[i].b.scrollIntoView({ inline: 'start', block: 'nearest', behavior: still ? 'auto' : 'smooth' }); });
+  groupsEl.appendChild(b); return { g, b };
+});
 const thumbC = document.createElement('canvas'); thumbC.width = 160; thumbC.height = 90;
 const thumbG = thumbC.getContext('2d');
 let thumbTimer;
@@ -55,6 +64,7 @@ function captureThumb() {
     thumbG.drawImage(src, (160 - sw * k) / 2, (90 - sh * k) / 2, sw * k, sh * k);
     const url = thumbC.toDataURL('image/jpeg', .6);
     thumbs[s.name] = url; cards[cur].im.src = url; cards[cur].im.hidden = false;
+    announce();   // the lock screen shows the scene too
     const json = JSON.stringify(thumbs);
     if (json.length < 2.5e6) localStorage.setItem(THUMB_KEY, json);
   } catch (e) { /* a tainted or blank frame just means no thumbnail yet */ }
@@ -112,6 +122,9 @@ function updateText() {
   el('who').textContent = mt ? `${mt.t} — ${mt.a}` : '';
   el('lic').textContent = mt ? mt.lic + (mt.file ? '' : ' · streams') : '';
   cards.forEach((c, i) => c.b.setAttribute('aria-pressed', String(i === cur)));
+  groupChips.forEach(c => c.b.setAttribute('aria-selected', String(c.g === s.group)));
+  if (location.hash !== '#lab') history.replaceState(null, '', '#' + slug(s));
+  announce();
   cards[cur].b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
   drawFav();
 }
@@ -154,6 +167,16 @@ function render(dt) {
 }
 
 /* Favourites and Drift: star the scenes you like; Drift moves between them every so often */
+const moreBtn = el('moreBtn');
+moreBtn.addEventListener('click', () => { const on = !document.body.classList.contains('more'); document.body.classList.toggle('more', on); moreBtn.setAttribute('aria-pressed', String(on)); });
+el('shareBtn').addEventListener('click', async () => {
+  const url = location.origin + location.pathname + '#' + slug(SCENES[cur]);
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Slow Windows: ' + SCENES[cur].name, url }); return; }
+    await navigator.clipboard.writeText(url); setStatus('Link copied: ' + url);
+  } catch (e) { if (e && e.name !== 'AbortError') setStatus(url); }
+});
+setArtworkSource(() => thumbs[SCENES[cur].name] || null);
 const favBtn = el('favBtn'), driftBtn = el('driftBtn');
 function drawFav() { const on = favs.has(SCENES[cur].name); favBtn.textContent = (on ? '★' : '☆') + ' Favourite'; favBtn.setAttribute('aria-pressed', String(on)); }
 function toggleFav() {
@@ -187,6 +210,12 @@ const liveBtn = el('liveBtn');
 function setLively(v) { setLivelyFlag(v); liveBtn.setAttribute('aria-pressed', String(v)); saveState({ lively: v }); }
 setLively(!!state.lively);
 liveBtn.addEventListener('click', () => setLively(!lively));
+// On a draining battery below 40%, switch to low power once (the viewer can switch back).
+let batteryNoted = false;
+if (navigator.getBattery) navigator.getBattery().then(b => {
+  const check = () => { if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off in the top bar.'); } };
+  check(); b.addEventListener('levelchange', check); b.addEventListener('chargingchange', check);
+}).catch(() => {});
 let fpsAcc = 0, fpsN = 0, slowFor = 0, autoLow = false;
 function watchFps(real) {
   fpsAcc += real; fpsN++;
@@ -276,20 +305,31 @@ function chime(notes) {
     });
   } catch (e) {}
 }
+// A system notification when a block ends while the page is in the background. Asked for once, when the timer first starts.
+function askNotify() { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {}); }
+async function notify(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
+  try {
+    const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg) await reg.showNotification(title, { body, icon: './icon-512.png', tag: 'timer' });   // required on Android
+    else new Notification(title, { body, icon: './icon-512.png', tag: 'timer' });
+  } catch (e) {}
+}
 function toggleTimer() {
   timer.running = !timer.running; timer.last = performance.now();
+  if (timer.running) askNotify();
   const c = audioCtx(); if (timer.running && c && c.state === 'suspended') c.resume().catch(() => {});
   drawTimer(); saveTimer();
 }
-function resetTimer() { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; drawTimer(); saveTimer(); }
+function resetTimer() { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; setDuck(false); drawTimer(); saveTimer(); }
 let lastSave = 0;
 timer.last = performance.now();
 setInterval(() => {
   if (!timer.running) return;
   const now = performance.now(); timer.left -= (now - timer.last) / 1000; timer.last = now;
   if (timer.left <= 0) {
-    if (timer.mode === 'focus') { timer.mode = 'break'; timer.left = timer.b * 60; chime([660, 880]); setStatus('Focus block done. Break started.'); }
-    else { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; chime([660]); setStatus('Break over. Press the timer to start the next focus block.'); }
+    if (timer.mode === 'focus') { timer.mode = 'break'; timer.left = timer.b * 60; chime([660, 880]); setStatus('Focus block done. Break started.'); notify('Focus block done', `Break for ${timer.b} minutes.`); setDuck(true); }
+    else { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; chime([660]); setStatus('Break over. Press the timer to start the next focus block.'); notify('Break over', 'Press the timer to start the next focus block.'); setDuck(false); }
     saveTimer();
   }
   if (now - lastSave > 10000) { lastSave = now; saveTimer(); }
@@ -304,6 +344,7 @@ tMenu.querySelectorAll('button[data-f]').forEach(b => b.addEventListener('click'
 el('tReset').addEventListener('click', () => { resetTimer(); closeMenus(); });
 document.addEventListener('pointerdown', e => { if (!e.target.closest('.timer, .settings')) closeMenus(); });
 window.addEventListener('pagehide', saveTimer);
+setDuck(timer.mode === 'break');
 drawTimer();
 
 const clock = el('clock');
@@ -376,8 +417,11 @@ window.addEventListener('touchend', e => {
   if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
 }, { passive: true });
 
-// The rain lab is a different scene list, so a hash change reloads into it.
-window.addEventListener('hashchange', () => location.reload());
+// A scene link in the hash switches scenes; entering or leaving the lab changes the scene list, so that reloads.
+window.addEventListener('hashchange', () => {
+  const i = SCENES.findIndex(s => '#' + slug(s) === location.hash);
+  if (i >= 0) go(i); else if (location.hash === '#lab' || (location.hash === '' && SCENES.some(s => s.lab))) location.reload();
+});
 
 // Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});

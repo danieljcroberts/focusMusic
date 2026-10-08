@@ -54,6 +54,8 @@ public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke
 ```
 
+Every scene has a link: the address bar follows the scene (`#aurora-from-orbit`), and **Share** copies it or opens the phone's share sheet. On a phone the controls fold behind **More** so the scene stays visible.
+
 Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen.
 
 Star scenes with **Favourite**; **Drift** then moves between them (or all scenes, if none are starred) every 10, 20 or 30 minutes. **Settings** holds the weather and time-of-day overrides, the drift interval, and "Save music for offline use", which fetches the bundled tracks into the browser cache.

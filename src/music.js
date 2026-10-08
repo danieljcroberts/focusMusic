@@ -56,9 +56,13 @@ export function sampleMusic(dt) {
 
 const FADE = 2.5;
 let fades = [];
-function setGain(p, g) { p._g = g; p.volume = Math.max(0, Math.min(1, g * master)); }
+// Breaks duck the music to a third; the change ramps over a second and a half.
+let duck = 1, duckTarget = 1;
+function setGain(p, g) { p._g = g; p.volume = Math.max(0, Math.min(1, g * master * duck)); }
+export function setDuck(on) { duckTarget = on ? .35 : 1; }
 function rampTo(p, to, dur, stopAfter) { fades = fades.filter(x => x.p !== p); fades.push({ p, from: p._g, to, t0: performance.now(), dur, stopAfter }); }
 export function tickFades(now) {
+  if (duck !== duckTarget) { duck += (duckTarget - duck) * .06; if (Math.abs(duck - duckTarget) < .005) duck = duckTarget; players.forEach(p => setGain(p, p._g)); }
   fades = fades.filter(x => {
     const k = Math.min(1, (now - x.t0) / (x.dur * 1000));
     setGain(x.p, x.from + (x.to - x.from) * k);
@@ -78,7 +82,7 @@ export function onSceneChange() {
   const t = sceneTrack(); if (t && playable(t) && t !== curTrack) playTrack(t);
 }
 
-const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), vol: el('vol'), lib: el('lib'), list: el('libList') };
+const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -94,10 +98,13 @@ function syncSeg() { ui.mix.setAttribute('aria-pressed', String(source === 'mix'
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
-function announce(t) {
-  if (!ms) return;
+let artwork = () => null;   // main.js supplies the current scene's thumbnail
+export function setArtworkSource(fn) { artwork = fn; }
+export function announce(t = curTrack) {
+  if (!ms || !t) return;
   try {
-    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic });
+    const art = artwork();
+    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic, artwork: art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
   } catch (e) {}
 }
 if (ms) {
@@ -199,6 +206,15 @@ export function togglePlay() {
   if (source === 'live') nextLive();
   else { const t = sceneTrack(); playTrack(t && playable(t) ? t : TRACKS.find(playable)); }
 }
+// The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
+let scrubbing = false;
+ui.seek.addEventListener('pointerdown', () => { scrubbing = true; });
+ui.seek.addEventListener('change', () => { if (hasSrc && audio.duration) audio.currentTime = audio.duration * ui.seek.value / 1000; scrubbing = false; });
+setInterval(() => {
+  const ok = hasSrc && audio.duration > 0 && isFinite(audio.duration);
+  ui.seek.hidden = !ok;
+  if (ok && !scrubbing) ui.seek.value = Math.round(audio.currentTime / audio.duration * 1000);
+}, 250);
 for (const p of players) {
   p.addEventListener('play', () => { if (p === audio) { ui.play.textContent = 'Pause'; if (ms) ms.playbackState = 'playing'; } });
   p.addEventListener('pause', () => { if (p === audio) { ui.play.textContent = 'Play'; if (ms) ms.playbackState = 'paused'; } });

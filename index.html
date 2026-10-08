@@ -72,7 +72,8 @@
     <div class="player">
       <button type="button" class="pbtn primary" id="play">Play</button>
       <button type="button" class="pbtn" id="next">Next</button>
-      <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span></div>
+      <button type="button" class="pbtn tog only-phone" id="moreBtn" aria-pressed="false" aria-controls="bottomMore">More</button>
+      <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span><input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Position in track" hidden></div>
       <div class="seg" role="group" aria-label="Music source">
         <button type="button" id="srcMix" aria-pressed="true">From the mixes</button>
         <button type="button" id="srcLive" aria-pressed="false">Internet Archive live</button>
@@ -83,8 +84,10 @@
       <button type="button" class="pbtn tog" id="favBtn" aria-pressed="false">☆ Favourite</button>
       <button type="button" class="pbtn tog" id="driftBtn" aria-pressed="false" title="Move between your favourite scenes every so often">Drift</button>
       <button type="button" class="pbtn" id="libBtn">Library</button>
+      <button type="button" class="pbtn" id="shareBtn" title="Copy a link that opens on this scene">Share</button>
     </div>
     <p class="status" id="status"></p>
+    <div class="groups" id="groups" role="tablist" aria-label="Scene groups"></div>
     <nav id="nav" aria-label="Scenes"></nav>
     <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen</p>
   </div>
