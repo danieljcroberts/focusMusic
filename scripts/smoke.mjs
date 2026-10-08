@@ -44,7 +44,7 @@ for (let i = 0; i < total; i++) {
   await page.evaluate(i => document.getElementById('scene-' + i).click(), i);
   await page.waitForTimeout(700);
   const title = await page.textContent('#title');
-  const expected = await page.evaluate(i => document.getElementById('scene-' + i).textContent, i);
+  const expected = await page.evaluate(i => document.querySelector('#scene-' + i + ' .lbl').textContent, i);
   if (title !== expected) problems.push(`scene ${i}: title shows "${title}", nav says "${expected}"`);
   names.push(title);
   if (shots) await page.screenshot({ path: join(shots, `${String(i).padStart(2, '0')}-${title.replace(/[^\w]+/g, '-')}.png`) });

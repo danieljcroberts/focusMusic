@@ -7,7 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..500&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<meta name="theme-color" content="#07080c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-512.png">
 </head>
 <body>
 <canvas id="scene" aria-label="Animated ambient scene"></canvas>
@@ -30,6 +33,23 @@
           <button type="button" data-f="50" data-b="10">50 / 10 min</button>
           <button type="button" data-f="90" data-b="15">90 / 15 min</button>
           <button type="button" id="tReset">Reset</button>
+        </div>
+      </div>
+      <div class="settings">
+        <button type="button" class="icon-btn" id="setBtn" aria-expanded="false">Settings</button>
+        <div class="tmenu wide" id="setMenu" hidden>
+          <span class="lbl">Weather</span>
+          <div class="row"><input type="range" id="wx" min="0" max="1" step="0.01" value="0.6" aria-label="Weather intensity"><button type="button" class="tog" id="wxAuto" aria-pressed="true">Auto</button></div>
+          <span class="lbl">Time of day</span>
+          <div class="seg" id="todSeg" role="group" aria-label="Time of day">
+            <button type="button" data-tod="auto" aria-pressed="true">Auto</button><button type="button" data-tod="night" aria-pressed="false">Night</button><button type="button" data-tod="dusk" aria-pressed="false">Dusk</button><button type="button" data-tod="day" aria-pressed="false">Day</button>
+          </div>
+          <span class="lbl">Drift every</span>
+          <div class="seg" id="driftSeg" role="group" aria-label="Drift interval">
+            <button type="button" data-min="10" aria-pressed="false">10 min</button><button type="button" data-min="20" aria-pressed="false">20 min</button><button type="button" data-min="30" aria-pressed="false">30 min</button>
+          </div>
+          <span class="lbl">Offline</span>
+          <button type="button" id="offlineBtn">Save music for offline use (60 MB)</button>
         </div>
       </div>
       <button type="button" class="icon-btn tog" id="liveBtn" aria-pressed="false" title="Faster, more music-reactive motion">Lively</button>
@@ -59,11 +79,13 @@
       </div>
       <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       <button type="button" class="pbtn tog" id="follow" aria-pressed="false" title="When the scene changes, crossfade to its track">Scene picks music</button>
+      <button type="button" class="pbtn tog" id="favBtn" aria-pressed="false">☆ Favourite</button>
+      <button type="button" class="pbtn tog" id="driftBtn" aria-pressed="false" title="Move between your favourite scenes every so often">Drift</button>
       <button type="button" class="pbtn" id="libBtn">Library</button>
     </div>
     <p class="status" id="status"></p>
     <nav id="nav" aria-label="Scenes"></nav>
-    <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · V lively · T timer · L library · F full screen</p>
+    <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen</p>
   </div>
 </div>
 

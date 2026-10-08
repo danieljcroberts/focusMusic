@@ -2,6 +2,7 @@
 import { W, H, ctx } from '../view.js';
 import { rand, hash, mix, rgb, layer, glow, stars } from '../util.js';
 import { daylight, skyMix } from '../daylight.js';
+import { bands } from '../music.js';
 
 // Low Tide and Aurora follow the viewer's clock and rebuild their sky when the light has moved.
 const stale = built => Math.abs(daylight() - built) > .04;
@@ -209,7 +210,7 @@ export function hearthScene() {
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < 9; i++) {
         const ph = i * 1.7, x = cx + (i - 4) * fw * .055 + Math.sin(t * .8 + ph) * 3;
-        const w = fw * (.09 + .04 * hash(i, 3)), h = fh * (.38 + .22 * hash(i, 5)) * (.78 + .16 * Math.sin(t * 3.7 + ph) + .08 * Math.sin(t * 9.3 + ph * 2));
+        const w = fw * (.09 + .04 * hash(i, 3)), h = fh * (.38 + .22 * hash(i, 5)) * (.78 + .16 * Math.sin(t * 3.7 + ph) + .08 * Math.sin(t * 9.3 + ph * 2)) * (1 + bands.bass * .3);
         const b = base - fh * .12, sway = Math.sin(t * 2.3 + ph) * w * .4 + Math.sin(t * 5.3 + ph * 2) * w * .14;
         const fg = ctx.createLinearGradient(0, b, 0, b - h);
         fg.addColorStop(0, 'rgba(255,240,190,.85)'); fg.addColorStop(.3, 'rgba(255,165,60,.6)');
@@ -219,7 +220,7 @@ export function hearthScene() {
         ctx.quadraticCurveTo(x + w * .6, b - h * .45, x + w / 2, b); ctx.fill();
       }
       for (const e of embers) {
-        e.life += dt * .35;
+        e.life += dt * (.35 + .3 * bands.treble);
         if (e.life >= 1 || e.x === undefined) { e.life = e.x === undefined ? e.life % 1 : 0; e.x = cx + rand(-fw * .25, fw * .25); e.y0 = base - fh * .2; e.dx = rand(-20, 20); e.ph = rand(0, 6); }
         const y = e.y0 - e.life * fh * 1.1, x = e.x + e.dx * e.life + Math.sin(t * 2 + e.ph) * 6;
         ctx.fillStyle = `rgba(255,${150 + 60 * (1 - e.life)},70,${(1 - e.life) * .9})`;
@@ -350,8 +351,8 @@ export function auroraScene() {
       for (let i = 0; i < 3; i++) {
         for (let x = 0; x < W; x += step) {
           const y = H * (.32 + i * .07) + Math.sin(x * .0035 + t * .12 + i * 1.9) * H * .07 + Math.sin(x * .011 - t * .2 + i) * H * .022;
-          const h = H * (.2 + .1 * Math.sin(x * .006 + t * .27 + i * 2.3));
-          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6) * (.08 + .92 * night);
+          const h = H * (.2 + .1 * Math.sin(x * .006 + t * .27 + i * 2.3)) * (1 + bands.mid * .3);
+          const a = (i === 2 ? .35 : .75) * Math.pow(.5 + .5 * Math.sin(x * .017 + t * .45 + i * 2), 1.6) * (.08 + .92 * night) * (1 + bands.bass * .5);
           if (a < .02) continue;
           ctx.globalAlpha = a;
           ctx.drawImage(strips[i], x, y - h, step + .5, h);

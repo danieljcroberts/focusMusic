@@ -136,6 +136,19 @@ nav button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--ch
 .lib .pl:disabled { opacity: .3; cursor: default; }
 .lib li.on .t { color: var(--accent); }
 body.lib-open .chrome, body.lib-open .shade { opacity: 1 !important; }
+/* Scene cards: a thumbnail once the scene has been seen, the swatch colour until then */
+nav button.card { flex-direction: column; align-items: stretch; gap: 6px; padding: 6px 6px 8px; width: 112px; border-radius: 14px; position: relative; }
+nav .thumb { display: block; width: 100px; height: 56px; border-radius: 9px; overflow: hidden; }
+nav .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+nav .lbl { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: var(--accent); text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.settings { position: relative; }
+.tmenu.wide { min-width: 240px; }
+.tmenu .row { display: flex; align-items: center; gap: 8px; }
+.tmenu .row .tog { border-radius: 10px; padding: 6px 10px; }
+.tmenu .seg { width: fit-content; border-radius: 10px; }
+.tmenu .seg button { border-radius: 0; padding: 6px 10px; }
+.tmenu input[type="range"] { flex: 1; min-width: 120px; accent-color: var(--accent); }
 @media (max-width: 520px) {
   nav button .k { display: none; }
   .hint { display: none; }

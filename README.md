@@ -42,4 +42,8 @@ public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke
 ```
 
-Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · V lively · T timer · L library · F full screen. On touch, swipe to change scenes.
+Keyboard: ← → scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen.
+
+Star scenes with **Favourite**; **Drift** then moves between them (or all scenes, if none are starred) every 10, 20 or 30 minutes. **Settings** holds the weather and time-of-day overrides, the drift interval, and "Save music for offline use", which fetches the bundled tracks into the browser cache.
+
+The built site is an installable PWA: a service worker caches the page, code and scene assets as they are seen, so scenes work offline after one visit; the music works offline once saved from Settings. On touch, swipe to change scenes.

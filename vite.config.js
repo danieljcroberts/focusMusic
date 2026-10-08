@@ -6,6 +6,7 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2022',
+    chunkSizeWarningLimit: 800,   // three.js is one lazily loaded chunk
     rollupOptions: {
       output: {
         entryFileNames: 'app.js',

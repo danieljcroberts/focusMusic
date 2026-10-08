@@ -1,44 +1,75 @@
 import './style.css';
 import { cv, ctx, glc, stillImg, fadeCv, fctx, still, W, H, DPR, lowPower, lively, setSize, setLowPowerFlag, setLivelyFlag } from './view.js';
-import { A, ok } from './assets.js';
+import { A, M, ok } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
-import { tickWeather } from './weather.js';
+import { weather, tickWeather, setWeatherOverride } from './weather.js';
+import { setDaylightOverride } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { TRACKS, sampleMusic, tickFades, audioCtx, setSceneKey, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen } from './music.js';
 
+const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
 const instances = SCENES.map(makeScene);
 SCENES.forEach((s, i) => { const k = state.bgs && state.bgs[s.name]; if (k && BGS[k] && instances[i].setBg) instances[i].setBg(k); });
 const ready = new Array(SCENES.length).fill(false);
 let cur = Math.max(0, SCENES.findIndex(s => s.name === state.scene)), fade = 0, t = 8, last = performance.now();
+const favs = new Set(state.favs || []);
 
-/* Scene navigation */
-const nav = document.getElementById('nav');
+/* Scene navigation: a strip of cards, each with a thumbnail once the scene has been seen */
+const THUMB_KEY = 'sw-thumbs';
+let thumbs = {};
+try { thumbs = JSON.parse(localStorage.getItem(THUMB_KEY) || '{}') || {}; } catch (e) { thumbs = {}; }
+const nav = el('nav');
 let lastGroup = '';
-SCENES.forEach((s, i) => {
+const cards = SCENES.map((s, i) => {
   if (s.group !== lastGroup) {
     const g = document.createElement('span'); g.className = 'grp'; g.textContent = s.group; nav.appendChild(g); lastGroup = s.group;
   }
   const b = document.createElement('button');
-  b.type = 'button'; b.id = 'scene-' + i; b.dataset.i = i;
-  const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = s.sw;
-  b.append(sw, s.name);
+  b.type = 'button'; b.id = 'scene-' + i; b.className = 'card'; b.dataset.i = i;
+  const th = document.createElement('span'); th.className = 'thumb'; th.style.background = s.sw;
+  const im = document.createElement('img'); im.alt = ''; im.hidden = true; if (thumbs[s.name]) { im.src = thumbs[s.name]; im.hidden = false; }
+  th.appendChild(im);
+  const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = s.name;
+  const star = document.createElement('span'); star.className = 'star'; star.textContent = '★'; star.hidden = !favs.has(s.name);
+  b.append(th, lbl, star);
   b.addEventListener('click', () => go(i));
   nav.appendChild(b);
+  return { b, im, star };
 });
-const buttons = [...nav.querySelectorAll('button')];
-const bgSeg = document.getElementById('bgSeg');
+const thumbC = document.createElement('canvas'); thumbC.width = 160; thumbC.height = 90;
+const thumbG = thumbC.getContext('2d');
+let thumbTimer;
+// A few seconds into a scene, grab a small frame of it for the nav. Kept per viewer; dropped if storage is short.
+function captureThumb() {
+  const s = SCENES[cur], inst = instances[cur], src = stageOf(inst);
+  const sw = src.videoWidth || src.naturalWidth || src.width, sh = src.videoHeight || src.naturalHeight || src.height;
+  if (!sw || !sh || src.hidden) return;
+  try {
+    const k = Math.max(160 / sw, 90 / sh);
+    thumbG.fillStyle = '#000'; thumbG.fillRect(0, 0, 160, 90);
+    thumbG.imageSmoothingEnabled = inst.kind !== 'image';
+    thumbG.drawImage(src, (160 - sw * k) / 2, (90 - sh * k) / 2, sw * k, sh * k);
+    const url = thumbC.toDataURL('image/jpeg', .6);
+    thumbs[s.name] = url; cards[cur].im.src = url; cards[cur].im.hidden = false;
+    const json = JSON.stringify(thumbs);
+    if (json.length < 2.5e6) localStorage.setItem(THUMB_KEY, json);
+  } catch (e) { /* a tainted or blank frame just means no thumbnail yet */ }
+}
+function scheduleThumb() { clearTimeout(thumbTimer); thumbTimer = setTimeout(captureThumb, 3000); }
+
+const bgSeg = el('bgSeg');
 const bgButtons = Object.entries(BGS).map(([k, b]) => {
-  const el = document.createElement('button');
-  el.type = 'button'; el.dataset.k = k; el.textContent = b.label; el.setAttribute('aria-pressed', 'false');
-  el.addEventListener('click', () => {
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.dataset.k = k; btn.textContent = b.label; btn.setAttribute('aria-pressed', 'false');
+  btn.addEventListener('click', () => {
     const inst = instances[cur]; if (!inst.setBg || inst.bg === k) return;
     inst.setBg(k); updateText(); saveState({ bgs: Object.assign({}, state.bgs || {}, { [SCENES[cur].name]: k }) });
   });
-  bgSeg.appendChild(el);
-  return el;
+  bgSeg.appendChild(btn);
+  return btn;
 });
 
 function resize() {
@@ -63,23 +94,24 @@ function show(i) {
 }
 function updateText() {
   const s = SCENES[cur];
-  document.getElementById('eyebrow').textContent = `${s.group} · Scene ${cur + 1} of ${SCENES.length}`;
-  document.getElementById('title').textContent = s.name;
-  document.getElementById('desc').textContent = s.desc;
-  const art = document.getElementById('art');
+  el('eyebrow').textContent = `${s.group} · Scene ${cur + 1} of ${SCENES.length}`;
+  el('title').textContent = s.name;
+  el('desc').textContent = s.desc;
+  const art = el('art');
   const info = s.bgs ? BGS[instances[cur].bg].art : s.art;
   art.textContent = '';
   if (info.url) { const a = document.createElement('a'); a.href = info.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = info.who; art.appendChild(a); }
   else art.textContent = info.who;
-  document.getElementById('artlic').textContent = info.lic;
-  document.getElementById('bgRow').hidden = !s.bgs;
+  el('artlic').textContent = info.lic;
+  el('bgRow').hidden = !s.bgs;
   if (s.bgs) bgButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === instances[cur].bg)));
   setSceneKey(s.music);
   const mt = byKey[s.music];
-  document.getElementById('who').textContent = mt ? `${mt.t} — ${mt.a}` : '';
-  document.getElementById('lic').textContent = mt ? mt.lic + (mt.file ? '' : ' · streams') : '';
-  buttons.forEach((b, i) => b.setAttribute('aria-pressed', String(i === cur)));
-  buttons[cur].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
+  el('who').textContent = mt ? `${mt.t} — ${mt.a}` : '';
+  el('lic').textContent = mt ? mt.lic + (mt.file ? '' : ' · streams') : '';
+  cards.forEach((c, i) => c.b.setAttribute('aria-pressed', String(i === cur)));
+  cards[cur].b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
+  drawFav();
 }
 function snapshot() {
   fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fadeCv.width, fadeCv.height);
@@ -106,6 +138,7 @@ function go(i) {
   fade = still ? 0 : 1; fadeCv.style.opacity = fade;
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); onSceneChange();
+  driftLast = performance.now(); scheduleThumb();
   if (still) render(0);
 }
 function render(dt) {
@@ -118,8 +151,28 @@ function render(dt) {
   if (fade > 0) { fade = Math.max(0, fade - dt / 1.4); fadeCv.style.opacity = fade; }
 }
 
+/* Favourites and Drift: star the scenes you like; Drift moves between them every so often */
+const favBtn = el('favBtn'), driftBtn = el('driftBtn');
+function drawFav() { const on = favs.has(SCENES[cur].name); favBtn.textContent = (on ? '★' : '☆') + ' Favourite'; favBtn.setAttribute('aria-pressed', String(on)); }
+function toggleFav() {
+  const name = SCENES[cur].name;
+  if (favs.has(name)) favs.delete(name); else favs.add(name);
+  cards[cur].star.hidden = !favs.has(name); saveState({ favs: [...favs] }); drawFav();
+}
+favBtn.addEventListener('click', toggleFav);
+let drift = !!state.drift, driftMin = state.driftMin || 20, driftLast = performance.now();
+function setDrift(v) { drift = v; driftBtn.setAttribute('aria-pressed', String(v)); saveState({ drift: v }); driftLast = performance.now(); }
+driftBtn.addEventListener('click', () => setDrift(!drift));
+setDrift(drift);
+function driftNext() {
+  const all = SCENES.map((s, i) => i).filter(i => i !== cur && !SCENES[i].lab);
+  const pool = all.filter(i => favs.has(SCENES[i].name));
+  const list = pool.length ? pool : all;
+  go(list[Math.floor(Math.random() * list.length)]);
+}
+
 /* Low power: lower render resolution, fewer drops, lighter rain. Turns itself on if the frame rate stays low. */
-const lowBtn = document.getElementById('lowBtn');
+const lowBtn = el('lowBtn');
 function setLowPower(v, note) {
   setLowPowerFlag(v); lowBtn.setAttribute('aria-pressed', String(v)); saveState({ lowPower: v });
   resize();
@@ -128,7 +181,7 @@ function setLowPower(v, note) {
 setLowPowerFlag(!!state.lowPower);
 lowBtn.addEventListener('click', () => setLowPower(!lowPower));
 lowBtn.setAttribute('aria-pressed', String(lowPower));
-const liveBtn = document.getElementById('liveBtn');
+const liveBtn = el('liveBtn');
 function setLively(v) { setLivelyFlag(v); liveBtn.setAttribute('aria-pressed', String(v)); saveState({ lively: v }); }
 setLively(!!state.lively);
 liveBtn.addEventListener('click', () => setLively(!lively));
@@ -144,10 +197,53 @@ function watchFps(real) {
 function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
+  if (drift && now - driftLast > driftMin * 60000) driftNext();
   render(dt);
   requestAnimationFrame(frame);
 }
 if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); }, 100);
+
+/* Settings: weather and time of day overrides, the drift interval, music saved for offline */
+const setBtn = el('setBtn'), setMenu = el('setMenu'), wx = el('wx'), wxAuto = el('wxAuto');
+const TOD = { auto: null, night: 0, dusk: .5, day: 1 };
+function applyWeather(v) {
+  setWeatherOverride(v); wxAuto.setAttribute('aria-pressed', String(v === null));
+  if (v !== null) wx.value = v;
+  saveState({ weather: v });
+}
+wx.addEventListener('input', () => applyWeather(Number(wx.value)));
+wxAuto.addEventListener('click', () => applyWeather(null));
+applyWeather(typeof state.weather === 'number' ? state.weather : null);
+const todButtons = [...el('todSeg').querySelectorAll('button')];
+function applyTod(k) {
+  if (!(k in TOD)) k = 'auto';
+  setDaylightOverride(TOD[k]); todButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tod === k))); saveState({ tod: k });
+}
+todButtons.forEach(b => b.addEventListener('click', () => applyTod(b.dataset.tod)));
+applyTod(state.tod || 'auto');
+const driftButtons = [...el('driftSeg').querySelectorAll('button')];
+function applyDriftMin(m) { driftMin = m; driftButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.min === m))); saveState({ driftMin: m }); }
+driftButtons.forEach(b => b.addEventListener('click', () => applyDriftMin(+b.dataset.min)));
+applyDriftMin(driftMin);
+// Fetch every bundled track into the cache the service worker serves from, so the music plays offline too.
+el('offlineBtn').addEventListener('click', async () => {
+  if (!('caches' in window)) { setStatus("This browser can't store files for offline use."); return; }
+  const files = TRACKS.filter(x => x.file).map(x => M + x.file);
+  try {
+    const c = await caches.open('slow-windows-v1');
+    for (let i = 0; i < files.length; i++) {
+      setStatus(`Saving music for offline use: ${i + 1} of ${files.length}`);
+      if (await c.match(files[i])) continue;
+      const r = await fetch(files[i]); if (!r.ok) throw new Error(r.status);
+      await c.put(files[i], r);
+    }
+    setStatus('Music saved. The scenes and the bundled tracks now work without a connection.');
+  } catch (e) { setStatus("Couldn't save the music. Check the connection and try again."); }
+});
+setBtn.addEventListener('click', () => {
+  const open = setMenu.hidden; closeMenus(); setMenu.hidden = !open; setBtn.setAttribute('aria-expanded', String(!setMenu.hidden));
+  if (!setMenu.hidden && wxAuto.getAttribute('aria-pressed') === 'true') wx.value = weather;
+});
 
 /* Focus timer: a focus block, then a break that dims the scene; the break starts on its own, the next block waits for you.
    It survives a reload: a running block picks up where the clock says it should be. */
@@ -158,7 +254,7 @@ if (state.timer && state.timer.f) {
   if (s.mode) timer.mode = s.mode;
   if (s.running && s.at) { timer.running = true; timer.left -= (Date.now() - s.at) / 1000; }
 }
-const tBtn = document.getElementById('tStart'), tMore = document.getElementById('tMore'), tMenu = document.getElementById('tMenu');
+const tBtn = el('tStart'), tMore = el('tMore'), tMenu = el('tMenu');
 const fmt = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 function saveTimer() { saveState({ timer: { f: timer.f, b: timer.b, mode: timer.mode, left: timer.left, running: timer.running, at: Date.now() } }); }
 function drawTimer() {
@@ -197,17 +293,17 @@ setInterval(() => {
   drawTimer();
 }, 250);
 tBtn.addEventListener('click', toggleTimer);
-function closeMenu() { tMenu.hidden = true; tMore.setAttribute('aria-expanded', 'false'); }
-tMore.addEventListener('click', () => { tMenu.hidden = !tMenu.hidden; tMore.setAttribute('aria-expanded', String(!tMenu.hidden)); });
+function closeMenus() { tMenu.hidden = true; tMore.setAttribute('aria-expanded', 'false'); setMenu.hidden = true; setBtn.setAttribute('aria-expanded', 'false'); }
+tMore.addEventListener('click', () => { const open = tMenu.hidden; closeMenus(); tMenu.hidden = !open; tMore.setAttribute('aria-expanded', String(!tMenu.hidden)); });
 tMenu.querySelectorAll('button[data-f]').forEach(b => b.addEventListener('click', () => {
-  timer.f = +b.dataset.f; timer.b = +b.dataset.b; resetTimer(); closeMenu();
+  timer.f = +b.dataset.f; timer.b = +b.dataset.b; resetTimer(); closeMenus();
 }));
-document.getElementById('tReset').addEventListener('click', () => { resetTimer(); closeMenu(); });
-document.addEventListener('pointerdown', e => { if (!tMenu.hidden && !e.target.closest('.timer')) closeMenu(); });
+el('tReset').addEventListener('click', () => { resetTimer(); closeMenus(); });
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.timer, .settings')) closeMenus(); });
 window.addEventListener('pagehide', saveTimer);
 drawTimer();
 
-const clock = document.getElementById('clock');
+const clock = el('clock');
 const tick = () => { const d = new Date(); clock.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
 tick(); setInterval(tick, 10000);
 
@@ -232,11 +328,11 @@ async function keepAwake() {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
 
-const fsBtn = document.getElementById('fs');
+const fsBtn = el('fs');
 function toggleFs() {
-  const el = document.documentElement;
+  const root = document.documentElement;
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-  else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (root.requestFullscreen) root.requestFullscreen().catch(() => {});
 }
 fsBtn.addEventListener('click', toggleFs);
 document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
@@ -255,7 +351,9 @@ window.addEventListener('keydown', e => {
     case 't': case 'T': toggleTimer(); break;
     case 'f': case 'F': toggleFs(); break;
     case 'v': case 'V': setLively(!lively); break;
-    case 'Escape': if (libOpen()) openLib(false); break;
+    case 's': case 'S': toggleFav(); break;
+    case 'd': case 'D': setDrift(!drift); break;
+    case 'Escape': if (libOpen()) openLib(false); else closeMenus(); break;
   }
 });
 
@@ -273,8 +371,12 @@ window.addEventListener('touchend', e => {
 // The rain lab is a different scene list, so a hash change reloads into it.
 window.addEventListener('hashchange', () => location.reload());
 
+// Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
 show(cur);
 updateText();
 resize();
 if (still) render(0); else { render(0); requestAnimationFrame(t2 => { last = t2; requestAnimationFrame(frame); }); }
 wake();
+scheduleThumb();

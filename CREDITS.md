@@ -55,7 +55,7 @@ Files are in `public/assets/scenes/`. Some were resized or converted, which CC0 
 | Open Water | three.js r169: `Water.js`, `Sky.js`, and the `waternormals.jpg` texture | MIT, © three.js authors | https://github.com/mrdoob/three.js |
 | Snowfall, Starfield | three.js r169 core (point sprites; the cabin backdrop and sprite textures are drawn in code) | MIT, © three.js authors | https://github.com/mrdoob/three.js |
 
-three.js is loaded from jsDelivr at runtime. If the files are bundled into the app instead, the MIT notice must be kept with them.
+three.js is bundled into the app at build time (`src/scenes/three-lib.js`), so its MIT notice is kept at `public/THIRD-PARTY-LICENSES.txt`.
 
 ## Considered but not included
 

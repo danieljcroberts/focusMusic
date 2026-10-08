@@ -1,16 +1,15 @@
-// three.js scenes (MIT). three.js is resolved through the import map in index.html and loaded from the CDN the first time
-// one of these scenes is opened, so it stays out of the bundle. All of them share one renderer on the #gl canvas.
+// three.js scenes (MIT). three.js is bundled as its own chunk (src/scenes/three-lib.js) and loaded the first time one of
+// these scenes is opened. All of them share one renderer on the #gl canvas.
 import { W, H, DPR, glc, gctxFallback } from '../view.js';
 import { A } from '../assets.js';
 import { rand } from '../util.js';
+import { bands, musicLevel } from '../music.js';
 
 let THREE = null, ADDONS = null, renderer = null, loading = null, failed = false;
 async function load() {
   try {
-    // The specifiers are kept out of literal form so Vite leaves them to the browser's import map.
-    const cdn = s => import(/* @vite-ignore */ s);
-    THREE = await cdn('three');
-    ADDONS = { Water: (await cdn('three/addons/objects/Water.js')).Water, Sky: (await cdn('three/addons/objects/Sky.js')).Sky };
+    const m = await import('./three-lib.js');
+    THREE = m.THREE; ADDONS = { Water: m.Water, Sky: m.Sky };
     renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, preserveDrawingBuffer: true });
   } catch (e) { failed = true; }
 }
@@ -28,7 +27,7 @@ function threeScene(build) {
     kind: 'webgl',
     init() { if (!loading) loading = load(); size(); },
     draw(t, dt) {
-      if (!renderer) { if (failed) gctxFallback('This scene needs WebGL and a connection to the three.js CDN.'); return; }
+      if (!renderer) { if (failed) gctxFallback('This scene needs WebGL, which this browser has turned off.'); return; }
       if (!st) { st = build(THREE, ADDONS); size(); }
       renderer.toneMapping = st.tone ?? THREE.NoToneMapping; renderer.toneMappingExposure = st.exposure ?? 1;
       st.update(t, dt);
@@ -68,7 +67,8 @@ export const oceanScene = () => threeScene((THREE, { Water, Sky }) => {
     scene, camera, tone: THREE.ACESFilmicToneMapping, exposure: .42,
     update(t) {
       water.material.uniforms.time.value = t * .6;
-      camera.position.y = 14 + Math.sin(t * .35) * .8;
+      water.material.uniforms.distortionScale.value = 3.2 + bands.bass * 2.5;   // the swell picks up with the music
+      camera.position.y = 14 + Math.sin(t * .35) * (.8 + musicLevel * .6);
       camera.lookAt(0, 8 + Math.sin(t * .27) * .4, -200);
     }
   };
