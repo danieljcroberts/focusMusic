@@ -191,5 +191,11 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
 .help dt { color: var(--accent); font-variant-numeric: tabular-nums; }
 .help dd { margin: 0; }
 body.sleep #dim { opacity: .72; }
+.grain, .vignette { position: fixed; inset: 0; pointer-events: none; }
+.grain { background-size: 128px 128px; mix-blend-mode: soft-light; opacity: .2; }
+.vignette { background: radial-gradient(ellipse at center, rgba(255, 205, 150, .05) 0%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, .42) 100%); }
+.tmenu .nums { flex-wrap: wrap; gap: 6px 10px; }
+.tmenu .nums label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.tmenu .nums input { width: 52px; font: inherit; font-size: 12px; color: var(--text); background: var(--glass); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
 /* Readable over bright scenes */
 .desc, .pair, .eyebrow, .hint, .np { text-shadow: 0 1px 8px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .5); }

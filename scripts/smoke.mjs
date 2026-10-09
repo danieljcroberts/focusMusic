@@ -1,7 +1,7 @@
 // Opens the built app in headless Chromium, steps through every scene
 // and fails on any page error or console error. Run `npm run build` first; `npm test` does both.
 // Set SMOKE_SHOTS=<dir> to also save a screenshot of each scene, SMOKE_CHROMIUM=<path> to use a particular Chromium.
-/* global document */ // inside page.evaluate callbacks, which run in the browser
+/* global document, window */ // inside page.evaluate callbacks, which run in the browser
 import { preview } from 'vite';
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
@@ -45,6 +45,8 @@ const names = [];
 for (let i = 0; i < total; i++) {
   await page.evaluate(i => document.getElementById('scene-' + i).click(), i);
   await page.waitForTimeout(900);
+  const broken = await page.evaluate(() => window.slowWindows.broken());
+  if (broken.length) problems.push(`broken after scene ${i}: ${broken.join(', ')}`);
   const title = await page.textContent('#title');
   const expected = await page.evaluate(i => document.querySelector('#scene-' + i + ' .lbl').textContent, i);
   if (title !== expected) problems.push(`scene ${i}: title shows "${title}", nav says "${expected}"`);
@@ -61,6 +63,24 @@ await page.click('#lowBtn'); await page.waitForTimeout(300); await page.click('#
 await page.click('#libBtn'); await page.keyboard.press('Escape');
 await page.click('#tStart'); await page.click('#tStart');
 await page.waitForTimeout(300);
+
+// Second pass with real motion: the animation loop runs, and every scene must yield a thumbnail (so it drew something).
+const page2 = await browser.newPage({ viewport: { width: 640, height: 360 } });
+page2.on('pageerror', e => problems.push(`page error (motion): ${e.message}`));
+page2.on('console', m => { if (m.type() === 'error' && !/three|jsdelivr|archive\.org|fonts\.g|net::ERR|open-meteo/.test(m.text())) problems.push(`console error (motion): ${m.text()}`); });
+await page2.goto(url, { waitUntil: 'load' });
+await page2.waitForTimeout(800);
+const noThumb = [];
+for (let i = 0; i < total; i++) {
+  await page2.evaluate(i => document.getElementById('scene-' + i).click(), i);
+  await page2.waitForTimeout(1500);
+  const got = await page2.evaluate(() => window.slowWindows.captureThumb());
+  if (!got) noThumb.push(names[i]);
+}
+const brokenMotion = await page2.evaluate(() => window.slowWindows.broken());
+if (brokenMotion.length) problems.push(`broken in motion: ${brokenMotion.join(', ')}`);
+if (noThumb.length > 3) problems.push(`no thumbnail from: ${noThumb.join(', ')}`);   // a few may miss on a slow image load; many means scenes are blank
+else if (noThumb.length) console.log(`no thumbnail yet from: ${noThumb.join(', ')}`);
 
 await browser.close(); await server.close();
 console.log(`${total} scenes opened: ${names.join(', ')}`);

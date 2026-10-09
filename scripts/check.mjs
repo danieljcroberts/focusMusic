@@ -10,6 +10,7 @@ const TRACKS = JSON.parse(readFileSync(join(root, 'src/data/tracks.json'), 'utf8
 const SCENE_DIR = join(root, 'public/assets/scenes');
 const MUSIC_DIR = join(root, 'public/assets/music');
 // Mirrors KINDS in src/ambience.js, which cannot be imported here because it touches the audio API.
+const TONES = new Set(['calm', 'warm', 'cold', 'dark', 'bright', 'pulse']);
 const SOUNDS = new Set(['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space']);
 
 const errors = [], warnings = [];
@@ -26,6 +27,7 @@ for (const t of TRACKS) {
   if (!t.lic) err(`track has no licence: ${k}`);
   if (!CONF.has(t.conf)) err(`track has unknown conf "${t.conf}": ${k}`);
   if (!t.src) err(`track has no source link: ${k}`);
+  if (!TONES.has(t.mood)) err(`track has an unknown mood "${t.mood}": ${k}`);
   if (t.file && !t.stream) warn(`bundled track has no stream URL to fetch from: ${k}`);
 }
 
@@ -44,6 +46,7 @@ for (const s of SCENES) {
   if (!s.desc) err(`scene "${s.name}" has no description`);
   if (!SOUNDS.has(s.sound)) err(`scene "${s.name}" has an unknown sound "${s.sound}"`);
   if (!['day', 'night', 'any'].includes(s.mood)) err(`scene "${s.name}" has an unknown mood "${s.mood}"`);
+  if (!TONES.has(s.tone)) err(`scene "${s.name}" has an unknown tone "${s.tone}"`);
   if (!/^#[0-9a-f]{6}$/i.test(s.sw || '')) err(`scene "${s.name}" has no swatch colour`);
   if (s.src && !existsSync(join(SCENE_DIR, s.src))) err(`scene "${s.name}" image is missing: ${s.src}`);
 }

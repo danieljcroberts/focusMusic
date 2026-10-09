@@ -3,6 +3,7 @@
     "a": "Chris Zabriskie",
     "t": "Chance, Luck, Errors in Nature, Fate, Destruction As a Finale",
     "lic": "CC BY 3.0",
+    "mood": "bright",
     "ep": [
       "22"
     ],
@@ -14,6 +15,7 @@
     "a": "Calling Sister Midnight",
     "t": "Daemon In The Cube",
     "lic": "CC BY 3.0",
+    "mood": "pulse",
     "ep": [
       "25"
     ],
@@ -26,6 +28,7 @@
     "a": "Preslav Literary School",
     "t": "Velvet Shield",
     "lic": "CC BY 4.0",
+    "mood": "dark",
     "ep": [
       "66"
     ],
@@ -36,6 +39,7 @@
     "a": "Preslav Literary School",
     "t": "Mirth In Funeral",
     "lic": "CC BY 4.0",
+    "mood": "dark",
     "ep": [
       "73"
     ],
@@ -46,6 +50,7 @@
     "a": "Miles Tilmann",
     "t": "Bloom",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "bright",
     "ep": [
       "11"
     ],
@@ -56,6 +61,7 @@
     "a": "Miles Tilmann",
     "t": "Navigator 6",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "11"
     ],
@@ -66,6 +72,7 @@
     "a": "Miles Tilmann",
     "t": "Navigator 4",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "11"
     ],
@@ -76,6 +83,7 @@
     "a": "Miles Tilmann",
     "t": "Morning Song",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "bright",
     "ep": [
       "11"
     ],
@@ -86,6 +94,7 @@
     "a": "Miles Tilmann",
     "t": "Evaporation",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "11"
     ],
@@ -96,6 +105,7 @@
     "a": "Miles Tilmann",
     "t": "Planetarium",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "cold",
     "ep": [
       "11"
     ],
@@ -106,6 +116,7 @@
     "a": "Miles Tilmann",
     "t": "Particle Song 1",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "pulse",
     "ep": [
       "3"
     ],
@@ -116,6 +127,7 @@
     "a": "Miles Tilmann",
     "t": "Cellula 4.2",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "11"
     ],
@@ -126,6 +138,7 @@
     "a": "Miles Tilmann",
     "t": "Cellula 4.4",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "11"
     ],
@@ -136,6 +149,7 @@
     "a": "Esa Ruoho",
     "t": "Glasnevin",
     "lic": "CC BY-NC-SA 3.0",
+    "mood": "dark",
     "ep": [
       "37"
     ],
@@ -148,6 +162,7 @@
     "a": "Ian Hawgood",
     "t": "Before I Let The Sunshine Rot",
     "lic": "CC BY-NC-SA 3.0",
+    "mood": "warm",
     "ep": [
       "7"
     ],
@@ -159,6 +174,7 @@
     "a": "Pulse Emitter",
     "t": "Longing Thresholds",
     "lic": "CC BY-NC-SA 3.0 US",
+    "mood": "cold",
     "ep": [
       "5",
       "16"
@@ -172,6 +188,7 @@
     "a": "Agents Of The Culture Industry",
     "t": "Reality Effect (Kafkadub)",
     "lic": "CC BY-NC 4.0",
+    "mood": "pulse",
     "ep": [
       "67"
     ],
@@ -182,6 +199,7 @@
     "a": "Renniac",
     "t": "Earth Night",
     "lic": "CC BY-NC-SA 2.5",
+    "mood": "cold",
     "ep": [
       "73"
     ],
@@ -193,6 +211,7 @@
     "a": "_nono_",
     "t": "Commfault",
     "lic": "CC BY-NC-SA",
+    "mood": "dark",
     "ep": [
       "25"
     ],
@@ -203,6 +222,7 @@
     "a": "아버지",
     "t": "reflection",
     "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
     "ep": [
       "79"
     ],
@@ -214,6 +234,7 @@
     "a": "Glochids",
     "t": "Pulse Sjilver",
     "lic": "CC BY-NC 4.0",
+    "mood": "pulse",
     "ep": [
       "38"
     ],
@@ -224,6 +245,7 @@
     "a": "Holger Flinsch",
     "t": "Organon",
     "lic": "CC BY-NC-ND 2.0",
+    "mood": "cold",
     "ep": [
       "73"
     ],
@@ -235,6 +257,7 @@
     "a": "Gaston Arevalo",
     "t": "Agreste",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "warm",
     "ep": [
       "73"
     ],
@@ -247,6 +270,7 @@
     "a": "Maps And Diagrams",
     "t": "Eleemosyn",
     "lic": "CC BY-NC-ND 3.0 DE",
+    "mood": "calm",
     "ep": [
       "73"
     ],
@@ -259,6 +283,7 @@
     "a": "Lomov",
     "t": "Sommersumpf",
     "lic": "CC BY-NC-ND 2.0",
+    "mood": "calm",
     "ep": [
       "73"
     ],
@@ -270,6 +295,7 @@
     "a": "Sable",
     "t": "Benthal",
     "lic": "CC BY-NC-ND 1.0",
+    "mood": "dark",
     "ep": [
       "73"
     ],
@@ -281,6 +307,7 @@
     "a": "Bannister Boy",
     "t": "Entrance to Golden Suburbia",
     "lic": "CC BY-NC-ND 2.5",
+    "mood": "warm",
     "ep": [
       "64"
     ],
@@ -293,6 +320,7 @@
     "a": "Khonnor",
     "t": "I Was Everything You Wanted Until I Quit",
     "lic": "CC BY-NC-ND 1.0",
+    "mood": "warm",
     "ep": [
       "43"
     ],
@@ -305,6 +333,7 @@
     "a": "SiJ",
     "t": "There is no life without love",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "cold",
     "ep": [
       "41"
     ],
@@ -316,6 +345,7 @@
     "a": "Zen Savauge",
     "t": "Quiet View",
     "lic": "CC BY-NC-ND 2.0",
+    "mood": "calm",
     "ep": [
       "73"
     ],
@@ -328,6 +358,7 @@
     "a": "Downliners Sekt",
     "t": "hockey nights in Canada",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "dark",
     "ep": [
       "8"
     ],
@@ -339,6 +370,7 @@
     "a": "adamned.age",
     "t": "Calmer",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "calm",
     "ep": [
       "73"
     ],
@@ -351,6 +383,7 @@
     "a": "Vultrapia",
     "t": "Scali",
     "lic": "CC BY-NC-ND 1.0",
+    "mood": "cold",
     "ep": [
       "73"
     ],
@@ -363,6 +396,7 @@
     "a": "migloJE",
     "t": "Leti Vejai",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "bright",
     "ep": [
       "73"
     ],
@@ -374,6 +408,7 @@
     "a": "Space Dimension Controller",
     "t": "Unidentified Flying Oscillator",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "pulse",
     "ep": [
       "29"
     ],
@@ -385,6 +420,7 @@
     "a": "The Inventors of Aircraft",
     "t": "Hazel",
     "lic": "CC BY-NC-ND 2.0 UK",
+    "mood": "warm",
     "ep": [
       "44"
     ],
@@ -396,6 +432,7 @@
     "a": "D_rradio",
     "t": "Leaves",
     "lic": "CC BY-ND 3.0",
+    "mood": "calm",
     "ep": [
       "14"
     ],
@@ -408,6 +445,7 @@
     "a": "Puffin On My Side",
     "t": "Winter Coast Sand",
     "lic": "CC BY-NC-ND 4.0",
+    "mood": "bright",
     "ep": [
       "25"
     ],
@@ -418,6 +456,7 @@
     "a": "Off The Sky vs Gyges",
     "t": "Polaroidmanteaux",
     "lic": "CC BY-NC-ND 2.0",
+    "mood": "calm",
     "ep": [
       "9"
     ],
@@ -428,6 +467,7 @@
     "a": "Miles Tilmann",
     "t": "Red Whale",
     "lic": "CC BY-NC-SA",
+    "mood": "calm",
     "ep": [
       "9"
     ],
@@ -439,6 +479,7 @@
     "a": "Not Your Average Hippy",
     "t": "Sunset Dawn",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "calm",
     "ep": [
       "25"
     ],
@@ -450,6 +491,7 @@
     "a": "Manrico Montero & Alexandre Navarro",
     "t": "Bootleg (Remix by Offthesky)",
     "lic": "CC BY-NC-ND 3.0",
+    "mood": "calm",
     "ep": [
       "7"
     ],
@@ -462,6 +504,7 @@
     "a": "Agents Of The Culture Industry",
     "t": "frgmnt",
     "lic": "CC BY-NC 4.0",
+    "mood": "dark",
     "ep": [
       "50"
     ],
@@ -473,6 +516,7 @@
     "a": "Agents Of The Culture Industry",
     "t": "The Long Road South",
     "lic": "CC BY-NC 4.0",
+    "mood": "dark",
     "ep": [
       "75"
     ],

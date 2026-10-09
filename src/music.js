@@ -71,16 +71,28 @@ export function tickFades(now) {
   });
 }
 
-// "Scene picks music": when the scene changes, crossfade to its track.
+// "Scene picks music": when the scene changes, crossfade to a track that suits it. Each scene names a preferred track and a
+// tone (calm, warm, cold, dark, bright, pulse); tracks carry a mood. The preferred track plays unless it was heard recently,
+// then another of the same mood takes its place, so a scene does not sound the same on every visit.
 export let follow = !!state.follow;
 export function setFollow(v) { follow = v; el('follow').setAttribute('aria-pressed', String(v)); saveState({ follow: v }); }
-let sceneKey = null;
-export function setSceneKey(k) { sceneKey = k; }
+let sceneKey = null, sceneTone = null;
+const recent = [];
+export function setScene(k, tone) { sceneKey = k; sceneTone = tone || null; }
 export const sceneTrack = () => byKey[sceneKey];
+export function pickFor(key, tone) {
+  const pref = byKey[key];
+  if (pref && playable(pref) && !recent.includes(key)) return pref;
+  const pool = TRACKS.filter(t => playable(t) && t.mood === tone && !recent.includes(t.a + '|' + t.t));
+  if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+  return pref && playable(pref) ? pref : null;
+}
 export function onSceneChange() {
   if (!follow || source !== 'mix') return;
-  const t = sceneTrack(); if (t && playable(t) && t !== curTrack) playTrack(t);
+  const t = pickFor(sceneKey, sceneTone); if (t && t !== curTrack) playTrack(t);
 }
+export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+export const currentTrack = () => curTrack;
 
 const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
@@ -141,6 +153,7 @@ export function playTrack(t) {
     return;
   }
   source = 'mix'; syncSeg(); setStatus(''); curTrack = t;
+  recent.push(key(t)); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${t.t} — ${t.a}`;
   setMeta([t.lic, eps(t), t.file ? 'bundled' : 'streaming'], t.src, 'Source ↗');
   announce(t);
@@ -210,10 +223,18 @@ setInterval(() => {
 }, 500);
 // The sleep timer fades everything out over `seconds` and stops it.
 export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }
+// Where you left off: the current mix track and position are saved every few seconds; the first Play after a reload
+// resumes it (a shared link can queue a track the same way).
+let resume = null, resumeAt = null;
+export function queueResume(t, at) { resume = t; resumeAt = at; ui.title.textContent = `${t.t} — ${t.a}`; setMeta(['press Play to resume', t.lic], t.src, 'Source ↗'); }
+if (state.np && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
+setInterval(() => { if (hasSrc && !audio.paused && curTrack && !curTrack.live) saveState({ np: { key: key(curTrack), t: Math.floor(audio.currentTime) } }); }, 5000);
+for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} resumeAt = null; } });
 export function togglePlay() {
   if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
+  if (resume) { const r = resume; resume = null; if (playable(r)) { playTrack(r); return; } resumeAt = null; }
   if (source === 'live') nextLive();
-  else { const t = sceneTrack(); playTrack(t && playable(t) ? t : TRACKS.find(playable)); }
+  else { const t = pickFor(sceneKey, sceneTone); playTrack(t || TRACKS.find(playable)); }
 }
 // The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
 let scrubbing = false;
