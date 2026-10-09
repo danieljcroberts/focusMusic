@@ -1,8 +1,8 @@
 // Slow Windows service worker: the page and code come network-first (so a new build is picked up on the next load,
 // with the cache as the offline fallback); scene art, video and music are cache-first once seen.
 // Audio is requested in byte ranges, which the cache cannot answer directly, so ranges are cut from a cached whole file.
-const CACHE = 'slow-windows-v1';
-const SHELL = ['./', './index.html', './app.js', './index.css', './manifest.webmanifest', './icon.svg', './icon-512.png'];
+const CACHE = 'slow-windows-v2';
+const SHELL = ['./', './index.html', './app.js', './index.css', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));

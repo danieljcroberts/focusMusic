@@ -53,7 +53,7 @@ el('offlineBtn').addEventListener('click', async () => {
   if (!('caches' in window)) { setStatus("This browser can't store files for offline use."); return; }
   const files = TRACKS.filter(x => x.file).map(x => M + x.file);
   try {
-    const c = await caches.open('slow-windows-v1');
+    const c = await caches.open('slow-windows-v2');
     for (let i = 0; i < files.length; i++) {
       setStatus(`Saving music for offline use: ${i + 1} of ${files.length}`);
       if (await c.match(files[i])) continue;
