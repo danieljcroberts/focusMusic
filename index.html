@@ -30,11 +30,20 @@
         <button type="button" class="icon-btn tog" id="tStart" aria-pressed="false" aria-label="Start or pause the focus timer">Focus 25:00</button>
         <button type="button" class="icon-btn" id="tMore" aria-label="Timer options" aria-expanded="false">⋯</button>
         <div class="tmenu" id="tMenu" hidden>
-          <span class="lbl">Focus / break</span>
-          <button type="button" data-f="25" data-b="5">25 / 5 min</button>
-          <button type="button" data-f="50" data-b="10">50 / 10 min</button>
-          <button type="button" data-f="90" data-b="15">90 / 15 min</button>
-          <button type="button" id="tReset">Reset</button>
+          <span class="lbl">Focus / break / long break</span>
+          <button type="button" data-f="25" data-b="5" data-lb="15">25 / 5 / 15 min</button>
+          <button type="button" data-f="50" data-b="10" data-lb="25">50 / 10 / 25 min</button>
+          <button type="button" data-f="90" data-b="15" data-lb="30">90 / 15 / 30 min</button>
+          <span class="lbl">Custom (minutes)</span>
+          <div class="row nums">
+            <label>Focus <input type="number" id="tF" min="1" max="180" value="25"></label>
+            <label>Break <input type="number" id="tB" min="1" max="60" value="5"></label>
+            <label>Long <input type="number" id="tLB" min="1" max="90" value="15"></label>
+            <label>Every <input type="number" id="tEvery" min="0" max="12" value="4"></label>
+          </div>
+          <button type="button" id="tApply">Apply</button>
+          <span class="lbl" id="tCount"></span>
+          <button type="button" id="tReset">Reset the count</button>
         </div>
       </div>
       <div class="settings">
@@ -60,6 +69,8 @@
           <span class="note" id="weekLine">No focus blocks yet.</span>
           <span class="lbl">Offline</span>
           <button type="button" id="offlineBtn">Save music for offline use (60 MB)</button>
+          <span class="lbl">Look</span>
+          <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
           <div class="row"><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button></div>
         </div>
       </div>
