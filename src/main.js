@@ -185,8 +185,13 @@ function go(i) {
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); onSceneChange();
   noteSceneChange(); scheduleThumb();
+  if (document.body.classList.contains('idle')) caption(SCENES[cur].name);
   if (still) render(0);
 }
+// While the controls are hidden, a scene change shows just its name for a moment.
+const toast = el('toast');
+let toastTimer;
+function caption(text) { toast.textContent = text; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1600); }
 function render(dt) {
   const inst = instances[cur];
   if (broken[cur]) {
@@ -278,16 +283,22 @@ const clock = el('clock');
 const tick = () => { const d = new Date(); clock.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
 tick(); setInterval(tick, 10000);
 
-/* The controls fade after five quiet seconds; any movement, key or focus brings them back. */
+/* The controls fade after five quiet seconds. A mouse move, a key or a tap brings them back; swiping between scenes
+   and the arrow keys do not, so you can flip through scenes without the menus. On touch, a tap on the scene toggles them. */
 let idleTimer;
 function wake() {
   wakeFromSleep();
   document.body.classList.remove('idle');
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => document.body.classList.add('idle'), 5000);
+  idleTimer = setTimeout(hide, 5000);
   keepAwake();
 }
-['pointermove', 'pointerdown', 'keydown', 'touchstart', 'focusin'].forEach(e => window.addEventListener(e, wake, { passive: true }));
+function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
+const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag');
+window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
+window.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
+window.addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) wake(); else { wakeFromSleep(); keepAwake(); } }, { passive: true });
+window.addEventListener('focusin', e => { if (!onScene(e)) wake(); });
 
 /* Ambient sound: starts on the first gesture, follows the scene, its level is remembered */
 const amb = el('amb'); amb.value = ambienceLevel;
@@ -341,12 +352,16 @@ window.addEventListener('keydown', e => {
 /* A horizontal swipe on the scene changes it; swipes that start on the controls or the library are theirs. */
 let swipe = null;
 window.addEventListener('touchstart', e => {
-  swipe = e.target.closest('.chrome, .lib') ? null : { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  swipe = onScene(e) ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY, at: performance.now() } : null;
 }, { passive: true });
 window.addEventListener('touchend', e => {
   if (!swipe) return;
-  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y; swipe = null;
-  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
+  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y, ms = performance.now() - swipe.at; swipe = null;
+  wakeFromSleep(); keepAwake();
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));   // swipe: next or previous scene, controls stay as they are
+  else if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {                                // tap: show or hide the controls
+    if (document.body.classList.contains('idle')) wake(); else hide();
+  }
 }, { passive: true });
 
 // A scene link in the hash switches scenes (so the back button walks through them).

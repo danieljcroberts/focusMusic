@@ -196,6 +196,10 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
 .help dt { color: var(--accent); font-variant-numeric: tabular-nums; }
 .help dd { margin: 0; }
 body.sleep #dim { opacity: .72; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); transform: translateX(-50%); z-index: 5; pointer-events: none;
+  font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 300; font-size: 26px; color: var(--text);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .6); opacity: 0; transition: opacity .5s ease; white-space: nowrap; }
+.toast.on { opacity: .92; }
 .grain, .vignette { position: fixed; inset: 0; pointer-events: none; }
 .grain { background-size: 128px 128px; mix-blend-mode: soft-light; opacity: .2; }
 .vignette { background: radial-gradient(ellipse at center, rgba(255, 205, 150, .05) 0%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, .42) 100%); }
