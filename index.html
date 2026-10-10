@@ -104,6 +104,7 @@
       <div class="seg" role="group" aria-label="Music source">
         <button type="button" id="srcMix" aria-pressed="true">From the mixes</button>
         <button type="button" id="srcLive" aria-pressed="false">Internet Archive live</button>
+        <button type="button" id="srcOwn" aria-pressed="false">Your music</button>
       </div>
       <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume" title="Music">
       <label class="amb" for="amb">Ambience <input type="range" id="amb" min="0" max="1" step="0.01" value="0.35" title="Ambient sound: rain, wind, sea, fire, matched to the scene"></label>
@@ -157,8 +158,8 @@
   <button type="button" class="pbtn primary" id="hint1Ok">Got it</button>
 </div>
 <aside class="lib" id="lib" hidden aria-label="Music library">
-  <header><h2>Music from the mixes</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
-  <p class="intro">Creative Commons tracks: the ones that appeared in the Music For Programming mixes (episode numbers show where), plus more from the same artists' releases. Credit the artist, keep the app non-commercial for NC licences, and play ND tracks unedited.</p>
+  <header><h2>Music</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
+  <p class="intro">Your own music, kept on this device, and Creative Commons tracks: the ones that appeared in the Music For Programming mixes (episode numbers show where), plus more from the same artists' releases. For those, credit the artist, keep the app non-commercial for NC licences, and play ND tracks unedited.</p>
   <div class="list" id="libList"></div>
 </aside>
 </body>
