@@ -69,14 +69,19 @@
           <span class="note" id="weekLine">No focus blocks yet.</span>
           <span class="lbl">Offline</span>
           <button type="button" id="offlineBtn">Save music for offline use (250 MB)</button>
-          <span class="lbl">Look</span>
-          <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
+          <span class="lbl">Presets</span>
+          <div class="presets" id="presetList"></div>
+          <div class="row"><input type="text" id="presetName" maxlength="24" placeholder="Name, e.g. Late night" aria-label="Preset name"><button type="button" id="presetSave">Save current</button></div>
+          <span class="lbl">Look and performance</span>
+          <div class="row wrap">
+            <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
+            <button type="button" class="tog" id="liveBtn" aria-pressed="false" title="Faster, more music-reactive motion">Lively</button>
+            <button type="button" class="tog" id="lowBtn" aria-pressed="false">Low power</button>
+            <button type="button" id="fs">Full screen</button>
+          </div>
           <div class="row"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button></div>
         </div>
       </div>
-      <button type="button" class="icon-btn tog" id="liveBtn" aria-pressed="false" title="Faster, more music-reactive motion">Lively</button>
-      <button type="button" class="icon-btn tog" id="lowBtn" aria-pressed="false">Low power</button>
-      <button class="icon-btn" id="fs" type="button">Full screen</button>
     </div>
   </div>
   <div class="bottom">
@@ -116,6 +121,11 @@
 </div>
 
 <div class="toast" id="toast" aria-live="polite"></div>
+<svg class="ring" id="ring" viewBox="0 0 40 40" hidden aria-hidden="true"><circle cx="20" cy="20" r="16" class="track"/><circle cx="20" cy="20" r="16" class="fill" id="ringFill" pathLength="100"/></svg>
+<div class="picker" id="picker" hidden role="dialog" aria-label="Choose a scene">
+  <header><h2>Scenes</h2><button type="button" class="pbtn" id="pickerClose">Close</button></header>
+  <div class="grid" id="pickerGrid"></div>
+</div>
 <pre class="diag" id="diag" hidden></pre>
 <div class="help" id="help" hidden role="dialog" aria-label="Keyboard shortcuts">
   <h2>Shortcuts</h2>
@@ -132,6 +142,7 @@
     <dt>F</dt><dd>Full screen</dd>
     <dt>`</dt><dd>Diagnostics</dd>
     <dt>A</dt><dd>About and credits</dd>
+    <dt>G</dt><dd>All scenes</dd>
     <dt>?</dt><dd>This list</dd>
     <dt>Esc</dt><dd>Close panels</dd>
   </dl>
@@ -142,7 +153,7 @@
   <div class="list" id="aboutList"></div>
 </aside>
 <div class="hint1" id="hint1" hidden role="dialog" aria-label="Getting started">
-  <p><b>Welcome to Slow Windows.</b> Press <b>Play</b> for music that suits the scene. Swipe (or ← →) to change scenes; the menus stay out of the way. Tap the scene to show or hide the controls.</p>
+  <p><b>Welcome to Slow Windows.</b> Press <b>Play</b> for music that suits the scene. Swipe sideways (or ← →) to change scenes; the menus stay out of the way. Tap or swipe up for the controls, swipe down to hide them, double-tap to play or pause, long-press for all scenes.</p>
   <button type="button" class="pbtn primary" id="hint1Ok">Got it</button>
 </div>
 <aside class="lib" id="lib" hidden aria-label="Music library">

@@ -38,5 +38,55 @@
     "standalone",
     "fullscreen"
   ],
-  "id": "./"
+  "id": "./",
+  "shortcuts": [
+    {
+      "name": "Start a focus block",
+      "short_name": "Focus",
+      "url": "./?start=focus",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Rain on Glass",
+      "short_name": "Rain",
+      "url": "./#rain-on-glass",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Aurora from Orbit",
+      "short_name": "Aurora",
+      "url": "./#aurora-from-orbit",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Hearth",
+      "short_name": "Hearth",
+      "url": "./#hearth",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }
