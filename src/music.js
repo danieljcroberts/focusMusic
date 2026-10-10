@@ -21,6 +21,7 @@ function wireAnalyser() {
   if (analyser || !audioCtx()) return;
   try {
     analyser = actx.createAnalyser(); analyser.fftSize = 512; analyser.smoothingTimeConstant = .6;
+    analyser.minDecibels = -90; analyser.maxDecibels = -12;   // headroom: loud music no longer pins every low bin at the top
     fdata = new Uint8Array(analyser.frequencyBinCount);
     for (const p of players.slice(0, 2)) actx.createMediaElementSource(p).connect(analyser);
     analyser.connect(actx.destination);
@@ -33,7 +34,26 @@ export let musicLevel = 0, musicPlaying = false;
 export const bands = { bass: 0, mid: 0, treble: 0 };
 const SILENCE = new Uint8Array(256);
 // The analyser's 256 bins, or silence when nothing is on the graph.
+// The waveform: 512 samples of the sound itself (128 is silence), for oscilloscopes and visualisers.
+let wdata = null;
+const FLAT = new Uint8Array(512).fill(128);
+export const waveform = () => {
+  if (!(analyser && musicPlaying && players.slice(0, 2).some(p => !p.paused && p.readyState > 2))) return FLAT;
+  if (!wdata) wdata = new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(wdata);
+  return wdata;
+};
 export const spectrum = () => (analyser && musicPlaying && players.slice(0, 2).some(p => !p.paused && p.readyState > 2)) ? fdata : SILENCE;
+// Automatic gain per band: each reading is placed between that band's recent floor and its recent peak, so the bands
+// follow the beat of quiet and loud tracks alike instead of sitting at the top (or the bottom) for a whole song.
+const agcState = { bass: { lo: .3, hi: .6 }, mid: { lo: .2, hi: .5 }, treble: { lo: .05, hi: .25 } };
+function agc(k, v, dt) {
+  const s = agcState[k];
+  s.hi = v > s.hi ? s.hi + (v - s.hi) * Math.min(1, dt * 8) : s.hi - (s.hi - v) * Math.min(1, dt * .25);   // peaks rise fast, fall over a few seconds
+  s.lo = v < s.lo ? s.lo + (v - s.lo) * Math.min(1, dt * 4) : s.lo + (v - s.lo) * Math.min(1, dt * .15);   // the floor follows the quiet parts
+  const range = Math.max(.08, s.hi - s.lo);
+  return Math.max(0, Math.min(1, (v - s.lo) / range));
+}
 function average(a, from, to) { let s = 0; for (let i = from; i < to; i++) s += a[i]; return s / (to - from) / 255; }
 export function sampleMusic(dt) {
   musicPlaying = players.some(p => !p.paused && !p.ended && p.readyState > 2);
@@ -50,7 +70,7 @@ export function sampleMusic(dt) {
   musicLevel += (target - musicLevel) * Math.min(1, dt * (target > musicLevel ? 6 : 1.2));
   const d = spectrum(), now = performance.now() / 1000;
   const want = d !== SILENCE
-    ? { bass: Math.min(1, average(d, 1, 6) * 1.4), mid: Math.min(1, average(d, 6, 48) * 1.9), treble: Math.min(1, average(d, 48, 160) * 2.8) }
+    ? { bass: agc('bass', average(d, 1, 6), dt), mid: agc('mid', average(d, 6, 48), dt), treble: agc('treble', average(d, 48, 160), dt) }
     : { bass: musicLevel * (.5 + .3 * Math.sin(now * 2.1)), mid: musicLevel * (.45 + .25 * Math.sin(now * 3.3)), treble: musicLevel * (.3 + .2 * Math.sin(now * 5.1)) }; // a plain player: a gentle pulse instead
   for (const k of ['bass', 'mid', 'treble']) bands[k] += (want[k] - bands[k]) * Math.min(1, dt * (want[k] > bands[k] ? 14 : 3.5));
 }

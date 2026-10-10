@@ -1,14 +1,14 @@
 // Trip: full-screen fragment shaders that move with the music. Slow and non-strobing by default; the Lively toggle
 // speeds them up and lets the analyser push harder. Nothing here flashes.
 import { W, H, DPR, lowPower, lively } from '../view.js';
-import { bands, spectrum, musicLevel } from '../music.js';
+import { bands, spectrum, waveform, musicLevel } from '../music.js';
 import { setStatus } from '../status.js';
 import { report } from '../diag.js';
 import { addStage, glKit, glFailed } from './glass-shared.js';
 
 const PRELUDE = `precision highp float;
 uniform vec2 uRes; uniform float uT, uBass, uMid, uTreble, uLevel, uLively, uHue, uA, uB;
-uniform sampler2D uSpec;
+uniform sampler2D uSpec, uWave;
 varying vec2 vUv;
 #define PI 3.14159265
 float h21(vec2 p){ p = fract(p * vec2(233.34, 851.73)); p += dot(p, p + 23.45); return fract(p.x * p.y); }
@@ -21,9 +21,9 @@ vec3 hsv(float h, float s, float v){ vec3 k = abs(fract(vec3(h) + vec3(0., 2. / 
 `;
 
 // One full-screen shader on its own stage. o.speed scales the scene clock, o.res caps the render scale,
-// o.spectrum uploads the analyser's bins as uSpec, o.before(t, dt, gl, u) sets scene uniforms.
+// o.spectrum uploads the analyser's bins as uSpec, o.wave the waveform as uWave (512×1, .5 is silence), o.before(t, dt, gl, u) sets scene uniforms.
 export function shaderScene(fs, o = {}) {
-  let stage, kit, failed = false, clock = 0, specC, specG, specIm;
+  let stage, kit, failed = false, clock = 0, specC, specG, specIm, waveC, waveG, waveIm;
   const u = {}, smooth = new Float32Array(256);
   return {
     kind: 'webgl',
@@ -35,6 +35,7 @@ export function shaderScene(fs, o = {}) {
         if (!kit) { failed = true; return; }
         for (const n of ['uT', 'uBass', 'uMid', 'uTreble', 'uLevel', 'uLively', 'uHue', 'uRes', 'uA', 'uB']) u[n] = kit.u(n);
         specC = document.createElement('canvas'); specC.width = 256; specC.height = 1; specG = specC.getContext('2d'); specIm = specG.createImageData(256, 1);
+        waveC = document.createElement('canvas'); waveC.width = 512; waveC.height = 1; waveG = waveC.getContext('2d'); waveIm = waveG.createImageData(512, 1);
       }
       if (failed) return;
       const r = Math.min(DPR, lowPower ? .7 : (o.res ?? 1.5)); stage.width = Math.round(W * r); stage.height = Math.round(H * r);
@@ -50,6 +51,11 @@ export function shaderScene(fs, o = {}) {
         const d = spectrum();
         for (let i = 0; i < 256; i++) { smooth[i] = Math.max(d[i], smooth[i] - dt * 140); specIm.data[i * 4] = smooth[i]; specIm.data[i * 4 + 3] = 255; }
         specG.putImageData(specIm, 0, 0); kit.tex('uSpec', 0, specC);
+      }
+      if (o.wave) {
+        const w = waveform();
+        for (let i = 0; i < 512; i++) { waveIm.data[i * 4] = w[i] ?? 128; waveIm.data[i * 4 + 3] = 255; }
+        waveG.putImageData(waveIm, 0, 0); kit.tex('uWave', 1, waveC);
       }
       if (o.before) o.before(t, dt, gl, u);
       kit.draw();
