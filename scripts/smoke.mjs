@@ -59,6 +59,7 @@ for (let i = 0; i < total; i++) {
 }
 // Controls that should not throw.
 await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowLeft');
+await page.mouse.move(200, 200); await page.mouse.move(220, 210);   // arrows leave the controls hidden; a mouse move shows them
 await page.click('#lowBtn'); await page.waitForTimeout(300); await page.click('#lowBtn');
 await page.click('#libBtn'); await page.keyboard.press('Escape');
 await page.click('#tStart'); await page.click('#tStart');
