@@ -34,7 +34,7 @@ function apply(p) {
 el('presetSave').addEventListener('click', () => {
   const name = nameEl.value.trim() || `Preset ${presets().length + 1}`;
   const t = currentTrack();
-  const p = { name, scene: opts.sceneName(), track: t && !t.live ? t.a + '|' + t.t : null, ambience: ambienceLevel, lively: opts.lively(), timer: timerDurations() };
+  const p = { name, scene: opts.sceneName(), track: t && !t.live && !t.own ? t.a + '|' + t.t : null, ambience: ambienceLevel, lively: opts.lively(), timer: timerDurations() };
   const all = presets().filter(x => x.name !== name); all.push(p);
   saveState({ presets: all.slice(-12) }); nameEl.value = ''; draw();
   setStatus(`Saved "${name}".`);

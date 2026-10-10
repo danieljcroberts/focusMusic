@@ -57,41 +57,104 @@ export function shaderScene(fs, o = {}) {
   };
 }
 
-/* Lava Lamp: warm wax rising and merging in a tall glass, lit from below */
+/* Lava Lamp: a classic tapered lamp on a chrome base. Wax heats in a pool at the bottom, stretches as it rises, cools and
+   sinks from the top; the glass curves the view like a lens, and the lamp's glow colours the room. The colours drift over minutes. */
 export const lavaScene = () => shaderScene(`
-void main(){
-  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
-  float t = uT * .11;
-  vec2 b = abs(uv) - vec2(.17, .40);
-  float body = length(max(b, 0.)) - .06;
-  float inside = smoothstep(.004, -.004, body);
-  float f = 0.;
-  for (int i = 0; i < 7; i++) {
-    float fi = float(i);
-    float ph = fract(t * (.35 + .3 * fract(fi * .618)) + fi * .37);
-    float y = -.36 + .72 * (.5 - .5 * cos(ph * 2. * PI));
-    float x = sin(t * (.9 + .4 * fi) + fi * 2.1) * .1;
-    float r = .036 + .028 * fract(fi * .73) + uBass * .015;
-    vec2 d = uv - vec2(x, y);
-    f += r * r / (dot(d, d) + .0004);
+const float FLOOR = -.47, BASE_TOP = -.25, GLASS_TOP = .38, CAP_TOP = .45;
+float glassR(float y) { float k = clamp((y - BASE_TOP) / (GLASS_TOP - BASE_TOP), 0., 1.); return mix(.128, .07, k) + .014 * sin(k * 3.14159); }
+// Wax density at a point in "inside the glass" space; more than 1 is wax.
+float wax(vec2 p) {
+  float t = uT * .05, f = 0.;
+  for (int i = 0; i < 8; i++) {
+    float fi = float(i), sp = .5 + .45 * fract(fi * .618);
+    float ph = fract(t * sp * .5 + fi * .37);
+    float c = .5 - .5 * cos(ph * 6.28318);                     // slow at the bottom and top, quick in between
+    float y = mix(-.205, .31, c), v = sin(ph * 6.28318);
+    float r = (.026 + .02 * fract(fi * .73)) * (1. + uBass * .1) * (1. - .2 * c);   // wax shrinks a little as it cools
+    float stretch = 1. + .55 * abs(v);
+    float x = sin(t * (1.3 + fi * .4) + fi * 2.1) * glassR(y) * .45;
+    vec2 d = (p - vec2(x, y)) / vec2(1. / sqrt(stretch), stretch);
+    f += pow(r * r / (dot(d, d) + .00008), 1.6);   // a steep falloff keeps blobs apart until they touch
   }
-  f += .7 * smoothstep(-.34, -.46, uv.y);
-  float blob = smoothstep(.85, 1.05, f);
-  float grad = clamp((uv.y + .45) / .9, 0., 1.);
-  vec3 wax = mix(vec3(1., .28, .14), vec3(1., .78, .28), grad) + uMid * .12;
-  vec3 liquid = mix(vec3(.16, .02, .1), vec3(.42, .08, .22), grad);
-  liquid += vec3(1., .5, .2) * exp(-(uv.y + .5) * 6.) * .5;
-  vec3 col = mix(liquid, wax, blob);
-  col += wax * .35 * smoothstep(.5, .85, f) * (1. - blob);
-  col += vec3(1., .92, .8) * .14 * smoothstep(0., .03, -body) * smoothstep(.16, .11, abs(uv.x + .12)) * smoothstep(.46, .3, abs(uv.y));
-  vec3 room = vec3(.03, .02, .03) + vec3(.5, .15, .1) * exp(-length(uv * vec2(1., .7) + vec2(0., .25)) * 3.) * .4;
-  col = mix(room, col, inside);
-  float base = step(uv.y, -.44) * step(-.5, uv.y) * step(abs(uv.x), .2 + (uv.y + .44) * -.8);
-  float cap = step(.44, uv.y) * step(uv.y, .49) * step(abs(uv.x), .16 - (uv.y - .44) * .8);
-  vec3 metal = vec3(.5, .45, .4) * (.5 + .5 * smoothstep(.2, 0., abs(uv.x + .06)));
-  col = mix(col, metal * (.6 + .6 * exp(-(uv.y + .5) * 8.)), max(base, cap));
+  float pool = -.222 + .006 * sin(p.x * 55. + uT * .4) + .004 * sin(p.x * 90. - uT * .3);
+  f += smoothstep(pool + .004, pool - .004, p.y) * 3. + .6 * exp(-(p.y - pool) * 70.);    // the hot pool at the bottom
+  f += .3 * exp(-(.35 - p.y) * 90.);                                                     // a little cooled wax under the cap
+  return f;
+}
+vec3 metal(float px, float y, vec3 glowC) {
+  float band = .18 + .5 * exp(-pow((px + .38) / .22, 2.)) + .35 * exp(-pow((px - .55) / .09, 2.)) + .08 * sin(px * 9.);
+  vec3 m = vec3(.62, .64, .68) * band;
+  return m + glowC * .25 * smoothstep(-.6, .9, -px);
+}
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y * 1.28 + vec2(0., -.03);   // the lamp fills about three quarters of the height
+  float px1 = 1.9 / uRes.y;
+  // Two palettes that drift into each other over about ten minutes: violet liquid with orange wax, deep blue with red.
+  float pk = .5 + .5 * sin(uT * .0105);
+  vec3 liquid = mix(vec3(.30, .05, .36), vec3(.03, .10, .30), pk);
+  vec3 waxLo = mix(vec3(.95, .26, .04), vec3(.88, .04, .10), pk);
+  vec3 waxHi = mix(vec3(1., .66, .16), vec3(1., .42, .30), pk);
+  vec3 glowC = mix(waxLo, liquid, .3);
+
+  // The room: a dark wall lit by the lamp, a table top with a pool of light
+  vec3 col = vec3(.035, .028, .04) + glowC * .45 * exp(-length((uv - vec2(0., .02)) * vec2(1.1, .75)) * 3.2) * (.85 + .15 * uLevel);
+  if (uv.y < FLOOR) {
+    float dz = (FLOOR - uv.y) * 4.;
+    col = vec3(.06, .04, .035) * (1. - dz * .6) + glowC * .5 * exp(-length(vec2(uv.x * 2.2, (uv.y - FLOOR) * 9.)) * 2.4);
+  }
+  float y = uv.y, ax = abs(uv.x);
+
+  // Base: a chrome cone, wide on the table, narrowing up to the glass
+  float baseR = mix(.2, .128, smoothstep(FLOOR, BASE_TOP, y));
+  float inBase = step(FLOOR, y) * step(y, BASE_TOP) * smoothstep(baseR + px1, baseR - px1, ax);
+  if (inBase > 0.) {
+    vec3 m = metal(uv.x / baseR, y, glowC);
+    m *= .75 + .25 * smoothstep(FLOOR, FLOOR + .02, y);                    // darker foot
+    m += glowC * .9 * smoothstep(BASE_TOP - .03, BASE_TOP, y);               // glow spilling from the bulb at the top
+    col = mix(col, m, inBase);
+  }
+
+  // Cap: a small chrome cone on top
+  float capR = mix(.072, .04, smoothstep(GLASS_TOP, CAP_TOP, y));
+  float inCap = step(GLASS_TOP, y) * step(y, CAP_TOP) * smoothstep(capR + px1, capR - px1, ax);
+  if (inCap > 0.) col = mix(col, metal(uv.x / capR, y, glowC) * .9, inCap);
+
+  // The glass, and what is inside it
+  float R = glassR(y);
+  float inGlass = step(BASE_TOP, y) * step(y, GLASS_TOP) * smoothstep(R + px1, R - px1, ax);
+  if (inGlass > 0.) {
+    float px = clamp(uv.x / R, -.999, .999);
+    float cyl = sqrt(1. - px * px);
+    vec2 p = vec2(asin(px) * .6366 * R, y);                                  // the curved glass widens the middle and squeezes the edges
+    float f = wax(p);
+    float e = .004;
+    vec2 grad = vec2(wax(p + vec2(e, 0.)) - f, wax(p + vec2(0., e)) - f) / e;
+    float m = smoothstep(.92, 1.08, f);
+    float heat = smoothstep(.25, -.22, y);                                  // hotter, brighter wax near the bulb
+    float bulb = exp(-(y - BASE_TOP) * 4.5);
+
+    vec3 liq = liquid * (.35 + 1.1 * bulb) * (.55 + .45 * cyl);
+    liq += waxLo * .22 * smoothstep(.35, .95, f);                            // light scattered round the wax
+    vec3 n = normalize(vec3(-grad * .012, 1.));
+    float thick = smoothstep(1., 3.2, f);
+    // Hot wax glows from within: brightest where it is thickest, deeper and redder towards its thin edges.
+    float core = smoothstep(1.05, 6., f);
+    vec3 w = mix(waxLo * .85, waxHi * 1.15, clamp(.1 + .75 * core + .2 * heat, 0., 1.)) * (.85 + .45 * heat + .2 * bulb);
+    w *= .8 + .35 * n.z;                                                     // rounded edges fall off a little
+    w += waxHi * pow(max(dot(n, normalize(vec3(-.5, .45, 1.))), 0.), 30.) * .3;   // a soft highlight in the wax's own colour
+    vec3 inside = mix(liq, w, m);
+
+    // Glass: two vertical reflections, a darker rim and a thin bright edge
+    inside += vec3(1.) * (.16 * exp(-pow((px + .55) / .07, 2.)) + .07 * exp(-pow((px - .62) / .04, 2.)));
+    inside *= .65 + .35 * cyl;
+    inside += vec3(.9, .9, 1.) * .1 * smoothstep(.86, .99, abs(px));
+    col = mix(col, inside, inGlass);
+  }
+  // A collar where glass meets base, and a soft halo around the whole lamp
+  float collar = step(BASE_TOP - .006, y) * step(y, BASE_TOP + .006) * smoothstep(.135, .13, ax);
+  col = mix(col, metal(uv.x / .13, y, glowC) * 1.1, collar);
   gl_FragColor = vec4(col, 1.);
-}`, { speed: 1 });
+}`, { speed: 1, res: 1.25 });
 
 /* Kaleidoscope: a drifting noise field folded into mirror segments */
 export const kaleidoScene = () => shaderScene(`

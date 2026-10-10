@@ -121,6 +121,7 @@ function resize() {
   cv.width = fadeCv.width = Math.round(W * DPR); cv.height = fadeCv.height = Math.round(H * DPR);
   ready.fill(false);
   ensure(cur);
+  show(cur);   // a GPU scene creates its canvas in init, so pick the visible stage after it
   if (still) render(0);
 }
 let resizeTimer;
@@ -214,7 +215,7 @@ const moreBtn = el('moreBtn');
 moreBtn.addEventListener('click', () => { const on = !document.body.classList.contains('more'); document.body.classList.toggle('more', on); moreBtn.setAttribute('aria-pressed', String(on)); });
 function setLink() {
   const parts = [slug(SCENES[cur])], ct = currentTrack();
-  if (ct && !ct.live) parts.push('m-' + trackSlug(ct));
+  if (ct && !ct.live && !ct.own) parts.push('m-' + trackSlug(ct));   // your own music stays on your device
   if (Math.round(ambienceLevel * 100) !== 35) parts.push('a' + Math.round(ambienceLevel * 100));
   return location.origin + location.pathname + '#' + parts.join('.');
 }

@@ -4,6 +4,7 @@ import TRACKS from './data/tracks.json';
 import { M } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
+import { loadOwn, ownTracks, addOwn, ownURL, removeOwn, clearOwn, ownBytes, keeps } from './mine.js';
 
 const el = id => document.getElementById(id);
 export { TRACKS };
@@ -13,7 +14,7 @@ export { TRACKS };
 const mkPlayer = cors => { const a = new Audio(); a.preload = 'none'; if (cors) a.crossOrigin = 'anonymous'; a._g = 1; return a; };
 const players = [mkPlayer(true), mkPlayer(true), mkPlayer(false)];
 let audio = players[0], master = .8;
-const corsOk = url => url.startsWith(M) || /^https:\/\/archive\.org\//.test(url);
+const corsOk = url => url.startsWith(M) || url.startsWith('blob:') || /^https:\/\/archive\.org\//.test(url);
 let actx = null, analyser = null, fdata = null;
 export function audioCtx() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return actx; }
 function wireAnalyser() {
@@ -95,7 +96,7 @@ export function onSceneChange() {
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 export const currentTrack = () => curTrack;
 
-const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
+const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), own: el('srcOwn'), vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -108,7 +109,7 @@ function setMeta(parts, href, label) {
   ui.meta.textContent = parts.filter(Boolean).join(' · ');
   if (href) ui.meta.append(' · ', link(href, label));
 }
-function syncSeg() { ui.mix.setAttribute('aria-pressed', String(source === 'mix')); ui.live.setAttribute('aria-pressed', String(source === 'live')); }
+function syncSeg() { for (const k of ['mix', 'live', 'own']) ui[k].setAttribute('aria-pressed', String(source === k)); }
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
@@ -218,12 +219,36 @@ async function nextLive() {
   } finally { loadingLive = false; }
 }
 
-export function nextTrack() { source === 'live' ? nextLive() : nextMix(); }
+// Your music: shuffled, each track once before any repeats.
+let ownQueue = [], ownBlob = null;
+async function playOwn(e) {
+  source = 'own'; syncSeg(); setStatus('');
+  curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' };
+  ui.title.textContent = `${e.t} — ${e.a}`;
+  setMeta(['your music', (e.size / 1e6).toFixed(1) + ' MB']);
+  announce(curTrack);
+  try {
+    const url = await ownURL(e), old = ownBlob; ownBlob = url;
+    start(url);
+    if (old) setTimeout(() => URL.revokeObjectURL(old), 4000);   // after the crossfade
+  } catch (err) { setStatus("That file couldn't be opened. It may have been removed; add it again from the Library."); }
+  markLib();
+}
+function nextOwn() {
+  const all = ownTracks();
+  if (!all.length) { source = 'own'; syncSeg(); setStatus('No music of your own yet. Open the Library and add a folder or some files.'); openLib(true); return; }
+  if (!ownQueue.length) ownQueue = all.map(e => e.id).sort(() => Math.random() - .5);
+  let id = ownQueue.shift();
+  if (curTrack && curTrack.own && id === curTrack.id && ownQueue.length) id = ownQueue.shift();
+  const e = all.find(x => x.id === id) || all[0];
+  playOwn(e);
+}
+export function nextTrack() { source === 'live' ? nextLive() : source === 'own' ? nextOwn() : nextMix(); }
 // Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
 let queued = false;
 setInterval(() => {
-  if (!hasSrc || audio.paused || queued || source !== 'mix' || !isFinite(audio.duration) || !audio.duration) return;
-  if (audio.duration - audio.currentTime < 8) { queued = true; nextMix(); }
+  if (!hasSrc || audio.paused || queued || (source !== 'mix' && source !== 'own') || !isFinite(audio.duration) || !audio.duration) return;
+  if (audio.duration - audio.currentTime < 8) { queued = true; nextTrack(); }
 }, 500);
 // The sleep timer fades everything out over `seconds` and stops it.
 export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }
@@ -232,12 +257,13 @@ export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) ra
 let resume = null, resumeAt = null;
 export function queueResume(t, at) { resume = t; resumeAt = at; ui.title.textContent = `${t.t} — ${t.a}`; setMeta(['press Play to resume', t.lic], t.src, 'Source ↗'); }
 if (state.np && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
-setInterval(() => { if (hasSrc && !audio.paused && curTrack && !curTrack.live) saveState({ np: { key: key(curTrack), t: Math.floor(audio.currentTime) } }); }, 5000);
+setInterval(() => { if (hasSrc && !audio.paused && curTrack && !curTrack.live && !curTrack.own) saveState({ np: { key: key(curTrack), t: Math.floor(audio.currentTime) } }); }, 5000);
 for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} resumeAt = null; } });
 export function togglePlay() {
   if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
   if (resume) { const r = resume; resume = null; if (playable(r)) { playTrack(r); return; } resumeAt = null; }
   if (source === 'live') nextLive();
+  else if (source === 'own') nextOwn();
   else { const t = pickFor(sceneKey, sceneTone); playTrack(t || TRACKS.find(playable)); }
 }
 // The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
@@ -265,6 +291,7 @@ for (const p of players) {
 ui.play.addEventListener('click', togglePlay);
 ui.next.addEventListener('click', nextTrack);
 ui.mix.addEventListener('click', () => { if (source === 'mix') return; source = 'mix'; syncSeg(); setStatus(''); nextMix(); });
+ui.own.addEventListener('click', () => { if (source === 'own' && hasSrc && !audio.paused) return; nextOwn(); });
 ui.live.addEventListener('click', () => {
   if (iaOnline === false) { setStatus(BLOCKED); return; }
   source = 'live'; syncSeg(); nextLive();
@@ -276,6 +303,54 @@ el('follow').addEventListener('click', () => setFollow(!follow));
 setFollow(follow);
 el('who').addEventListener('click', () => playTrack(sceneTrack()));
 
+// The "Your music" part of the Library: add a folder or files, see what's there, play or remove a track.
+function ownSection() {
+  const sec = document.createElement('section'); sec.className = 'own';
+  const all = ownTracks();
+  const h = document.createElement('h3'); h.textContent = `Your music (${all.length})`;
+  const note = document.createElement('p'); note.className = 'note';
+  note.textContent = (keeps ? 'Copied into this app on this device, so it plays offline and stays after a restart. ' : 'Kept for this session only: this browser cannot store files for the app. ') +
+    'Nothing is uploaded.' + (all.length ? ` ${(ownBytes() / 1e6).toFixed(0)} MB.` : '');
+  const row = document.createElement('div'); row.className = 'row';
+  const pick = (label, folder) => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.accept = 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.flac,.wav'; inp.hidden = true;
+    if (folder) { inp.webkitdirectory = true; inp.setAttribute('webkitdirectory', ''); }
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = label;
+    b.addEventListener('click', () => inp.click());
+    inp.addEventListener('change', async () => {
+      if (!inp.files.length) return;
+      const n = await addOwn(inp.files, (i, of, name) => setStatus(`Adding ${i} of ${of}: ${name}`));
+      setStatus(n ? `Added ${n} track${n === 1 ? '' : 's'}. Choose "Your music" under the player to hear them.` : 'Nothing new to add: no audio files, or they were already here.');
+      ownQueue = []; renderLib();
+    });
+    row.append(b, inp);
+  };
+  pick('Add a folder', true); pick('Add files', false);
+  if (all.length) {
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'pbtn'; c.textContent = 'Remove all';
+    let armed = false;
+    c.addEventListener('click', async () => {
+      if (!armed) { armed = true; c.textContent = 'Tap again to remove all'; setTimeout(() => { armed = false; c.textContent = 'Remove all'; }, 4000); return; }
+      await clearOwn(); ownQueue = []; renderLib(); setStatus('Your music was removed from this device.');
+    });
+    row.append(c);
+  }
+  const ol = document.createElement('ol');
+  for (const e of all) {
+    const li = document.createElement('li'); li.dataset.k = 'own:' + e.id;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pl'; b.textContent = '▶'; b.setAttribute('aria-label', `Play ${e.t}`);
+    b.addEventListener('click', () => playOwn(e));
+    const body = document.createElement('div');
+    const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${e.t} — ${e.a}`;
+    const mm = document.createElement('div'); mm.className = 'm'; mm.textContent = `${(e.size / 1e6).toFixed(1)} MB · ${e.name}`;
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove ${e.t}`);
+    x.addEventListener('click', async () => { await removeOwn(e.id); ownQueue = ownQueue.filter(i => i !== e.id); renderLib(); });
+    mm.append(' · ', x);
+    body.append(tt, mm); li.append(b, body); ol.append(li);
+  }
+  sec.append(h, note, row, ol);
+  return sec;
+}
 export function renderLib() {
   const groups = [
     ['Plays here', t => t.file],
@@ -284,6 +359,7 @@ export function renderLib() {
     ['Likely Creative Commons, not yet confirmed', t => t.conf === 'likely' && !t.file],
   ];
   ui.list.textContent = '';
+  ui.list.append(ownSection());
   for (const [label, test] of groups) {
     const items = TRACKS.filter(test); if (!items.length) continue;
     const sec = document.createElement('section');
@@ -309,7 +385,8 @@ export function renderLib() {
   markLib();
 }
 function markLib() {
-  ui.list.querySelectorAll('li').forEach(li => li.classList.toggle('on', !!curTrack && !curTrack.live && li.dataset.k === key(curTrack)));
+  const k = curTrack && !curTrack.live ? (curTrack.own ? 'own:' + curTrack.id : key(curTrack)) : null;
+  ui.list.querySelectorAll('li').forEach(li => li.classList.toggle('on', !!k && li.dataset.k === k));
 }
 export const libOpen = () => !ui.lib.hidden;
 export function openLib(open) {
@@ -320,3 +397,4 @@ el('libBtn').addEventListener('click', () => openLib(ui.lib.hidden));
 el('libClose').addEventListener('click', () => openLib(false));
 renderLib();
 probe();
+loadOwn().then(() => renderLib());
