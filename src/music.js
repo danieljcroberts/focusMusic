@@ -74,7 +74,7 @@ export function tickFades(now) {
 // "Scene picks music": when the scene changes, crossfade to a track that suits it. Each scene names a preferred track and a
 // tone (calm, warm, cold, dark, bright, pulse); tracks carry a mood. The preferred track plays unless it was heard recently,
 // then another of the same mood takes its place, so a scene does not sound the same on every visit.
-export let follow = !!state.follow;
+export let follow = state.follow ?? true;   // on unless the viewer turned it off
 export function setFollow(v) { follow = v; el('follow').setAttribute('aria-pressed', String(v)); saveState({ follow: v }); }
 let sceneKey = null, sceneTone = null;
 const recent = [];

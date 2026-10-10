@@ -18,6 +18,7 @@ import { initTimer, toggleTimer } from './timer.js';
 import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
+import { openAbout, aboutOpen } from './about.js';
 
 const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
@@ -330,9 +331,10 @@ window.addEventListener('keydown', e => {
     case 'v': case 'V': setLively(!lively); break;
     case 's': case 'S': toggleFav(); break;
     case 'd': case 'D': setDrift(!drift); break;
+    case 'a': case 'A': openAbout(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (helpOpen()) showHelp(false); else if (libOpen()) openLib(false); else closeMenus(); break;
+    case 'Escape': if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
   }
 });
 

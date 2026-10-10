@@ -129,6 +129,11 @@ nav button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--ch
   padding-block: calc(env(safe-area-inset-top, 0px) + 18px) calc(env(safe-area-inset-bottom, 0px) + 18px);
 }
 .lib header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-inline: 20px; }
+.lib ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.lib ul li { display: block; padding-block: 8px; border-top: 1px solid rgba(236, 230, 218, .08); }
+.hint1 { position: fixed; z-index: 6; left: 50%; top: 22%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); display: grid; gap: 12px; justify-items: start;
+  padding: 16px 18px; background: rgba(9, 10, 14, .9); border: 1px solid var(--line); border-radius: 16px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.hint1 p { margin: 0; font-size: 13px; line-height: 1.6; }
 .lib h2 { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 26px; margin: 0; }
 .lib .intro { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 10px 0 0; padding-inline: 20px; }
 .lib .list { overflow-y: auto; margin-top: 14px; padding-inline: 20px; display: grid; gap: 18px; padding-bottom: 12px; }

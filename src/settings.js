@@ -11,6 +11,7 @@ import { diagOn, toggleDiag } from './diag.js';
 import { finishOn, setFinish } from './finish.js';
 import { weekLine } from './timer.js';
 import { registerMenu, closeMenus } from './menus.js';
+import { openAbout } from './about.js';
 
 const el = id => document.getElementById(id);
 const setBtn = el('setBtn'), setMenu = el('setMenu'), wx = el('wx'), wxAuto = el('wxAuto');
@@ -74,6 +75,7 @@ const help = el('help');
 export function showHelp(on = help.hidden) { help.hidden = !on; if (on) el('helpClose').focus(); }
 export const helpOpen = () => !help.hidden;
 el('helpBtn').addEventListener('click', () => { closeMenus(); showHelp(true); });
+el('aboutBtn').addEventListener('click', () => { closeMenus(); openAbout(true); });
 el('helpClose').addEventListener('click', () => showHelp(false));
 const diagBtn = el('diagBtn');
 let drawDiag = () => {};

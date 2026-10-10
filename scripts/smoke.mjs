@@ -67,6 +67,7 @@ await page.waitForTimeout(300);
 // Second pass with real motion: the animation loop runs, and every scene must yield a thumbnail (so it drew something).
 const page2 = await browser.newPage({ viewport: { width: 640, height: 360 } });
 page2.on('pageerror', e => problems.push(`page error (motion): ${e.message}`));
+page2.on('response', r => { if (r.status() >= 400) console.log('HTTP', r.status(), r.url()); });
 page2.on('console', m => { if (m.type() === 'error' && !/three|jsdelivr|archive\.org|fonts\.g|net::ERR|open-meteo/.test(m.text())) problems.push(`console error (motion): ${m.text()}`); });
 await page2.goto(url, { waitUntil: 'load' });
 await page2.waitForTimeout(800);
