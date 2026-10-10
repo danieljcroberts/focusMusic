@@ -83,10 +83,10 @@ export function setScene(k, tone) { sceneKey = k; sceneTone = tone || null; }
 export const sceneTrack = () => byKey[sceneKey];
 export function pickFor(key, tone) {
   const pref = byKey[key];
-  if (pref && playable(pref) && !recent.includes(key)) return pref;
-  const pool = TRACKS.filter(t => playable(t) && t.mood === tone && !recent.includes(t.a + '|' + t.t));
+  if (pref && allowed(pref) && !recent.includes(key)) return pref;
+  const pool = TRACKS.filter(t => allowed(t) && t.mood === tone && !recent.includes(t.a + '|' + t.t));
   if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
-  return pref && playable(pref) ? pref : null;
+  return pref && allowed(pref) ? pref : null;
 }
 export function onSceneChange() {
   // Only while music is playing: a scene change never starts music on its own, and a deliberate pause stays paused.
@@ -96,7 +96,7 @@ export function onSceneChange() {
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 export const currentTrack = () => curTrack;
 
-const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'), mix: el('srcMix'), live: el('srcLive'), own: el('srcOwn'), vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
+const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -109,7 +109,20 @@ function setMeta(parts, href, label) {
   ui.meta.textContent = parts.filter(Boolean).join(' · ');
   if (href) ui.meta.append(' · ', link(href, label));
 }
-function syncSeg() { for (const k of ['mix', 'live', 'own']) ui[k].setAttribute('aria-pressed', String(source === k)); }
+// Which sources Next, gapless changes and Drift draw from: any combination, at least one. Included = the bundled tracks,
+// Streamed = the shared library's tracks played from archive.org, Live archive = random finds, Your music = files on this device.
+const SRC = ['inc', 'str', 'live', 'own'];
+const src = Object.assign({ inc: true, str: true, live: false, own: false }, state.sources || {});
+const srcBtns = [...document.querySelectorAll('[data-src]')];
+function syncSeg() { srcBtns.forEach(b => b.setAttribute('aria-pressed', String(!!src[b.dataset.src]))); }
+function setSource(k, on) {
+  if (!on && src[k] && SRC.filter(x => src[x]).length === 1) { setStatus('Keep at least one source on.'); return; }
+  src[k] = on; saveState({ sources: { ...src } }); syncSeg();
+  if (k === 'own' && on && !ownTracks().length) { setStatus('No music of your own yet. Add a folder or some files here.'); openLib(true); }
+  else if ((k === 'str' || k === 'live') && on && iaOnline === false) setStatus(BLOCKED);
+}
+srcBtns.forEach(b => b.addEventListener('click', () => setSource(b.dataset.src, !src[b.dataset.src])));
+const allowed = t => playable(t) && (t.file ? src.inc : src.str);
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
@@ -165,12 +178,6 @@ export function playTrack(t) {
   start(t.file ? M + t.file : t.stream);
   markLib();
 }
-function nextMix() {
-  const list = TRACKS.filter(playable);
-  if (!list.length) { setStatus('No playable tracks here.'); return; }
-  const i = curTrack && !curTrack.live ? list.indexOf(curTrack) : -1;
-  playTrack(list[(i + 1) % list.length]);
-}
 
 const LIVE_Q = 'collection:netlabels AND (subject:ambient OR subject:drone OR subject:downtempo OR subject:idm) AND licenseurl:*creativecommons* AND mediatype:audio';
 const iaSearch = p => 'https://archive.org/advancedsearch.php?' + new URLSearchParams({ q: LIVE_Q, output: 'json', ...p }) + '&fl%5B%5D=identifier';
@@ -220,10 +227,11 @@ async function nextLive() {
 }
 
 // Your music: shuffled, each track once before any repeats.
-let ownQueue = [], ownBlob = null;
+let ownBlob = null;
 async function playOwn(e) {
   source = 'own'; syncSeg(); setStatus('');
   curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' };
+  recent.push('own:' + e.id); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${e.t} — ${e.a}`;
   setMeta(['your music', (e.size / 1e6).toFixed(1) + ' MB']);
   announce(curTrack);
@@ -234,20 +242,35 @@ async function playOwn(e) {
   } catch (err) { setStatus("That file couldn't be opened. It may have been removed; add it again from the Library."); }
   markLib();
 }
-function nextOwn() {
-  const all = ownTracks();
-  if (!all.length) { source = 'own'; syncSeg(); setStatus('No music of your own yet. Open the Library and add a folder or some files.'); openLib(true); return; }
-  if (!ownQueue.length) ownQueue = all.map(e => e.id).sort(() => Math.random() - .5);
-  let id = ownQueue.shift();
-  if (curTrack && curTrack.own && id === curTrack.id && ownQueue.length) id = ownQueue.shift();
-  const e = all.find(x => x.id === id) || all[0];
-  playOwn(e);
+// The next track: first a source, each one that is on getting an equal share however many tracks it holds (the live archive
+// half a share, so it adds variety without taking over), then a track from it that wasn't one of the last few.
+function pickNext(relaxed = false) {
+  const isCur = k => curTrack && (curTrack.own ? 'own:' + curTrack.id : key(curTrack)) === k;
+  const ok = k => !isCur(k) && (relaxed || !recent.includes(k));
+  const pools = [];
+  const inc = src.inc ? TRACKS.filter(t => t.file && allowed(t) && ok(key(t))) : [];
+  const str = src.str ? TRACKS.filter(t => !t.file && allowed(t) && ok(key(t))) : [];
+  const own = src.own ? ownTracks().filter(e => ok('own:' + e.id)) : [];
+  if (inc.length) pools.push([1, () => playTrack(inc[Math.floor(Math.random() * inc.length)])]);
+  if (str.length) pools.push([1, () => playTrack(str[Math.floor(Math.random() * str.length)])]);
+  if (own.length) pools.push([1, () => playOwn(own[Math.floor(Math.random() * own.length)])]);
+  if (src.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
+  if (!pools.length) {
+    if (!relaxed) return pickNext(true);                       // everything was played recently: allow it again
+    if (curTrack && !curTrack.live) { if (curTrack.own) { const e = ownTracks().find(x => x.id === curTrack.id); if (e) return playOwn(e); } else if (allowed(curTrack)) return playTrack(curTrack); }
+    if (src.own && !ownTracks().length && !src.inc && !src.str && !src.live) { setStatus('No music of your own yet. Open the Library and add a folder or some files.'); openLib(true); return; }
+    setStatus(iaOnline === false && !src.inc && !src.own ? BLOCKED : 'Nothing to play from the sources that are on. Turn another one on under the player.');
+    return;
+  }
+  let r = Math.random() * pools.reduce((a, p) => a + p[0], 0);
+  for (const [w, play] of pools) { if ((r -= w) < 0) return play(); }
+  pools[pools.length - 1][1]();
 }
-export function nextTrack() { source === 'live' ? nextLive() : source === 'own' ? nextOwn() : nextMix(); }
+export function nextTrack() { pickNext(); }
 // Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
 let queued = false;
 setInterval(() => {
-  if (!hasSrc || audio.paused || queued || (source !== 'mix' && source !== 'own') || !isFinite(audio.duration) || !audio.duration) return;
+  if (!hasSrc || audio.paused || queued || source === 'live' || !isFinite(audio.duration) || !audio.duration) return;
   if (audio.duration - audio.currentTime < 8) { queued = true; nextTrack(); }
 }, 500);
 // The sleep timer fades everything out over `seconds` and stops it.
@@ -262,9 +285,8 @@ for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === 
 export function togglePlay() {
   if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
   if (resume) { const r = resume; resume = null; if (playable(r)) { playTrack(r); return; } resumeAt = null; }
-  if (source === 'live') nextLive();
-  else if (source === 'own') nextOwn();
-  else { const t = pickFor(sceneKey, sceneTone); playTrack(t || TRACKS.find(playable)); }
+  if (follow) { const t = pickFor(sceneKey, sceneTone); if (t) { playTrack(t); return; } }   // the scene's track, if its source is on
+  pickNext();
 }
 // The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
 let scrubbing = false;
@@ -290,12 +312,7 @@ for (const p of players) {
 
 ui.play.addEventListener('click', togglePlay);
 ui.next.addEventListener('click', nextTrack);
-ui.mix.addEventListener('click', () => { if (source === 'mix') return; source = 'mix'; syncSeg(); setStatus(''); nextMix(); });
-ui.own.addEventListener('click', () => { if (source === 'own' && hasSrc && !audio.paused) return; nextOwn(); });
-ui.live.addEventListener('click', () => {
-  if (iaOnline === false) { setStatus(BLOCKED); return; }
-  source = 'live'; syncSeg(); nextLive();
-});
+syncSeg();
 try { const v = localStorage.getItem('sw-volume'); if (v !== null) ui.vol.value = v; } catch (e) {}
 master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g));
 ui.vol.addEventListener('input', () => { master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g)); try { localStorage.setItem('sw-volume', ui.vol.value); } catch (e) {} });
@@ -320,8 +337,9 @@ function ownSection() {
     inp.addEventListener('change', async () => {
       if (!inp.files.length) return;
       const n = await addOwn(inp.files, (i, of, name) => setStatus(`Adding ${i} of ${of}: ${name}`));
-      setStatus(n ? `Added ${n} track${n === 1 ? '' : 's'}. Choose "Your music" under the player to hear them.` : 'Nothing new to add: no audio files, or they were already here.');
-      ownQueue = []; renderLib();
+      if (n && !src.own) setSource('own', true);
+      setStatus(n ? `Added ${n} track${n === 1 ? '' : 's'}. Your music is on as a source; press Next or tap a track to hear it.` : 'Nothing new to add: no audio files, or they were already here.');
+      renderLib();
     });
     row.append(b, inp);
   };
@@ -331,7 +349,7 @@ function ownSection() {
     let armed = false;
     c.addEventListener('click', async () => {
       if (!armed) { armed = true; c.textContent = 'Tap again to remove all'; setTimeout(() => { armed = false; c.textContent = 'Remove all'; }, 4000); return; }
-      await clearOwn(); ownQueue = []; renderLib(); setStatus('Your music was removed from this device.');
+      await clearOwn(); renderLib(); setStatus('Your music was removed from this device.');
     });
     row.append(c);
   }
@@ -344,7 +362,7 @@ function ownSection() {
     const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${e.t} — ${e.a}`;
     const mm = document.createElement('div'); mm.className = 'm'; mm.textContent = `${(e.size / 1e6).toFixed(1)} MB · ${e.name}`;
     const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove ${e.t}`);
-    x.addEventListener('click', async () => { await removeOwn(e.id); ownQueue = ownQueue.filter(i => i !== e.id); renderLib(); });
+    x.addEventListener('click', async () => { await removeOwn(e.id); renderLib(); });
     mm.append(' · ', x);
     body.append(tt, mm); li.append(b, body); ol.append(li);
   }

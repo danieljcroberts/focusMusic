@@ -150,6 +150,8 @@ nav button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--ch
 .lib .pl { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; font-size: 12px; }
 .lib .pl:disabled { opacity: .3; cursor: default; }
 .lib li.on .t { color: var(--accent); }
+.sources { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.sources .lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .lib .own .note { font-size: 11px; line-height: 1.6; color: var(--muted); margin: 0 0 8px; }
 .lib .own .row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .lib .own .rm { font: inherit; font-size: 11px; color: var(--muted); background: none; border: 0; padding: 0; text-decoration: underline; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; cursor: pointer; }
@@ -180,7 +182,7 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
   h1 { font-size: clamp(30px, 9vw, 42px); }
   .bottom { gap: 10px; }
   .only-phone { display: inline-flex; }
-  body:not(.more) .desc, body:not(.more) .credits, body:not(.more) .bgrow, body:not(.more) .np, body:not(.more) .player .seg,
+  body:not(.more) .desc, body:not(.more) .credits, body:not(.more) .bgrow, body:not(.more) .np, body:not(.more) .player .sources,
   body:not(.more) #vol, body:not(.more) .amb, body:not(.more) #follow, body:not(.more) #driftBtn, body:not(.more) #libBtn, body:not(.more) #shareBtn { display: none; }
   body.more .bottom { max-height: 72vh; overflow-y: auto; padding: 14px; margin-inline: -14px; border-radius: 18px 18px 0 0;
     background: rgba(9, 10, 14, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
