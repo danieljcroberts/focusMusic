@@ -13,7 +13,7 @@ let fetched = 0, failed = 0;
 for (const t of TRACKS.filter(t => t.file)) {
   const dest = join(dir, t.file);
   if (existsSync(dest) && statSync(dest).size > 0) { console.log(`have    ${t.file}`); continue; }
-  if (!t.stream) { console.error(`no URL  ${t.file}`); failed++; continue; }
+  if (!t.stream) { console.error(`by hand ${t.file}  (${t.src})`); continue; }   // Bandcamp releases cannot be fetched by script
   process.stdout.write(`fetch   ${t.file} … `);
   try {
     const r = await fetch(t.stream, { redirect: 'follow' });

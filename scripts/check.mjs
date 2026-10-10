@@ -28,7 +28,7 @@ for (const t of TRACKS) {
   if (!CONF.has(t.conf)) err(`track has unknown conf "${t.conf}": ${k}`);
   if (!t.src) err(`track has no source link: ${k}`);
   if (!TONES.has(t.mood)) err(`track has an unknown mood "${t.mood}": ${k}`);
-  if (t.file && !t.stream) warn(`bundled track has no stream URL to fetch from: ${k}`);
+  if (t.file && !t.stream && !/bandcamp\.com/.test(t.src || '')) warn(`bundled track has no stream URL to fetch from: ${k}`);   // Bandcamp releases are downloaded by hand
 }
 
 // Scenes

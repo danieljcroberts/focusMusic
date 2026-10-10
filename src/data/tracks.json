@@ -120,8 +120,10 @@
     "ep": [
       "3"
     ],
-    "src": "https://milestilmann.bandcamp.com/track/particle-song-1",
-    "conf": "confirmed"
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "conf": "confirmed",
+    "file": "miles-tilmann-particle-song-1.mp3",
+    "note": "From the XMASEP 2 release on Bandcamp"
   },
   {
     "a": "Miles Tilmann",
@@ -193,7 +195,8 @@
       "67"
     ],
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "file": "agents-of-the-culture-industry-reality-effect-kafkadub.mp3"
   },
   {
     "a": "Renniac",
@@ -239,7 +242,8 @@
       "38"
     ],
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "file": "glochids-pulse-sjilver.mp3"
   },
   {
     "a": "Holger Flinsch",
@@ -523,5 +527,148 @@
     "src": "https://agentsofthecultureindustry.bandcamp.com/",
     "conf": "likely",
     "note": "Release not found; all their releases are BY-NC 4.0"
+  },
+  {
+    "a": "Agents Of The Culture Industry",
+    "t": "Everything Is Changing",
+    "lic": "CC BY-NC 4.0",
+    "mood": "dark",
+    "ep": [],
+    "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
+    "file": "agents-of-the-culture-industry-everything-is-changing.mp3",
+    "conf": "likely",
+    "note": "Beyond Infinity, part 1 (34 min). Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Agents Of The Culture Industry",
+    "t": "Another World Is Necessary",
+    "lic": "CC BY-NC 4.0",
+    "mood": "dark",
+    "ep": [],
+    "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
+    "file": "agents-of-the-culture-industry-another-world-is-necessary.mp3",
+    "conf": "likely",
+    "note": "Beyond Infinity, part 3 (11 min). Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Glochids",
+    "t": "Smell",
+    "lic": "CC BY-NC 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://glopuntia.bandcamp.com/album/be-i-x",
+    "file": "glochids-smell.mp3",
+    "conf": "likely",
+    "note": "BE I-X. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Glochids",
+    "t": "On Gel",
+    "lic": "CC BY-NC 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://glopuntia.bandcamp.com/album/be-i-x",
+    "file": "glochids-on-gel.mp3",
+    "conf": "likely",
+    "note": "BE I-X. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Glochids",
+    "t": "Tescent",
+    "lic": "CC BY-NC 4.0",
+    "mood": "dark",
+    "ep": [],
+    "src": "https://glopuntia.bandcamp.com/album/be-i-x",
+    "file": "glochids-tescent.mp3",
+    "conf": "likely",
+    "note": "BE I-X. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Glochids",
+    "t": "Mercuset",
+    "lic": "CC BY-NC 4.0",
+    "mood": "cold",
+    "ep": [],
+    "src": "https://glopuntia.bandcamp.com/album/be-i-x",
+    "file": "glochids-mercuset.mp3",
+    "conf": "likely",
+    "note": "BE I-X (9 min). Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Glochids",
+    "t": "Plummi",
+    "lic": "CC BY-NC 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://glopuntia.bandcamp.com/album/be-i-x",
+    "file": "glochids-plummi.mp3",
+    "conf": "likely",
+    "note": "BE I-X. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Winder",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "bright",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-winder.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Mercury 2",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-mercury-2.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Alpha Chime",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-alpha-chime.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2 (10 min). Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Middle Fields",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "bright",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-middle-fields.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Particle 3",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "pulse",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-particle-3.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2. Same release as a confirmed track; the licence line on the album page still needs confirming."
+  },
+  {
+    "a": "Miles Tilmann",
+    "t": "Melt",
+    "lic": "CC BY-NC-SA 4.0",
+    "mood": "calm",
+    "ep": [],
+    "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
+    "file": "miles-tilmann-melt.mp3",
+    "conf": "likely",
+    "note": "XMASEP 2 (11 min). Same release as a confirmed track; the licence line on the album page still needs confirming."
   }
 ]

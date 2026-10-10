@@ -274,10 +274,10 @@ el('who').addEventListener('click', () => playTrack(sceneTrack()));
 
 export function renderLib() {
   const groups = [
-    ['Plays here', t => t.conf === 'confirmed' && t.file],
+    ['Plays here', t => t.file],
     ['Streams from archive.org or ccMixter', t => t.conf === 'confirmed' && !t.file && t.stream],
     ["On the artist's or label's page", t => t.conf === 'confirmed' && !t.file && !t.stream],
-    ['Likely Creative Commons, not yet confirmed', t => t.conf === 'likely'],
+    ['Likely Creative Commons, not yet confirmed', t => t.conf === 'likely' && !t.file],
   ];
   ui.list.textContent = '';
   for (const [label, test] of groups) {

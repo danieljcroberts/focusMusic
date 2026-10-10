@@ -16,7 +16,7 @@ Everything in it is either drawn in code or licensed for reuse. `CREDITS.md` lis
 
 ```sh
 npm install
-npm run fetch-music   # downloads the 8 bundled tracks (56 MB, not in git)
+npm run fetch-music   # downloads the archive.org bundled tracks (not in git); the Bandcamp ones are listed as missing and need a manual download
 npm run dev           # http://localhost:5173
 ```
 
