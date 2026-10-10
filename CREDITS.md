@@ -94,7 +94,7 @@ These are the original files from the netlabel releases on archive.org, unmodifi
 | Quiet View | Zen Savauge | CC BY-NC-ND 2.0 | https://www.subsource.de/sub/054 (Subsource) |
 | I Was Everything You Wanted Until I Quit | Khonnor | CC BY-NC-ND 1.0 | https://archive.org/details/pls001 (Please Do Something) |
 
-These were downloaded from Bandcamp by the owner and re-encoded to 192 kbps MP3, which their licences allow (BY-NC and BY-NC-SA permit derivatives; the share-alike terms are met by keeping the same licence here). The three starred tracks are the ones that appeared in the mixes; the rest are from the same releases and carry the same release licence, to be confirmed on the album page.
+These were downloaded from Bandcamp by the owner and re-encoded to 192 kbps MP3, which their licences allow (BY-NC and BY-NC-SA permit derivatives; the share-alike terms are met by keeping the same licence here). The three starred tracks are the ones that appeared in the mixes; the rest are from the same releases; the owner confirmed each album page's licence line on 2026-10-10.
 
 | Release | Tracks | Licence | Source |
 |---|---|---|---|
@@ -102,7 +102,7 @@ These were downloaded from Bandcamp by the owner and re-encoded to 192 kbps MP3,
 | Glochids – BE I-X | Smell, Pulse Sjilver ★, On Gel, Tescent, Mercuset, Plummi | CC BY-NC 4.0 | https://glopuntia.bandcamp.com/album/be-i-x |
 | Miles Tilmann – XMASEP 2 | Particle Song 1 ★, Winder, Mercury 2, Alpha Chime, Middle Fields, Particle 3, Melt | CC BY-NC-SA 4.0 | https://milestilmann.bandcamp.com/album/xmasep-2 |
 
-These were downloaded from Bandcamp by the owner and re-encoded to 192 kbps MP3, which their licences allow (BY-NC and BY-NC-SA permit derivatives; the share-alike terms are met by keeping the same licence here). The three starred tracks are the ones that appeared in the mixes; the rest are from the same releases and carry the same release licence, to be confirmed on the album page.
+These were downloaded from Bandcamp by the owner and re-encoded to 192 kbps MP3, which their licences allow (BY-NC and BY-NC-SA permit derivatives; the share-alike terms are met by keeping the same licence here). The three starred tracks are the ones that appeared in the mixes; the rest are from the same releases; the owner confirmed each album page's licence line on 2026-10-10.
 
 | Release | Tracks | Licence | Source |
 |---|---|---|---|
