@@ -71,7 +71,7 @@
           <button type="button" id="offlineBtn">Save music for offline use (250 MB)</button>
           <span class="lbl">Look</span>
           <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
-          <div class="row"><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button></div>
+          <div class="row"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button></div>
         </div>
       </div>
       <button type="button" class="icon-btn tog" id="liveBtn" aria-pressed="false" title="Faster, more music-reactive motion">Lively</button>
@@ -111,7 +111,7 @@
     <p class="status" id="status" role="status" aria-live="polite"></p>
     <div class="groups" id="groups" role="tablist" aria-label="Scene groups"></div>
     <nav id="nav" aria-label="Scenes"></nav>
-    <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · S favourite · D drift · V lively · T timer · L library · F full screen</p>
+    <p class="hint">← → or swipe for scenes · Space play/pause · N next track · M scene picks music · A about and credits · S favourite · D drift · V lively · T timer · L library · F full screen</p>
   </div>
 </div>
 
@@ -130,10 +130,19 @@
     <dt>L</dt><dd>Music library</dd>
     <dt>F</dt><dd>Full screen</dd>
     <dt>`</dt><dd>Diagnostics</dd>
+    <dt>A</dt><dd>About and credits</dd>
     <dt>?</dt><dd>This list</dd>
     <dt>Esc</dt><dd>Close panels</dd>
   </dl>
   <button type="button" class="pbtn" id="helpClose">Close</button>
+</div>
+<aside class="lib" id="about" hidden aria-label="About and credits">
+  <header><h2>About and credits</h2><button type="button" class="pbtn" id="aboutClose">Close</button></header>
+  <div class="list" id="aboutList"></div>
+</aside>
+<div class="hint1" id="hint1" hidden role="dialog" aria-label="Getting started">
+  <p><b>Welcome to Slow Windows.</b> Press <b>Play</b> for music that suits the scene. Use ← → or swipe for other scenes. The controls fade when you're still; move or tap to bring them back.</p>
+  <button type="button" class="pbtn primary" id="hint1Ok">Got it</button>
 </div>
 <aside class="lib" id="lib" hidden aria-label="Music library">
   <header><h2>Music from the mixes</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
