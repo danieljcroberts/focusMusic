@@ -2,7 +2,7 @@
 // its own, the next block waits for you. It survives a reload: a running block picks up where the clock says it should be.
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
-import { audioCtx, setDuck } from './music.js';
+import { audioCtx, setDuck, setLockLine } from './music.js';
 import { registerMenu, closeMenus } from './menus.js';
 
 const el = id => document.getElementById(id);
@@ -22,7 +22,14 @@ function draw() {
   tBtn.setAttribute('aria-pressed', String(timer.running));
   document.body.classList.toggle('break', timer.mode !== 'focus');
   el('tCount').textContent = timer.count ? `${timer.count} block${timer.count === 1 ? '' : 's'} today` : '';
+  // The ring in the corner while the controls are hidden, and a line on the lock screen.
+  const total = (timer.mode === 'focus' ? timer.f : timer.mode === 'long' ? timer.lb : timer.b) * 60;
+  const active = timer.running || timer.mode !== 'focus';
+  ring.toggleAttribute('hidden', !active); ring.classList.toggle('break', timer.mode !== 'focus');
+  ringFill.style.strokeDashoffset = String(100 * Math.max(0, Math.min(1, timer.left / total)));
+  setLockLine(active ? `${label} · ${Math.ceil(Math.max(0, timer.left) / 60)} min left` : '');
 }
+const ring = el('ring'), ringFill = el('ringFill');
 function chime(notes) {
   const c = audioCtx(); if (!c) return;
   try {
@@ -94,4 +101,8 @@ el('tApply').addEventListener('click', () => {
 });
 el('tReset').addEventListener('click', () => { reset(); closeMenus(); });
 window.addEventListener('pagehide', save);
+// Presets set the durations without touching the count.
+export const timerDurations = () => ({ f: timer.f, b: timer.b, lb: timer.lb, every: timer.every });
+export function setTimerDurations(d) { Object.assign(timer, { f: d.f, b: d.b, lb: d.lb, every: d.every }); if (!timer.running) { timer.mode = 'focus'; timer.left = timer.f * 60; } draw(); save(); }
+export const timerRunning = () => timer.running;
 export function initTimer(opts) { sceneName = opts.sceneName; setDuck(timer.mode !== 'focus'); draw(); }

@@ -19,6 +19,8 @@ import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
+import { initPresets } from './presets.js';
+import { timerRunning } from './timer.js';
 
 const el = id => document.getElementById(id);
 const byKey = Object.fromEntries(TRACKS.map(t => [t.a + '|' + t.t, t]));
@@ -278,23 +280,31 @@ setInvalidate(() => { if (still) render(0); });
 initTimer({ sceneName: () => SCENES[cur].name });
 initDrift({ go, current: () => cur, cards });
 initSettings({ drawDiag });
+initPresets({
+  sceneName: () => SCENES[cur].name,
+  goToName: name => { const i = SCENES.findIndex(s => s.name === name); if (i >= 0) go(i); },
+  syncAmbience: () => { amb.value = ambienceLevel; amb.dispatchEvent(new Event('input')); },
+  lively: () => lively, setLively,
+});
 
 const clock = el('clock');
 const tick = () => { const d = new Date(); clock.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
 tick(); setInterval(tick, 10000);
 
-/* The controls fade after five quiet seconds. A mouse move, a key or a tap brings them back; swiping between scenes
-   and the arrow keys do not, so you can flip through scenes without the menus. On touch, a tap on the scene toggles them. */
-let idleTimer;
-function wake() {
+/* The controls fade after a few quiet seconds (five with a mouse, three on touch). A mouse move, a key or a tap or upward
+   swipe brings them back; sideways swipes and the arrow keys change scene without them. Hiding them by hand is remembered. */
+let idleTimer, lastTouch = 0;
+function wake(ms) {
   wakeFromSleep();
   document.body.classList.remove('idle');
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(hide, 5000);
+  idleTimer = setTimeout(hide, ms || (performance.now() - lastTouch < 1500 ? 3000 : 5000));
   keepAwake();
 }
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
-const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag');
+function showByHand() { saveState({ hidden: false }); wake(3000); }
+function hideByHand() { saveState({ hidden: true }); hide(); }
+const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 window.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
 window.addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) wake(); else { wakeFromSleep(); keepAwake(); } }, { passive: true });
@@ -343,26 +353,65 @@ window.addEventListener('keydown', e => {
     case 's': case 'S': toggleFav(); break;
     case 'd': case 'D': setDrift(!drift); break;
     case 'a': case 'A': openAbout(); break;
+    case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
+    case 'Escape': if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
   }
 });
 
 /* A horizontal swipe on the scene changes it; swipes that start on the controls or the library are theirs. */
-let swipe = null;
+// Sideways swipe: next or previous scene, with a small tick. Up: show the controls. Down: hide them.
+// Tap: show or hide. Double-tap: play or pause. Long press: the scene picker.
+let swipe = null, tapTimer = null, pressTimer = null;
+const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
 window.addEventListener('touchstart', e => {
-  swipe = onScene(e) ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY, at: performance.now() } : null;
+  lastTouch = performance.now();
+  if (!onScene(e) || e.touches.length > 1) { swipe = null; return; }
+  const p = e.changedTouches[0];
+  swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false };
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => { if (swipe) { swipe.long = true; haptic(); picker.style.pointerEvents = 'none'; openPicker(); } }, 550);
+}, { passive: true });
+window.addEventListener('touchmove', e => {
+  if (!swipe) return;
+  const p = e.changedTouches[0];
+  if (Math.abs(p.clientX - swipe.x) > 12 || Math.abs(p.clientY - swipe.y) > 12) clearTimeout(pressTimer);
 }, { passive: true });
 window.addEventListener('touchend', e => {
+  clearTimeout(pressTimer);
   if (!swipe) return;
-  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y, ms = performance.now() - swipe.at; swipe = null;
+  const p = e.changedTouches[0], s0 = swipe; swipe = null;
+  if (s0.long) { setTimeout(() => { picker.style.pointerEvents = ''; }, 350); return; }   // the lift would otherwise click a tile
+  const dx = p.clientX - s0.x, dy = p.clientY - s0.y, ms = performance.now() - s0.at;
   wakeFromSleep(); keepAwake();
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));   // swipe: next or previous scene, controls stay as they are
-  else if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {                                // tap: show or hide the controls
-    if (document.body.classList.contains('idle')) wake(); else hide();
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); go(cur + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) showByHand(); else hideByHand(); return; }
+  if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {
+    if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; togglePlay(); caption(musicPlaying ? 'Paused' : 'Playing'); return; }   // double-tap
+    tapTimer = setTimeout(() => { tapTimer = null; if (document.body.classList.contains('idle')) showByHand(); else hideByHand(); }, 260);
   }
 }, { passive: true });
+
+/* The scene picker: every scene as a thumbnail, grouped */
+const picker = el('picker'), pickerGrid = el('pickerGrid');
+function openPicker() {
+  pickerGrid.textContent = '';
+  let g = '';
+  SCENES.forEach((s, i) => {
+    if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; pickerGrid.append(h); }
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(i === cur));
+    const t = document.createElement('span'); t.className = 'pt'; t.style.background = s.sw;
+    if (thumbs[s.name]) { const im = document.createElement('img'); im.alt = ''; im.src = thumbs[s.name]; t.append(im); }
+    b.append(t, s.name);
+    b.addEventListener('click', () => { closePicker(); go(i); });
+    pickerGrid.append(b);
+  });
+  picker.hidden = false;
+  const on = pickerGrid.querySelector('[aria-pressed="true"]'); if (on) on.scrollIntoView({ block: 'center' });
+}
+function closePicker() { picker.hidden = true; }
+el('pickerClose').addEventListener('click', closePicker);
 
 // A scene link in the hash switches scenes (so the back button walks through them).
 window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i >= 0) go(i); });
@@ -377,5 +426,9 @@ show(cur);
 updateText();
 resize();
 if (still) render(0); else { render(0); requestAnimationFrame(t2 => { last = t2; requestAnimationFrame(frame); }); }
-wake();
+if (state.hidden && el('hint1').hidden) hide(); else wake();   // start as you left it, unless the first-run hint is up
+// App-icon shortcuts: ?start=focus starts a focus block.
+const q = new URLSearchParams(location.search);
+if (q.get('start') === 'focus' && !timerRunning()) { toggleTimer(); caption('Focus block started'); }
+if (location.search) history.replaceState(null, '', location.pathname + location.hash);
 scheduleThumb();

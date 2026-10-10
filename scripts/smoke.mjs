@@ -60,7 +60,8 @@ for (let i = 0; i < total; i++) {
 // Controls that should not throw.
 await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowLeft');
 await page.mouse.move(200, 200); await page.mouse.move(220, 210);   // arrows leave the controls hidden; a mouse move shows them
-await page.click('#lowBtn'); await page.waitForTimeout(300); await page.click('#lowBtn');
+await page.click('#setBtn'); await page.click('#lowBtn'); await page.waitForTimeout(300); await page.click('#lowBtn'); await page.click('#setBtn');   // Low power lives in Settings
+await page.keyboard.press('g'); await page.waitForTimeout(200); await page.keyboard.press('Escape');   // scene picker opens and closes
 await page.click('#libBtn'); await page.keyboard.press('Escape');
 await page.click('#tStart'); await page.click('#tStart');
 await page.waitForTimeout(300);

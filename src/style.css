@@ -53,6 +53,8 @@ body.idle { cursor: none; }
 .tmenu { position: absolute; top: calc(100% + 8px); right: 0; display: grid; gap: 6px; padding: 8px; min-width: 150px; z-index: 6;
   background: rgba(9, 10, 14, .94); border: 1px solid var(--line); border-radius: 14px; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .tmenu button { border-radius: 10px; text-align: left; padding: 8px 12px; }
+/* Menus never run off the screen: they scroll inside it */
+.tmenu { max-height: calc(100vh - 80px - env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain; }
 .tmenu .lbl { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding: 4px 6px 0; }
 #dim { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 2.5s ease; }
 body.break #dim { opacity: .42; }
@@ -166,8 +168,8 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
   nav button .k { display: none; }
   .hint { display: none; }
 }
-/* Phone layout: the scene stays visible. Title, one row of controls and the strip; everything else behind More. */
-@media (max-width: 640px) {
+/* Phone layout, upright or sideways: the scene stays visible. Title, one row of controls and the strip; everything else behind More. */
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
   .chrome { padding-inline: 14px; }
   .top { gap: 8px 10px; font-size: 11px; }
   .brand { display: none; }
@@ -196,6 +198,45 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
 .help dt { color: var(--accent); font-variant-numeric: tabular-nums; }
 .help dd { margin: 0; }
 body.sleep #dim { opacity: .72; }
+/* Timer ring: shown while a block runs and the controls are hidden */
+.ring { position: fixed; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; width: 30px; height: 30px; transform: rotate(-90deg); opacity: 0; transition: opacity .9s ease; pointer-events: none; }
+body.idle .ring { opacity: .75; }
+.ring circle { fill: none; stroke-width: 3; }
+.ring .track { stroke: rgba(236, 230, 218, .18); }
+.ring .fill { stroke: var(--accent); stroke-dasharray: 100; stroke-linecap: round; transition: stroke-dashoffset .9s linear; }
+.ring.break .fill { stroke: #9fc0ff; }
+/* Scene picker: a grid of every scene */
+.picker { position: fixed; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: rgba(7, 8, 12, .94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.picker header { display: flex; justify-content: space-between; align-items: baseline; }
+.picker h2 { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 26px; margin: 0; }
+.picker .grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; align-content: start; }
+.picker .grid h3 { grid-column: 1 / -1; margin: 10px 0 0; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.picker .grid button { display: grid; gap: 6px; padding: 6px; border-radius: 12px; text-align: left; font-size: 12px; }
+.picker .grid button[aria-pressed="true"] { border-color: var(--accent); }
+.picker .grid .pt { aspect-ratio: 16 / 9; width: 100%; border-radius: 8px; overflow: hidden; display: block; }
+.picker .grid .pt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tmenu .row.wrap { flex-wrap: wrap; gap: 6px; }
+.tmenu input[type="text"] { flex: 1; min-width: 0; font: inherit; font-size: 12px; color: var(--text); background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets:empty::before { content: "None yet. Set things up how you like, name it and save."; font-size: 11px; color: var(--muted); }
+.presets .p { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.presets .p button { border: 0; border-radius: 0; padding: 6px 10px; }
+.presets .p .x { opacity: .6; padding-inline: 8px; }
+/* 8. Phones: hardware buttons set the music volume; the one slider left is the ambience mix */
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) { #vol { display: none !important; } }
+/* 7. Phones held sideways: a narrow column on the left, the scene on the right */
+@media (orientation: landscape) and (max-height: 520px) {
+  .chrome { padding-block: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  .brand, .hint, .groups { display: none; }
+  .bottom { max-width: min(420px, 55vw); gap: 8px; }
+  h1 { font-size: 30px; }
+  .desc { display: none; }
+  nav button.card { width: 84px; padding: 4px 4px 6px; }
+  nav .thumb { width: 76px; height: 42px; }
+  body.more .bottom { max-height: 86vh; margin-inline: 0; }
+  .tmenu { left: auto; right: 10px; width: min(380px, 60vw); }
+}
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); transform: translateX(-50%); z-index: 5; pointer-events: none;
   font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 300; font-size: 26px; color: var(--text);
   text-shadow: 0 2px 18px rgba(0, 0, 0, .6); opacity: 0; transition: opacity .5s ease; white-space: nowrap; }

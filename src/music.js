@@ -88,7 +88,8 @@ export function pickFor(key, tone) {
   return pref && playable(pref) ? pref : null;
 }
 export function onSceneChange() {
-  if (!follow || source !== 'mix') return;
+  // Only while music is playing: a scene change never starts music on its own, and a deliberate pause stays paused.
+  if (!follow || source !== 'mix' || !hasSrc || audio.paused) return;
   const t = pickFor(sceneKey, sceneTone); if (t && t !== curTrack) playTrack(t);
 }
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
@@ -113,11 +114,14 @@ function syncSeg() { ui.mix.setAttribute('aria-pressed', String(source === 'mix'
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
 let artwork = () => null;   // main.js supplies the current scene's thumbnail
 export function setArtworkSource(fn) { artwork = fn; }
+// The focus timer's state, shown on the lock screen in place of the album line while a block runs.
+let lockLine = '';
+export function setLockLine(text) { if (text === lockLine) return; lockLine = text; announce(); }
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
     const art = artwork();
-    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic, artwork: art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
+    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
   } catch (e) {}
 }
 if (ms) {
