@@ -17,7 +17,7 @@ async function load() {
 }
 
 // build(THREE, ADDONS) returns { scene, camera, update(t, dt), tone?, exposure? }.
-function threeScene(build) {
+export function threeScene(build) {
   let st = null;
   function size() {
     if (!renderer || !st) return;
@@ -39,7 +39,7 @@ function threeScene(build) {
 }
 
 // A soft round dot for point sprites.
-function dotTexture(THREE) {
+export function dotTexture(THREE) {
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.4, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');

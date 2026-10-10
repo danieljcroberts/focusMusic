@@ -60,7 +60,8 @@ src/main.js           boot, scene switching, timer, keys, swipe, idle and wake l
 src/music.js          players, crossfades, the library and the Internet Archive live source
 src/data/scenes.js    scene metadata: names, descriptions, art credits, paired tracks
 src/data/tracks.json  the Creative Commons tracks with licence, episodes and source
-src/scenes/           the renderers: drawn.js, places.js, glass.js, parallax.js, three-scenes.js, trip.js, video.js
+src/scenes/           the renderers: drawn.js, places.js, glass.js, interiors.js, outdoors.js, power.js, parallax.js,
+                      cozy.js, cosmos.js, three-scenes.js, trip.js, abstract.js, video.js
 public/assets/scenes  scene art (in git)
 public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke

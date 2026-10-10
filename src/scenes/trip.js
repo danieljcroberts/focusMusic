@@ -22,7 +22,7 @@ vec3 hsv(float h, float s, float v){ vec3 k = abs(fract(vec3(h) + vec3(0., 2. / 
 
 // One full-screen shader on its own stage. o.speed scales the scene clock, o.res caps the render scale,
 // o.spectrum uploads the analyser's bins as uSpec, o.before(t, dt, gl, u) sets scene uniforms.
-function shaderScene(fs, o = {}) {
+export function shaderScene(fs, o = {}) {
   let stage, kit, failed = false, clock = 0, specC, specG, specIm;
   const u = {}, smooth = new Float32Array(256);
   return {

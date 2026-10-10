@@ -8,6 +8,12 @@ import { parallaxScene, driftScene, skyExtras } from './parallax.js';
 import { oceanScene, snowfallScene, starfieldScene } from './three-scenes.js';
 import { lighthouseScene, trainScene, stormScene, cloudsScene, pondScene, aquariumScene } from './places.js';
 import { videoScene } from './video.js';
+import { cleanPowerScene } from './power.js';
+import { tramScene, libraryScene, lamproomScene, portholeScene, greenhouseNightScene, cabinScene } from './interiors.js';
+import { koiScene, zenScene, desertScene, bambooScene, lanternsScene, rooftopsScene, harbourScene, firefliesScene, volcanoScene } from './outdoors.js';
+import { saturnScene, orreryScene, blackholeScene, cometScene, deepfieldScene, marsScene } from './cosmos.js';
+import { inkScene, reactionScene, flowScene, voronoiScene, scopeScene, murmurationScene, ferrofluidScene } from './abstract.js';
+import { pixelTrainScene, pierScene, arcadeScene, crtRainScene, catScene, recordScene, typewriterScene, jellyfishScene } from './cozy.js';
 import { lavaScene, kaleidoScene, marbleScene, mandelScene, tunnelScene, spectrumScene, mandalaScene, plasmaScene, nebulaScene } from './trip.js';
 import { rainImprovedScene, snowScene } from './glass.js';
 
@@ -29,6 +35,43 @@ const FACTORIES = {
   clouds: cloudsScene,
   pond: pondScene,
   aquarium: aquariumScene,
+  cleanPower: cleanPowerScene,
+  tram: tramScene,
+  library: libraryScene,
+  lamproom: lamproomScene,
+  porthole: portholeScene,
+  greenhouseNight: greenhouseNightScene,
+  cabin: cabinScene,
+  koi: koiScene,
+  zen: zenScene,
+  desert: desertScene,
+  bamboo: bambooScene,
+  lanterns: lanternsScene,
+  rooftops: rooftopsScene,
+  harbour: harbourScene,
+  fireflies: firefliesScene,
+  volcano: volcanoScene,
+  saturn: saturnScene,
+  orrery: orreryScene,
+  blackhole: blackholeScene,
+  comet: cometScene,
+  deepfield: deepfieldScene,
+  mars: marsScene,
+  ink: inkScene,
+  reaction: reactionScene,
+  flow: flowScene,
+  voronoi: voronoiScene,
+  scope: scopeScene,
+  murmuration: murmurationScene,
+  ferrofluid: ferrofluidScene,
+  pixeltrain: pixelTrainScene,
+  pier: pierScene,
+  arcade: arcadeScene,
+  crtrain: crtRainScene,
+  cat: catScene,
+  record: recordScene,
+  typewriter: typewriterScene,
+  jellyfish: jellyfishScene,
 
   woods: () => parallaxScene({ bw: 272, bh: 160, bg: '#2a170c', layers: [
     { src: 'woods-back.png', v: 2 }, { src: 'woods-lights.png', v: 4, alpha: t => .65 + .35 * Math.sin(t * 1.3) },
