@@ -273,7 +273,7 @@ function frame(now) {
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
   tickDrift(now); tickSleep(now);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
-  render(dt);
+  if (picker.hidden) render(dt);   // nothing to draw behind the full-screen scene grid
   requestAnimationFrame(frame);
 }
 if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); }, 100);
@@ -388,7 +388,7 @@ window.addEventListener('touchstart', e => {
   const edge = p.clientX > W * (1 - EDGE) ? 'right' : p.clientX < W * EDGE ? 'left' : null;
   swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false, edge, drag: false, v0: edge === 'right' ? volume() : ambienceLevel };
   clearTimeout(pressTimer);
-  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; haptic(); picker.style.pointerEvents = 'none'; openPicker(); } }, 550);
+  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; holding = true; haptic(); openPicker(); } }, 550);
 }, { passive: true });
 window.addEventListener('touchmove', e => {
   if (!swipe) return;
@@ -402,11 +402,14 @@ window.addEventListener('touchmove', e => {
     else { setAmbienceLevel(v); amb.value = v; amb.dispatchEvent(new Event('input')); showLevel('left', 'Ambience', v); }
   }
 }, { passive: true });
+// A cancelled touch (the browser took it over, or something opened under the finger) simply ends the gesture.
+window.addEventListener('touchcancel', () => { clearTimeout(pressTimer); if (holding) { holding = false; liftAt = performance.now(); } swipe = null; }, { passive: true });
 window.addEventListener('touchend', e => {
   clearTimeout(pressTimer);
+  if (holding) { holding = false; liftAt = performance.now(); }
   if (!swipe) return;
   const p = e.changedTouches[0], s0 = swipe; swipe = null;
-  if (s0.long) { setTimeout(() => { picker.style.pointerEvents = ''; }, 350); return; }   // the lift would otherwise click a tile
+  if (s0.long) return;
   if (s0.drag) { haptic(); return; }
   const dx = p.clientX - s0.x, dy = p.clientY - s0.y, ms = performance.now() - s0.at;
   wakeFromSleep(); keepAwake();
@@ -426,22 +429,34 @@ window.addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-/* The scene picker: every scene as a thumbnail, grouped */
+/* The scene picker: every scene as a thumbnail, grouped. Built once; reopening only updates the current scene and new
+   thumbnails. While it is open the scene behind stops drawing, so scrolling the grid stays smooth. */
 const picker = el('picker'), pickerGrid = el('pickerGrid');
-function openPicker() {
-  pickerGrid.textContent = '';
+// holding: the finger that opened the grid is still down; liftAt: when it came up. Taps are ignored until just after the lift.
+let pickerTiles = null, holding = false, liftAt = 0;
+function buildPicker() {
+  pickerTiles = [];
   let g = '';
   SCENES.forEach((s, i) => {
     if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; pickerGrid.append(h); }
-    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(i === cur));
+    const b = document.createElement('button'); b.type = 'button';
     const t = document.createElement('span'); t.className = 'pt'; t.style.background = s.sw;
-    if (thumbs[s.name]) { const im = document.createElement('img'); im.alt = ''; im.src = thumbs[s.name]; t.append(im); }
+    const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.hidden = true; t.append(im);
     b.append(t, s.name);
-    b.addEventListener('click', () => { closePicker(); go(i); });
-    pickerGrid.append(b);
+    // The lift of the long press that opened the grid would otherwise pick whatever tile is under the finger.
+    b.addEventListener('click', () => { if (holding || performance.now() - liftAt < 400) return; closePicker(); go(i); });
+    pickerGrid.append(b); pickerTiles.push({ b, im });
+  });
+}
+function openPicker() {
+  if (!pickerTiles) buildPicker();
+  pickerTiles.forEach(({ b, im }, i) => {
+    b.setAttribute('aria-pressed', String(i === cur));
+    const url = thumbs[SCENES[i].name];
+    if (url && im.getAttribute('src') !== url) { im.src = url; im.hidden = false; }
   });
   picker.hidden = false;
-  const on = pickerGrid.querySelector('[aria-pressed="true"]'); if (on) on.scrollIntoView({ block: 'center' });
+  pickerTiles[cur].b.scrollIntoView({ block: 'center' });
 }
 function closePicker() { picker.hidden = true; }
 el('pickerClose').addEventListener('click', closePicker);
