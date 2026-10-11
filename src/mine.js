@@ -20,7 +20,7 @@ export async function loadOwn() {
   return index;
 }
 
-// Artist and title from ID3v2 tags (TPE1, TIT2), which most MP3s carry; otherwise from an "Artist - Title" file name.
+// Artist, title and genre from ID3v2 tags (TPE1, TIT2, TCON), which most MP3s carry; otherwise from an "Artist - Title" file name.
 function text(bytes, enc) {
   try {
     if (enc === 0) return new TextDecoder('latin1').decode(bytes);
@@ -41,7 +41,13 @@ async function tags(file) {
       if (!/^[A-Z0-9]{4}$/.test(id)) break;
       const n = ver === 4 ? (b[i + 4] << 21) | (b[i + 5] << 14) | (b[i + 6] << 7) | b[i + 7] : (b[i + 4] << 24) | (b[i + 5] << 16) | (b[i + 6] << 8) | b[i + 7];
       if (n <= 0) break;
-      if (id === 'TIT2' || id === 'TPE1') out[id] = text(b.subarray(i + 11, i + 10 + n), b[i + 10]).replace(/\0/g, '').trim();
+      if (id === 'TIT2' || id === 'TPE1' || id === 'TCON') {
+        // ID3v2.4 frames may carry a 4-byte length first and be "unsynchronised" (0xFF 0x00 stands for 0xFF).
+        const fl = b[i + 9];
+        let d = b.subarray(i + 10 + (ver === 4 && fl & 1 ? 4 : 0), i + 10 + n);
+        if (b[5] & 0x80 || (ver === 4 && fl & 2)) d = d.filter((v, k) => !(v === 0 && k && d[k - 1] === 0xff));
+        out[id] = text(d.subarray(1), d[0]).replace(/\0/g, '').trim();
+      }
       i += 10 + n;
     }
   } catch (e) {}
@@ -53,17 +59,23 @@ function fromName(name) {
   return m.length >= 2 ? { a: m[0], t: m.slice(1).join(' - ') } : { a: '', t: base };
 }
 
-// Add files (from a file picker or a folder picker). Reports progress; returns how many were added.
-export async function addOwn(files, progress = () => {}) {
-  const list = [...files].filter(f => AUDIO.test(f.name) || (f.type || '').startsWith('audio/'));
+export const isAudio = f => AUDIO.test(f.name) || (f.type || '').startsWith('audio/');
+// Add files (from a file picker or a folder picker). Reports progress. Returns one entry per audio file, in order:
+// the new entry, or the one already here for a file added before, so callers can sort them into soundtracks.
+// opts.measure(file) may return extra fields (energy, tempo) to keep with the entry.
+export async function addOwn(files, progress = () => {}, opts = {}) {
+  const list = [...files].filter(isAudio);
+  const out = [];
   let added = 0, dir = null;
   if (opfs) { try { dir = await folder(); if (navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) { dir = null; } }
   for (let k = 0; k < list.length; k++) {
     const f = list[k];
     progress(k + 1, list.length, f.name);
-    if (index.some(e => e.name === f.name && e.size === f.size)) continue;       // already here
+    const have = index.find(e => e.name === f.name && e.size === f.size);
+    if (have) { out.push(have); continue; }                                     // already here
     const tg = await tags(f), nm = fromName(f.name);
-    const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, a: tg.TPE1 || nm.a || 'Unknown artist', t: tg.TIT2 || nm.t, size: f.size };
+    const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, a: tg.TPE1 || nm.a || 'Unknown artist', t: tg.TIT2 || nm.t, size: f.size, genre: (tg.TCON || '').replace(/^\(\d+\)/, '') };
+    if (opts.measure) { try { Object.assign(e, await opts.measure(f)); } catch (err) {} }
     let stored = false;
     if (dir) {
       try {
@@ -72,11 +84,12 @@ export async function addOwn(files, progress = () => {}) {
       } catch (err) { keeps = false; }
     }
     if (!stored) session.set(e.id, f);
-    index.push(e); added++;
+    index.push(e); added++; out.push(e);
   }
   index.sort((x, y) => (x.a + x.t).localeCompare(y.a + y.t));
   if (opfs) await save();
-  return added;
+  out.added = added;
+  return out;
 }
 export async function ownURL(e) {
   if (session.has(e.id)) return URL.createObjectURL(session.get(e.id));

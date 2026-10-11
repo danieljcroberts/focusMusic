@@ -4,7 +4,8 @@ import TRACKS from './data/tracks.json';
 import { M } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
-import { loadOwn, ownTracks, addOwn, ownURL, removeOwn, clearOwn, ownBytes, keeps } from './mine.js';
+import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps } from './mine.js';
+import * as ST from './soundtracks.js';
 
 const el = id => document.getElementById(id);
 export { TRACKS };
@@ -129,20 +130,9 @@ function setMeta(parts, href, label) {
   ui.meta.textContent = parts.filter(Boolean).join(' · ');
   if (href) ui.meta.append(' · ', link(href, label));
 }
-// Which sources Next, gapless changes and Drift draw from: any combination, at least one. Included = the bundled tracks,
-// Streamed = the shared library's tracks played from archive.org, Live archive = random finds, Your music = files on this device.
-const SRC = ['inc', 'str', 'live', 'own'];
-const src = Object.assign({ inc: true, str: true, live: false, own: false }, state.sources || {});
-const srcBtns = [...document.querySelectorAll('[data-src]')];
-function syncSeg() { srcBtns.forEach(b => b.setAttribute('aria-pressed', String(!!src[b.dataset.src]))); }
-function setSource(k, on) {
-  if (!on && src[k] && SRC.filter(x => src[x]).length === 1) { setStatus('Keep at least one source on.'); return; }
-  src[k] = on; saveState({ sources: { ...src } }); syncSeg();
-  if (k === 'own' && on && !ownTracks().length) { setStatus('No music of your own yet. Add a folder or some files here.'); openLib(true); }
-  else if ((k === 'str' || k === 'live') && on && iaOnline === false) setStatus(BLOCKED);
-}
-srcBtns.forEach(b => b.addEventListener('click', () => setSource(b.dataset.src, !src[b.dataset.src])));
-const allowed = t => playable(t) && (t.file ? src.inc : src.str);
+// What plays is the current soundtrack: its free tracks (when on), the viewer's own tracks sorted into it, and random
+// finds from the Internet Archive when it asks for them. See soundtracks.js.
+const allowed = t => playable(t) && ST.freeAllows(t);
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
@@ -190,7 +180,7 @@ export function playTrack(t) {
     setStatus(t.stream ? (iaOnline === null ? 'Checking the connection to archive.org. Try again in a moment.' : BLOCKED) : 'This track is only on its source page. Open the link to listen.');
     return;
   }
-  source = 'mix'; syncSeg(); setStatus(''); curTrack = t;
+  source = 'mix'; setStatus(''); curTrack = t;
   remember({ kind: 'mix', t });
   recent.push(key(t)); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${t.t} — ${t.a}`;
@@ -214,7 +204,7 @@ function licLabel(u) {
 // Picks a random CC-licensed netlabel release, then an original MP3 of 185 kbps or better, 1.5 to 30 minutes long.
 async function nextLive() {
   if (loadingLive) return;
-  if (iaOnline === false) { source = 'mix'; syncSeg(); setStatus(BLOCKED); return; }
+  if (iaOnline === false) { source = 'mix'; setStatus(BLOCKED); return; }
   loadingLive = true; setStatus('Finding a Creative Commons track on the Internet Archive…');
   try {
     if (!liveTotal) liveTotal = (await (await fetch(iaSearch({ rows: 0 }))).json()).response.numFound;
@@ -245,14 +235,14 @@ async function nextLive() {
     }
     setStatus("Couldn't find a suitable track just now. Press Next to try again.");
   } catch (e) {
-    iaOnline = false; source = 'mix'; syncSeg(); setStatus(BLOCKED); renderLib();
+    iaOnline = false; source = 'mix'; setStatus(BLOCKED); renderLib();
   } finally { loadingLive = false; }
 }
 
 // Your music: shuffled, each track once before any repeats.
 let ownBlob = null;
 async function playOwn(e) {
-  source = 'own'; syncSeg(); setStatus('');
+  source = 'own'; setStatus('');
   curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' };
   remember({ kind: 'own', e });
   recent.push('own:' + e.id); if (recent.length > 4) recent.shift();
@@ -272,18 +262,17 @@ function pickNext(relaxed = false) {
   const isCur = k => curTrack && (curTrack.own ? 'own:' + curTrack.id : key(curTrack)) === k;
   const ok = k => !isCur(k) && (relaxed || !recent.includes(k));
   const pools = [];
-  const inc = src.inc ? TRACKS.filter(t => t.file && allowed(t) && ok(key(t))) : [];
-  const str = src.str ? TRACKS.filter(t => !t.file && allowed(t) && ok(key(t))) : [];
-  const own = src.own ? ownTracks().filter(e => ok('own:' + e.id)) : [];
-  if (inc.length) pools.push([1, () => playTrack(inc[Math.floor(Math.random() * inc.length)])]);
-  if (str.length) pools.push([1, () => playTrack(str[Math.floor(Math.random() * str.length)])]);
-  if (own.length) pools.push([1, () => playOwn(own[Math.floor(Math.random() * own.length)])]);
-  if (src.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
+  const st = ST.current(), mine = new Set(st.own);
+  const free = TRACKS.filter(t => allowed(t) && ok(key(t)));
+  const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
+  // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
+  if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(own[Math.floor(Math.random() * own.length)])]);
+  if (free.length) pools.push([1, () => playTrack(free[Math.floor(Math.random() * free.length)])]);
+  if (st.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
   if (!pools.length) {
     if (!relaxed) return pickNext(true);                       // everything was played recently: allow it again
     if (curTrack && !curTrack.live) { if (curTrack.own) { const e = ownTracks().find(x => x.id === curTrack.id); if (e) return playOwn(e); } else if (allowed(curTrack)) return playTrack(curTrack); }
-    if (src.own && !ownTracks().length && !src.inc && !src.str && !src.live) { setStatus('No music of your own yet. Open the Library and add a folder or some files.'); openLib(true); return; }
-    setStatus(iaOnline === false && !src.inc && !src.own ? BLOCKED : 'Nothing to play from the sources that are on. Turn another one on under the player.');
+    setStatus(`"${st.name}" has nothing to play yet. Add music to it, or turn on its free tracks, from the soundtrack menu.`);
     return;
   }
   let r = Math.random() * pools.reduce((a, p) => a + p[0], 0);
@@ -307,6 +296,8 @@ function replay(en) {
     else { source = 'live'; curTrack = en.t; ui.title.textContent = `${en.t.t} — ${en.t.a}`; ui.meta.textContent = en.meta || en.t.lic; announce(curTrack); start(en.url); markLib(); }
   } finally { replaying = false; }
 }
+// For the soundtrack screens: play one of the viewer's tracks to hear it while sorting.
+export async function previewOwn(id) { const e = ownTracks().find(x => x.id === id); if (e) await playOwn(e); }
 export function nextTrack() {
   if (histIdx < hist.length - 1) { histIdx++; replay(hist[histIdx]); return; }
   pickNext();
@@ -366,7 +357,6 @@ for (const p of players) {
 
 ui.play.addEventListener('click', togglePlay);
 ui.next.addEventListener('click', nextTrack);
-syncSeg();
 try { const v = localStorage.getItem('sw-volume'); if (v !== null) ui.vol.value = v; } catch (e) {}
 master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g));
 ui.vol.addEventListener('input', () => { master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g)); try { localStorage.setItem('sw-volume', ui.vol.value); } catch (e) {} });
@@ -383,27 +373,15 @@ function ownSection() {
   note.textContent = (keeps ? 'Copied into this app on this device, so it plays offline and stays after a restart. ' : 'Kept for this session only: this browser cannot store files for the app. ') +
     'Nothing is uploaded.' + (all.length ? ` ${(ownBytes() / 1e6).toFixed(0)} MB.` : '');
   const row = document.createElement('div'); row.className = 'row';
-  const pick = (label, folder) => {
-    const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.accept = 'audio/*,.mp3,.m4a,.aac,.ogg,.opus,.flac,.wav'; inp.hidden = true;
-    if (folder) { inp.webkitdirectory = true; inp.setAttribute('webkitdirectory', ''); }
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = label;
-    b.addEventListener('click', () => inp.click());
-    inp.addEventListener('change', async () => {
-      if (!inp.files.length) return;
-      const n = await addOwn(inp.files, (i, of, name) => setStatus(`Adding ${i} of ${of}: ${name}`));
-      if (n && !src.own) setSource('own', true);
-      setStatus(n ? `Added ${n} track${n === 1 ? '' : 's'}. Your music is on as a source; press Next or tap a track to hear it.` : 'Nothing new to add: no audio files, or they were already here.');
-      renderLib();
-    });
-    row.append(b, inp);
-  };
-  pick('Add a folder', true); pick('Add files', false);
+  const add = document.createElement('button'); add.type = 'button'; add.className = 'pbtn'; add.textContent = 'Add your music…';
+  add.addEventListener('click', () => { openLib(false); window.dispatchEvent(new CustomEvent('sw-wizard')); });
+  row.append(add);
   if (all.length) {
     const c = document.createElement('button'); c.type = 'button'; c.className = 'pbtn'; c.textContent = 'Remove all';
     let armed = false;
     c.addEventListener('click', async () => {
       if (!armed) { armed = true; c.textContent = 'Tap again to remove all'; setTimeout(() => { armed = false; c.textContent = 'Remove all'; }, 4000); return; }
-      await clearOwn(); renderLib(); setStatus('Your music was removed from this device.');
+      await clearOwn(); ST.prune([]); renderLib(); setStatus('Your music was removed from this device.');
     });
     row.append(c);
   }
@@ -414,9 +392,11 @@ function ownSection() {
     b.addEventListener('click', () => playOwn(e));
     const body = document.createElement('div');
     const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${e.t} — ${e.a}`;
-    const mm = document.createElement('div'); mm.className = 'm'; mm.textContent = `${(e.size / 1e6).toFixed(1)} MB · ${e.name}`;
+    const mm = document.createElement('div'); mm.className = 'm';
+    const inSt = ST.memberOf(e.id).map(x => x.name);
+    mm.textContent = `${inSt.length ? inSt.join(', ') : 'in no soundtrack yet'} · ${(e.size / 1e6).toFixed(1)} MB`;
     const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove ${e.t}`);
-    x.addEventListener('click', async () => { await removeOwn(e.id); renderLib(); });
+    x.addEventListener('click', async () => { await removeOwn(e.id); ST.prune(ownTracks().map(x => x.id)); renderLib(); });
     mm.append(' · ', x);
     body.append(tt, mm); li.append(b, body); ol.append(li);
   }
@@ -469,4 +449,5 @@ el('libBtn').addEventListener('click', () => openLib(ui.lib.hidden));
 el('libClose').addEventListener('click', () => openLib(false));
 renderLib();
 probe();
-loadOwn().then(() => renderLib());
+loadOwn().then(() => { ST.prune(ownTracks().map(x => x.id)); renderLib(); window.dispatchEvent(new CustomEvent('sw-own-loaded')); });
+ST.onChange(() => renderLib());

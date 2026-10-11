@@ -9,4 +9,4 @@ export function registerMenu(button, panel, onOpen) {
   });
 }
 export function closeMenus() { for (const m of menus) { m.panel.hidden = true; m.button.setAttribute('aria-expanded', 'false'); } }
-document.addEventListener('pointerdown', e => { if (!e.target.closest('.timer, .settings')) closeMenus(); });
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.timer, .settings, .stwrap')) closeMenus(); });

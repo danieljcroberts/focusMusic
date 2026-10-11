@@ -53,7 +53,7 @@ async function notify(title, body) {
 }
 export function toggleTimer() {
   timer.running = !timer.running; timer.last = performance.now();
-  if (timer.running) askNotify();
+  if (timer.running) { askNotify(); window.dispatchEvent(new CustomEvent('sw-timer', { detail: timer.mode === 'focus' ? 'focus' : 'break' })); }
   const c = audioCtx(); if (timer.running && c && c.state === 'suspended') c.resume().catch(() => {});
   draw(); save();
 }
@@ -78,10 +78,12 @@ setInterval(() => {
       timer.count++;
       const long = timer.every > 0 && timer.count % timer.every === 0;
       timer.mode = long ? 'long' : 'break'; timer.left = (long ? timer.lb : timer.b) * 60;
+      window.dispatchEvent(new CustomEvent('sw-timer', { detail: 'break' }));
       chime(long ? [660, 880, 1100] : [660, 880]); setStatus(long ? `Focus block done. Long break: ${timer.lb} minutes.` : 'Focus block done. Break started.');
       notify('Focus block done', `${long ? 'Long break' : 'Break'} for ${long ? timer.lb : timer.b} minutes.`); setDuck(true);
     } else {
       timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false;
+      window.dispatchEvent(new CustomEvent('sw-timer', { detail: 'focus' }));
       chime([660]); setStatus('Break over. Press the timer to start the next focus block.'); notify('Break over', 'Press the timer to start the next focus block.'); setDuck(false);
     }
     save();

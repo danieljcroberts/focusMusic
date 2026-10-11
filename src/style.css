@@ -182,7 +182,7 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
   h1 { font-size: clamp(30px, 9vw, 42px); }
   .bottom { gap: 10px; }
   .only-phone { display: inline-flex; }
-  body:not(.more) .desc, body:not(.more) .credits, body:not(.more) .bgrow, body:not(.more) .np, body:not(.more) .player .sources,
+  body:not(.more) .desc, body:not(.more) .credits, body:not(.more) .bgrow, body:not(.more) .np, 
   body:not(.more) #vol, body:not(.more) .amb, body:not(.more) #follow, body:not(.more) #driftBtn, body:not(.more) #libBtn, body:not(.more) #shareBtn { display: none; }
   body.more .bottom { max-height: 72vh; overflow-y: auto; padding: 14px; margin-inline: -14px; border-radius: 18px 18px 0 0;
     background: rgba(9, 10, 14, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
@@ -274,3 +274,47 @@ body:not(.idle) .mini { display: none; }
 .tmenu .nums input { width: 52px; font: inherit; font-size: 12px; color: var(--text); background: var(--glass); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
 /* Readable over bright scenes */
 .desc, .pair, .eyebrow, .hint, .np { text-shadow: 0 1px 8px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .5); }
+
+/* Soundtrack chip and menu */
+.stwrap { position: relative; }
+.pbtn.st { display: inline-flex; align-items: center; gap: 8px; }
+.pbtn.st i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+/* Above the chip on wide screens; on phones it is the usual bottom sheet */
+@media (min-width: 641px) and (min-height: 521px) { .stmenu { top: auto; bottom: calc(100% + 8px); left: 0; right: auto; min-width: 240px; } }
+.stmenu .opt { display: flex; align-items: center; gap: 10px; text-align: left; }
+.stmenu .opt i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.stmenu .opt small { margin-left: auto; color: var(--muted); font-size: 11px; }
+.stmenu .opt[aria-checked="true"] { border-color: var(--accent); }
+.stmenu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+/* The music wizard and soundtrack editor: one calm screen at a time */
+.wiz { position: fixed; inset: 0; z-index: 9; display: grid; place-items: center; padding: 16px; background: rgba(5, 6, 10, .78); }
+.wiz .box { width: min(560px, 100%); max-height: min(88vh, 900px); display: flex; flex-direction: column; background: #0d0e13; border: 1px solid var(--line); border-radius: 20px; }
+.wiz header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 18px 20px 6px; }
+.wiz h2 { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 24px; margin: 0; }
+.wiz .body { overflow-y: auto; padding: 6px 20px 20px; display: grid; gap: 14px; font-size: 13px; line-height: 1.6; }
+.wiz .body p { margin: 0; }
+.wiz .muted { color: var(--muted); font-size: 12px; }
+.wiz .step { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.wiz .choice { display: grid; gap: 3px; text-align: left; padding: 14px 16px; border-radius: 14px; font-size: 13px; -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(236, 230, 218, .05); }
+.wiz .choice b { font-weight: 500; font-size: 14px; }
+.wiz .choice span { color: var(--muted); font-size: 12px; }
+.wiz .choice[aria-checked="true"] { border-color: var(--accent); }
+.wiz .actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.wiz .primary { background: var(--chip-on-bg); color: var(--chip-on-text); border-color: transparent; font-weight: 500; }
+.wiz table { width: 100%; border-collapse: collapse; }
+.wiz td { padding: 8px 4px; border-top: 1px solid rgba(236, 230, 218, .08); vertical-align: middle; }
+.wiz td small { display: block; color: var(--muted); font-size: 11px; }
+.wiz select, .wiz input[type="text"] { font: inherit; font-size: 13px; color: var(--text); background: #16171d; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; max-width: 100%; }
+.wiz .bar { height: 6px; border-radius: 3px; background: rgba(236, 230, 218, .12); overflow: hidden; }
+.wiz .bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.wiz .stbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.wiz .stbtns button { padding: 12px 16px; }
+.wiz .stcard { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; }
+.wiz .stcard .top { display: flex; align-items: center; gap: 10px; }
+.wiz .stcard .top i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.wiz .stcard .top input { flex: 1; min-width: 0; }
+.wiz .stcard .opts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.wiz .stcard .opts .tog { padding: 6px 10px; }
+.wiz .tracks { display: grid; gap: 2px; font-size: 12px; color: var(--muted); max-height: 180px; overflow-y: auto; }
+.wiz .tracks div { display: flex; justify-content: space-between; gap: 8px; }
+.wiz .tracks button { font-size: 11px; padding: 0 6px; border: 0; background: none; color: var(--muted); text-decoration: underline; -webkit-backdrop-filter: none; backdrop-filter: none; }

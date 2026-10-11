@@ -21,6 +21,7 @@ import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDr
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
 import { initPresets } from './presets.js';
+import { wizardOpen } from './soundtrack-ui.js';
 import { timerRunning } from './timer.js';
 
 const el = id => document.getElementById(id);
@@ -306,7 +307,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker, .mini');
+const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker, .mini, .wiz');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -342,7 +343,7 @@ document.addEventListener('fullscreenchange', () => { fsBtn.textContent = docume
 
 /* Keyboard. Form controls keep their own keys, so arrows on the volume slider only change the volume. */
 window.addEventListener('keydown', e => {
-  if (e.target.closest('input, textarea, select')) return;
+  if (e.target.closest('input, textarea, select') || wizardOpen()) return;
   const onControl = !!e.target.closest('button, a');
   switch (e.key) {
     case ' ': if (!onControl) { e.preventDefault(); togglePlay(); } break;
@@ -363,7 +364,7 @@ window.addEventListener('keydown', e => {
     case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
+    case 'Escape': if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
   }
 });
 
