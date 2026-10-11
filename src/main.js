@@ -304,13 +304,15 @@ function wake(ms) {
   keepAwake();
 }
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
-function showByHand() { saveState({ hidden: false }); wake(3000); }
+function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker');
+const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker, .mini');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
-window.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
+// Touching the mini player keeps the full controls hidden; it has its own short timer.
+const onMini = e => !!e.target.closest('.mini');
+window.addEventListener('pointerdown', e => { if (onMini(e)) return; if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
 window.addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) wake(); else { wakeFromSleep(); keepAwake(); } }, { passive: true });
-window.addEventListener('focusin', e => { if (!onScene(e)) wake(); });
+window.addEventListener('focusin', e => { if (!onScene(e) && !onMini(e)) wake(); });
 
 /* Ambient sound: starts on the first gesture, follows the scene, its level is remembered */
 const amb = el('amb'); amb.value = ambienceLevel;
@@ -425,9 +427,36 @@ window.addEventListener('touchend', e => {
       return;
     }
     lastTap = { x: p.clientX, y: p.clientY };
-    tapTimer = setTimeout(() => { tapTimer = null; if (document.body.classList.contains('idle')) showByHand(); else hideByHand(); }, 260);
+    const low = p.clientY > H * .8;
+    tapTimer = setTimeout(() => {
+      tapTimer = null;
+      if (!mini.hidden) hideMini();                                          // any tap on the scene puts the mini player away
+      else if (document.body.classList.contains('idle')) { if (low) showMini(); else showByHand(); }   // near the bottom: the mini player
+      else hideByHand();
+    }, 260);
   }
 }, { passive: true });
+
+/* Mini player: the track and previous / play / next, over the bottom of the scene while the controls stay hidden.
+   It follows the main player and tucks itself away after a few quiet seconds. Tapping the title opens the full controls. */
+const mini = el('mini'), miniPlay = el('miniPlay');
+let miniTimer;
+function syncMini() {
+  const [name, artist] = el('npTitle').textContent.split(' — ');
+  el('miniName').textContent = name || 'Nothing playing';
+  el('miniArtist').textContent = artist || 'Tap play for music';
+  const playing = el('play').textContent === 'Pause';
+  miniPlay.textContent = playing ? 'Pause' : 'Play'; miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+}
+function showMini() { syncMini(); mini.hidden = false; bumpMini(); haptic(); }
+function hideMini() { clearTimeout(miniTimer); mini.hidden = true; }
+function bumpMini() { clearTimeout(miniTimer); miniTimer = setTimeout(hideMini, 6000); }
+new MutationObserver(syncMini).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
+new MutationObserver(syncMini).observe(el('play'), { childList: true, characterData: true, subtree: true });
+el('miniPrev').addEventListener('click', () => { prevTrack(); bumpMini(); });
+miniPlay.addEventListener('click', () => { togglePlay(); bumpMini(); });
+el('miniNext').addEventListener('click', () => { nextTrack(); bumpMini(); });
+el('miniTitle').addEventListener('click', () => { hideMini(); showByHand(); });
 
 /* The scene picker: every scene as a thumbnail, grouped. Built once; reopening only updates the current scene and new
    thumbnails. While it is open the scene behind stops drawing, so scrolling the grid stays smooth. */
