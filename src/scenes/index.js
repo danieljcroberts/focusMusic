@@ -9,6 +9,7 @@ import { oceanScene, snowfallScene, starfieldScene } from './three-scenes.js';
 import { lighthouseScene, trainScene, stormScene, cloudsScene, pondScene, aquariumScene } from './places.js';
 import { videoScene } from './video.js';
 import { cleanPowerScene } from './power.js';
+import { supercellScene } from './storm.js';
 import { synthwaveScene, neonHighwayScene, vectorScene, laserShowScene, memphisScene } from './eighties.js';
 import { spectrumBarsScene, feedbackScene, superscopeScene, beatStarsScene, dancingScopeScene } from './visualisers.js';
 import { tramScene, libraryScene, lamproomScene, portholeScene, greenhouseNightScene, cabinScene } from './interiors.js';
@@ -38,6 +39,7 @@ const FACTORIES = {
   pond: pondScene,
   aquarium: aquariumScene,
   cleanPower: cleanPowerScene,
+  supercell: supercellScene,
   synthwave: synthwaveScene,
   neonhighway: neonHighwayScene,
   vector: vectorScene,

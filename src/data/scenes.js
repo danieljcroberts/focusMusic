@@ -77,6 +77,8 @@ export const SCENES = [
     desc: 'Fireflies blink among tall grass as the dusk fades. Over a few minutes their blinking falls into step and rolls across the meadow in waves.' },
   { group: 'Places', key: 'volcano', name: 'Volcano Island', sw: '#b8461e', sound: 'sea', mood: 'night', tone: 'warm', art: ORIGINAL, music: 'Sable|Benthal',
     desc: 'Across dark water an island glows at its summit, lava creeping down one flank. Steam rises where the lava meets the sea.' },
+  { group: 'Places', key: 'supercell', name: 'Supercell', sw: '#3a4448', sound: 'storm', mood: 'any', tone: 'dark', art: ORIGINAL, music: 'Agents Of The Culture Industry|Everything Is Changing',
+    desc: 'A storm turning slowly overhead, its base sagging into a wall cloud and winding into spiral bands. Lightning glows inside the cloud, more often when the bass comes in, and rain hangs in shafts over the hills.' },
   { group: 'Places', key: 'cleanPower', name: 'Clean Power', sw: '#00a0de', sound: 'wind', mood: 'any', tone: 'bright', art: ORIGINAL, music: 'Miles Tilmann|Middle Fields',
     desc: 'A Norwegian valley running on renewables. Water spills from the dam, turbines turn on the ridge and out in the fjord, the solar field catches the light, and power pulses along the lines.' },
 
