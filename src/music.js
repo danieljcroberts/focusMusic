@@ -159,7 +159,7 @@ export function announce(t = curTrack) {
   } catch (e) {}
 }
 if (ms) {
-  for (const [action, fn] of [['play', () => togglePlay()], ['pause', () => togglePlay()], ['nexttrack', () => nextTrack()]]) {
+  for (const [action, fn] of [['play', () => togglePlay()], ['pause', () => togglePlay()], ['nexttrack', () => nextTrack()], ['previoustrack', () => prevTrack()]]) {
     try { ms.setActionHandler(action, fn); } catch (e) {}
   }
 }
@@ -191,6 +191,7 @@ export function playTrack(t) {
     return;
   }
   source = 'mix'; syncSeg(); setStatus(''); curTrack = t;
+  remember({ kind: 'mix', t });
   recent.push(key(t)); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${t.t} — ${t.a}`;
   setMeta([t.lic, eps(t), t.file ? 'bundled' : 'streaming'], t.src, 'Source ↗');
@@ -236,7 +237,9 @@ async function nextLive() {
       ui.title.textContent = `${title} — ${artist}`;
       setMeta([curTrack.lic, first(m.metadata.title), Math.round(f.kb) + ' kbps'], curTrack.src, 'archive.org ↗');
       announce(curTrack);
-      start('https://archive.org/download/' + encodeURIComponent(id) + '/' + f.name.split('/').map(encodeURIComponent).join('/'));
+      const url = 'https://archive.org/download/' + encodeURIComponent(id) + '/' + f.name.split('/').map(encodeURIComponent).join('/');
+      source = 'live'; remember({ kind: 'live', t: curTrack, url, meta: ui.meta.textContent });
+      start(url);
       setStatus(''); markLib();
       return;
     }
@@ -251,6 +254,7 @@ let ownBlob = null;
 async function playOwn(e) {
   source = 'own'; syncSeg(); setStatus('');
   curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' };
+  remember({ kind: 'own', e });
   recent.push('own:' + e.id); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${e.t} — ${e.a}`;
   setMeta(['your music', (e.size / 1e6).toFixed(1) + ' MB']);
@@ -286,7 +290,37 @@ function pickNext(relaxed = false) {
   for (const [w, play] of pools) { if ((r -= w) < 0) return play(); }
   pools[pools.length - 1][1]();
 }
-export function nextTrack() { pickNext(); }
+// History: the last 30 tracks that started, so Previous can step back and Next can step forward again before picking anew.
+const hist = [];
+let histIdx = -1, replaying = false;
+function remember(entry) {
+  if (replaying) return;
+  hist.splice(histIdx + 1); hist.push(entry);
+  if (hist.length > 30) hist.shift();
+  histIdx = hist.length - 1;
+}
+function replay(en) {
+  replaying = true;
+  try {
+    if (en.kind === 'mix') playTrack(en.t);
+    else if (en.kind === 'own') { const e = ownTracks().find(x => x.id === en.e.id); if (e) playOwn(e); else nextTrack(); }
+    else { source = 'live'; curTrack = en.t; ui.title.textContent = `${en.t.t} — ${en.t.a}`; ui.meta.textContent = en.meta || en.t.lic; announce(curTrack); start(en.url); markLib(); }
+  } finally { replaying = false; }
+}
+export function nextTrack() {
+  if (histIdx < hist.length - 1) { histIdx++; replay(hist[histIdx]); return; }
+  pickNext();
+}
+// Previous: more than a few seconds into a track it starts the track again (as most players do); otherwise the one before.
+export function prevTrack() {
+  if (hasSrc && audio.currentTime > 4) { audio.currentTime = 0; if (audio.paused) audio.play().catch(() => {}); return 'restart'; }
+  if (histIdx > 0) { histIdx--; replay(hist[histIdx]); return 'back'; }
+  if (hasSrc) { audio.currentTime = 0; return 'restart'; }
+  return null;
+}
+// Volume from gestures and keys: moves the slider, so the level is shown and remembered the same way.
+export const volume = () => master;
+export function setVolume(v) { ui.vol.value = Math.max(0, Math.min(1, v)); ui.vol.dispatchEvent(new Event('input')); }
 // Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
 let queued = false;
 setInterval(() => {

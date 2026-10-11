@@ -7,6 +7,7 @@ import { weather, tickWeather } from './weather.js';
 import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
+import { prevTrack, volume, setVolume } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -346,6 +347,9 @@ window.addEventListener('keydown', e => {
     case 'ArrowRight': go(cur + 1); break;
     case 'ArrowLeft': go(cur - 1); break;
     case 'n': case 'N': nextTrack(); break;
+    case 'p': case 'P': prevTrack(); break;
+    case 'ArrowUp': e.preventDefault(); setVolume(volume() + .05); showLevel('right', 'Music', volume()); break;
+    case 'ArrowDown': e.preventDefault(); setVolume(volume() - .05); showLevel('right', 'Music', volume()); break;
     case 'l': case 'L': openLib(!libOpen()); break;
     case 'm': case 'M': setFollow(!follow); break;
     case 't': case 'T': toggleTimer(); break;
@@ -362,34 +366,62 @@ window.addEventListener('keydown', e => {
 });
 
 /* A horizontal swipe on the scene changes it; swipes that start on the controls or the library are theirs. */
-// Sideways swipe: next or previous scene, with a small tick. Up: show the controls. Down: hide them.
-// Tap: show or hide. Double-tap: play or pause. Long press: the scene picker.
-let swipe = null, tapTimer = null, pressTimer = null;
+// Sideways swipe: next or previous scene, with a small tick. Up: show the controls. Down: hide them. Tap: show or hide.
+// Double-tap: left third previous track, middle play or pause, right third next track. Long press: the scene picker.
+// Slide up or down along the right edge: music volume; along the left edge: the ambience level.
+let swipe = null, tapTimer = null, pressTimer = null, lastTap = null;
 const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
+const EDGE = .12;
+const levelEl = el('level'), levelBar = el('levelBar'), levelLbl = el('levelLbl');
+let levelTimer;
+function showLevel(side, label, v) {
+  levelEl.hidden = false; levelEl.dataset.side = side;
+  levelBar.style.transform = `scaleY(${v})`; levelLbl.textContent = `${label}\n${Math.round(v * 100)}%`;
+  clearTimeout(levelTimer); levelTimer = setTimeout(() => { levelEl.hidden = true; }, 900);
+}
+// A caption after a track change waits a moment so the new title is in place.
+const trackCaption = icon => setTimeout(() => caption(`${icon} ${el('npTitle').textContent}`), 350);
 window.addEventListener('touchstart', e => {
   lastTouch = performance.now();
   if (!onScene(e) || e.touches.length > 1) { swipe = null; return; }
   const p = e.changedTouches[0];
-  swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false };
+  const edge = p.clientX > W * (1 - EDGE) ? 'right' : p.clientX < W * EDGE ? 'left' : null;
+  swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false, edge, drag: false, v0: edge === 'right' ? volume() : ambienceLevel };
   clearTimeout(pressTimer);
-  pressTimer = setTimeout(() => { if (swipe) { swipe.long = true; haptic(); picker.style.pointerEvents = 'none'; openPicker(); } }, 550);
+  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; haptic(); picker.style.pointerEvents = 'none'; openPicker(); } }, 550);
 }, { passive: true });
 window.addEventListener('touchmove', e => {
   if (!swipe) return;
-  const p = e.changedTouches[0];
-  if (Math.abs(p.clientX - swipe.x) > 12 || Math.abs(p.clientY - swipe.y) > 12) clearTimeout(pressTimer);
+  const p = e.changedTouches[0], dx = p.clientX - swipe.x, dy = p.clientY - swipe.y;
+  if (Math.abs(dx) > 12 || Math.abs(dy) > 12) clearTimeout(pressTimer);
+  // An edge slide: once the finger has moved mostly up or down from an edge, it sets a level instead of swiping.
+  if (swipe.edge && (swipe.drag || (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx) * 1.3))) {
+    swipe.drag = true;
+    const v = Math.max(0, Math.min(1, swipe.v0 - dy / (H * .45)));
+    if (swipe.edge === 'right') { setVolume(v); showLevel('right', 'Music', v); }
+    else { setAmbienceLevel(v); amb.value = v; amb.dispatchEvent(new Event('input')); showLevel('left', 'Ambience', v); }
+  }
 }, { passive: true });
 window.addEventListener('touchend', e => {
   clearTimeout(pressTimer);
   if (!swipe) return;
   const p = e.changedTouches[0], s0 = swipe; swipe = null;
   if (s0.long) { setTimeout(() => { picker.style.pointerEvents = ''; }, 350); return; }   // the lift would otherwise click a tile
+  if (s0.drag) { haptic(); return; }
   const dx = p.clientX - s0.x, dy = p.clientY - s0.y, ms = performance.now() - s0.at;
   wakeFromSleep(); keepAwake();
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); go(cur + (dx < 0 ? 1 : -1)); return; }
   if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) showByHand(); else hideByHand(); return; }
   if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {
-    if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; togglePlay(); caption(musicPlaying ? 'Paused' : 'Playing'); return; }   // double-tap
+    if (tapTimer && lastTap && Math.hypot(p.clientX - lastTap.x, p.clientY - lastTap.y) < 60) {   // double-tap, by zone
+      clearTimeout(tapTimer); tapTimer = null; haptic();
+      const zone = p.clientX < W / 3 ? 'prev' : p.clientX > W * 2 / 3 ? 'next' : 'play';
+      if (zone === 'prev') { const r = prevTrack(); if (r === 'restart') caption('From the start'); else if (r) trackCaption('←'); }
+      else if (zone === 'next') { nextTrack(); trackCaption('→'); }
+      else { togglePlay(); caption(musicPlaying ? 'Paused' : 'Playing'); }
+      return;
+    }
+    lastTap = { x: p.clientX, y: p.clientY };
     tapTimer = setTimeout(() => { tapTimer = null; if (document.body.classList.contains('idle')) showByHand(); else hideByHand(); }, 260);
   }
 }, { passive: true });
