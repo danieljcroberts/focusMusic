@@ -92,7 +92,7 @@ export function openWizard(target = null) {
   if (target) return stepPick();
   show('Your music',
     h('p', { className: 'step', textContent: 'Step 1 of 4' }),
-    h('p', { textContent: 'Add music from this device to your soundtracks: Ambient, Minimalist, Modern Classical, Downtempo Electronic, Lo-fi, Post-rock, Jazz, Misc, French language, Synthwave & Techno and High energy, or new ones of your own.' }),
+    h('p', { textContent: 'Add music from this device to your soundtracks, from Ambient to Synthwave & Techno, or new ones of your own.' }),
     h('p', { className: 'muted', textContent: 'Your files are copied into the app on this device, so they play offline. Nothing is uploaded, and they use space on your phone like any other copy.' }),
     h('div', { className: 'actions' }, btn('Not now', hide), btn('Continue', stepHow, 'pbtn primary')));
 }

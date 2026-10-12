@@ -5,20 +5,20 @@
 import TRACKS from './data/tracks.json';
 import { state, saveState } from './state.js';
 
-// The ten built-in soundtracks are genres. Every free track carries a genre in tracks.json; a soundtrack of your own
+// The built-in soundtracks are genres, in alphabetical order. Every free track carries a genre in tracks.json; a soundtrack of your own
 // can borrow a genre's free tracks with `like`. Each has a colour and a small line icon (a 24-unit path).
 export const BUILT_IN = [
   { id: 'ambient', name: 'Ambient', color: '#6f8fd8', icon: 'M3 12c3-5 6-5 9 0s6 5 9 0' },
-  { id: 'minimalist', name: 'Minimalist', color: '#9aa8ff', icon: 'M4 12h9M19 12h.01' },
-  { id: 'classical', name: 'Modern Classical', color: '#d8c38a', icon: 'M4 6h16v12H4zM8 6v7M12 6v7M16 6v7' },
   { id: 'downtempo', name: 'Downtempo Electronic', color: '#e8823c', icon: 'M3 9c2-4 4-4 6 0s4 4 6 0 4-4 6 0M3 16c2-4 4-4 6 0s4 4 6 0 4-4 6 0' },
-  { id: 'lofi', name: 'Lo-fi', color: '#c08ad0', icon: 'M3 7h18v10H3zM8 12h.01M16 12h.01M8 17l-1 3M16 17l1 3' },
-  { id: 'postrock', name: 'Post-rock', color: '#7fb7a3', icon: 'M3 20l5-10 4 6 3-4 6 8z' },
-  { id: 'jazz', name: 'Jazz', color: '#e0a040', icon: 'M9 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 15V4l6 2' },
-  { id: 'misc', name: 'Misc', color: '#8fa0a8', icon: 'M5 12h.01M12 12h.01M19 12h.01' },
   { id: 'french', name: 'French language', color: '#5b8fd6', icon: 'M12 3l-3 18M12 3l3 18M7 21h10M9.5 13h5' },
-  { id: 'synth', name: 'Synthwave & Techno', color: '#e05ad0', icon: 'M3 16l4-8 4 8 4-8 4 8M4 20h16' },
   { id: 'energy', name: 'High energy', color: '#f0503c', icon: 'M13 2L5 14h6l-1 8 9-13h-6z' },
+  { id: 'jazz', name: 'Jazz', color: '#e0a040', icon: 'M9 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 15V4l6 2' },
+  { id: 'lofi', name: 'Lo-fi', color: '#c08ad0', icon: 'M3 7h18v10H3zM8 12h.01M16 12h.01M8 17l-1 3M16 17l1 3' },
+  { id: 'minimalist', name: 'Minimalist', color: '#9aa8ff', icon: 'M4 12h9M19 12h.01' },
+  { id: 'misc', name: 'Misc', color: '#8fa0a8', icon: 'M5 12h.01M12 12h.01M19 12h.01' },
+  { id: 'classical', name: 'Modern Classical', color: '#d8c38a', icon: 'M4 6h16v12H4zM8 6v7M12 6v7M16 6v7' },
+  { id: 'postrock', name: 'Post-rock', color: '#7fb7a3', icon: 'M3 20l5-10 4 6 3-4 6 8z' },
+  { id: 'synth', name: 'Synthwave & Techno', color: '#e05ad0', icon: 'M3 16l4-8 4 8 4-8 4 8M4 20h16' },
 ];
 const COLORS = ['#3fd8c8', '#d0a040', '#c05050', '#70b0e0', '#90c060', '#b080e0', '#e05ad0'];
 
