@@ -39,97 +39,180 @@ float turbine(vec2 p, vec2 base, float h, float ang, float w){
 const build = (fs, o) => shaderScene(COMMON + fs, { res: .8, ...o });
 const byClock = (extra = {}) => ({ before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather + bands.bass * .3); }, ...extra });
 
-/* Offshore Wind: rows of turbines standing in the sea to the horizon, the sun on the water, haze with distance,
-   a service boat on its rounds. The rotors turn with the wind (and the bass), and their aviation lights blink at night. */
+/* Offshore Wind: from the deck of a boat among the turbines. One stands close, tower shaded and rotor angled into the
+   wind; rows more stand out to the horizon, fading into the haze. The sea mirrors them, broken by the waves, with the sun
+   (or the moon) laid along it; whitecaps come up as the wind rises. A crew boat crosses with a wake, gulls wheel round the
+   near tower, and at night the aviation lights blink together. The deck rolls gently under you. */
 const OFFSHORE = `
-vec3 sunL, sunC; float tw;
-vec3 skyAt(vec3 rd, float day, float t){
+vec3 sunL, sunC; float tw, hazeK;
+vec3 skyAt(vec3 rd, float day, float t, float wx){
   vec3 zen = dmix(vec3(.012, .022, .07), vec3(.1, .14, .36), vec3(.2, .48, .9), day);
   vec3 hor = dmix(vec3(.05, .07, .14), vec3(.95, .6, .4), vec3(.72, .85, .95), day);
+  zen = mix(zen, vec3(.32, .36, .42) * (.1 + .9 * day), wx * .6); hor = mix(hor, vec3(.55, .58, .62) * (.1 + .9 * day), wx * .6);
   vec3 sky = mix(hor, zen, smoothstep(-.02, .45, rd.y));
-  sky += vec3(1., .5, .25) * tw * exp(-abs(rd.y) * 10.) * .5;
+  sky += vec3(1., .5, .25) * tw * exp(-abs(rd.y) * 10.) * .5 * (1. - wx * .7);
   float sd = max(dot(rd, sunL), 0.);
-  sky += sunC * (pow(sd, 1200.) * 1.5 + pow(sd, 24.) * .3 + pow(sd, 2.) * .1);
+  sky += sunC * (pow(sd, 1200.) * 1.5 + pow(sd, 24.) * .3 + pow(sd, 2.) * .1) * (1. - wx * .5);
   if (rd.y > .005) {
     float cd = 2.8 / rd.y; vec2 q = mat2(.82, .57, -.57, .82) * (rd.xz * cd * .06) + vec2(t * .006, 0.);
     float n = fbm3o(q), nl = fbm3o(q + sunL.xz * .06);
-    float cov = smoothstep(.5, .68, n) * (1. - smoothstep(20., 60., cd)) * smoothstep(.005, .08, rd.y);
-    vec3 lit = mix(vec3(1.), sunC, .5) * (.4 + .6 * day + .4 * tw), dark = mix(zen, hor, .4);
+    float cov = smoothstep(.5 - wx * .3, .68 - wx * .2, n) * (1. - smoothstep(20., 60., cd)) * smoothstep(.005, .08, rd.y);
+    vec3 lit = mix(vec3(1.), sunC, .5) * (.4 + .6 * day + .4 * tw), dark = mix(zen, hor, .4) * (1. - wx * .3);
     sky = mix(sky, mix(dark, lit, smoothstep(-.1, .2, nl - n) * .6 + .3), cov);
   }
   return sky;
 }
-float wave(vec2 p, float t){
-  return .5 * sin(p.y * 1.1 - t * 1.) + .25 * sin((p.x * .6 + p.y * 1.2) * 1.9 + t * 1.5) + .15 * sin((p.x * 1.4 - p.y * .8) * 3.3 - t * 2.1)
-       + .5 * noise(p * 1.1 + vec2(t * .3, -t * .5)) + .25 * noise(p * 2.6 - vec2(t * .5, t * .2));
+float wave(vec2 p, float t, float wx){
+  float w = .5 * sin(p.y * 1.1 - t * 1.) + .25 * sin((p.x * .6 + p.y * 1.2) * 1.9 + t * 1.5) + .15 * sin((p.x * 1.4 - p.y * .8) * 3.3 - t * 2.1);
+  w += .35 * noise(p * 1.1 + vec2(t * .3, -t * .5)) + .25 * noise(p * 2.6 - vec2(t * .5, t * .2)) + .18 * noise(p * 6. + vec2(t * .9, t * .4)) * (.5 + wx);
+  return w;
+}
+// One turbine as seen from an eye at o: tower, nacelle and three blades, tapering, each a segment in the view plane of
+// that eye. Returns coverage in .a and colour in .rgb. Everything is in world units: the sea is at y = -E.
+const float E = 1.2;
+vec4 turbine(vec2 uv, vec3 o, vec3 base, float Ht, float yaw, float rot, float day, float wx, float t){
+  float zb = base.z - o.z; if (zb < .3) return vec4(0.);
+  vec2 bs = (base.xy - o.xy) / zb, hs = (base.xy + vec2(0., Ht) - o.xy) / zb;
+  float R = Ht * .62;
+  if (abs(uv.x - hs.x) > (R * 1.15 + .2) / zb) return vec4(0.);             // nowhere near this one
+  float haze = 1. - exp(-zb * hazeK);
+  vec3 white = vec3(.95, .96, .98) * (.25 + .75 * day) * (1. - wx * .25);
+  float px = 1.1 / uRes.y;
+  float wB = .04 * Ht / zb, wT = .022 * Ht / zb;
+  float d = seg(uv, bs, hs); float wTow = mix(wB, wT, hh);
+  float side = clamp((uv.x - mix(bs.x, hs.x, hh)) / max(wTow, 1e-5), -1., 1.);
+  float lit = .55 + .45 * smoothstep(-1., 1., side * sign(sunL.x) * -1.) * (.4 + .6 * day);
+  float thin = min(1., wTow / px); wTow = max(wTow, px);
+  float m = smoothstep(wTow, wTow * .5, d) * thin;
+  vec3 col = white * (lit * .9 + .1);
+  // The nacelle sits behind the hub along the rotor's axis; the hub is a cap on its front.
+  vec3 n = vec3(sin(yaw), 0., cos(yaw)), h = vec3(cos(yaw), 0., -sin(yaw)), hub = base + vec3(0., Ht, 0.);
+  vec3 nb = hub - n * R * .16;
+  vec2 nbs = (nb.xy - o.xy) / (nb.z - o.z);
+  float dn = seg(uv, hs, nbs); float wN = .045 * Ht / zb;
+  float thinN = min(1., wN / px); wN = max(wN, px);
+  float mn = smoothstep(wN, wN * .5, dn) * thinN;
+  col = mix(col, white * (.7 + .3 * smoothstep(1., -1., (uv.y - hs.y) / wN)), mn); m = max(m, mn);
+  for (int k = 0; k < 3; k++) {
+    float a = rot + float(k) * 2.0944;
+    vec3 tip = hub + (cos(a) * h + sin(a) * vec3(0., 1., 0.)) * R;
+    float zt = tip.z - o.z; if (zt < .2) continue;
+    vec2 ts = (tip.xy - o.xy) / zt;
+    float db = seg(uv, hs, ts);
+    float wb = mix(.016, .005, smoothstep(.05, 1., hh)) * Ht / zb;      // broad at the root, slim to the tip
+    float thinB = min(1., wb / px); wb = max(wb, px);
+    float mb = smoothstep(wb, wb * .4, db) * thinB;
+    float facing = .7 + .3 * cos(a + yaw);                                 // blades catch the light on the way round
+    col = mix(col, white * facing, mb); m = max(m, mb);
+  }
+  col = mix(col, white * .6, smoothstep(hs.y, bs.y, uv.y) * .25);          // darker toward the water
+  return vec4(col, m * (1. - smoothstep(60., 140., zb)) * (1. - haze * .5));
+}
+// The farm: one close, four in the next row, then rows to the horizon. The same geometry seen from any eye.
+vec4 farm(vec2 uv, vec3 o, float rot, float day, float wx, float t, float maxZ){
+  vec4 acc = vec4(0.);
+  vec3 hazeC = skyAt(normalize(vec3(uv.x, .01, 1.)), day, t, wx);
+  for (int i = 0; i < 28; i++) {
+    float fi = float(i);
+    vec3 base; float Ht = 1.8, yaw = .22 + .1 * sin(fi * 1.7), ph = fi * 2.1;
+    if (i == 0) base = vec3(-1.3, -E, 3.2);
+    else if (i < 5) base = vec3(-6. + float(i - 1) * 4., -E, 8.5 + .5 * sin(fi * 3.));
+    else if (i < 11) base = vec3(-12.5 + float(i - 5) * 5., -E, 17. + .8 * sin(fi * 2.));
+    else if (i < 18) base = vec3(-21. + float(i - 11) * 7., -E, 30. + 1.2 * sin(fi * 1.3));
+    else base = vec3(-36. + float(i - 18) * 8., -E, 52. + 2. * sin(fi));
+    if (base.z - o.z > maxZ) continue;
+    vec4 tb = turbine(uv, o, base, Ht, yaw, rot * (.95 + .1 * fract(fi * .37)) + ph, day, wx, t);
+    if (tb.a > 0.) {
+      float zb = base.z - o.z;
+      vec3 c = mix(tb.rgb, hazeC, (1. - exp(-zb * hazeK)) * .85);
+      acc.rgb += c * tb.a * (1. - acc.a); acc.a += tb.a * (1. - acc.a);   // nearer ones were drawn first
+    }
+  }
+  acc.rgb /= max(acc.a, 1e-4);
+  return acc;
 }
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
-  float t = uT, day = uA, wind = uB;
+  float t = uT, day = uA, wx = clamp(uB, 0., 1.);
   tw = 1. - abs(day * 2. - 1.);
+  hazeK = .018 + .03 * wx;
   float sunUp = smoothstep(.5, 1., day), moonK = 1. - smoothstep(0., .1, day);
   sunL = normalize(mix(vec3(.5, .02 + .7 * sunUp, 1.), vec3(-.6, .5, .8), moonK));
   sunC = mix(mix(vec3(1., .5, .25), vec3(1., .96, .88), sunUp), vec3(.55, .65, .9) * .5, moonK);
-  vec3 rd = normalize(vec3(uv.x, uv.y + .03, 1.));
+  // Aboard: the deck rolls and pitches a little with the swell, more in weather.
+  float roll = (.012 + .02 * wx) * sin(t * .43), pitch = (.008 + .015 * wx) * sin(t * .37 + 1.);
+  float cr = cos(roll), sr = sin(roll); uv = vec2(cr * uv.x - sr * uv.y, sr * uv.x + cr * uv.y);
+  vec3 rd = normalize(vec3(uv.x, uv.y + .04 + pitch, 1.));
+  vec3 eye = vec3(0., .05 * sin(t * .5), 0.);
+  float rot = t * (.9 + 1.6 * wx);
   vec3 col;
-  float horizonY = -.03;
+  float wet = 0.;
   if (rd.y >= 0.) {
-    col = skyAt(rd, day, t);
-    col += stars(uv * 150., t, day) * vec3(.9, .95, 1.);
+    col = skyAt(rd, day, t, wx);
+    col += stars(uv * 150., t, day) * vec3(.9, .95, 1.) * (1. - wx);
+    vec4 f = farm(rd.xy / rd.z, eye, rot, day, wx, t, 200.);
+    col = mix(col, f.rgb, f.a);
   } else {
-    float d = 1.2 / -rd.y;                              // the sea is 1.2 below the eye
-    vec3 p = rd * d;
-    float amp = exp(-d * .015) * (1. + .3 * wind);
+    float d = min((E + eye.y) / -rd.y, 400.);                              // the horizon rows would otherwise run off to infinity
+    vec3 p = eye + rd * d;
+    float amp = exp(-d * .015) * (1. + .5 * wx);
     float e = .02 + d * .004;
-    float w0 = wave(p.xz, t), wx = wave(p.xz + vec2(e, 0.), t), wz = wave(p.xz + vec2(0., e), t);
-    vec3 n = normalize(vec3(-(wx - w0) / e * .1 * amp, 1., -(wz - w0) / e * .1 * amp));
+    float w0 = wave(p.xz, t, wx), wxx = wave(p.xz + vec2(e, 0.), t, wx), wz = wave(p.xz + vec2(0., e), t, wx);
+    vec3 n = normalize(vec3(-(wxx - w0) / e * .07 * amp, 1., -(wz - w0) / e * .07 * amp));
     vec3 rr = reflect(rd, n); rr.y = abs(rr.y);
-    vec3 refl = skyAt(rr, day, t);
+    vec3 refl = skyAt(rr, day, t, wx);
+    // The turbines in the water: the same farm seen from this point on the sea along the reflected ray.
+    if (rr.z > .15 && d < 40.) { vec4 f = farm(rr.xy / rr.z, p, rot, day, wx, t, 22.); refl = mix(refl, f.rgb * .9, f.a * .6); }
     float fres = .04 + .96 * pow(1. - max(dot(-rd, n), 0.), 5.);
     vec3 deep = dmix(vec3(.01, .02, .04), vec3(.08, .08, .13), vec3(.03, .2, .32), day);
+    deep = mix(deep, vec3(.08, .11, .13) * (.2 + .8 * day), wx * .5);
     col = mix(deep, refl, clamp(fres * 1.6, 0., 1.));
-    col += sunC * pow(max(dot(rr, sunL), 0.), 300.) * .8 * (1. - moonK * .6);
-    float crest = smoothstep(.6, 1.1, w0) * exp(-d * .03) * wind * .5;      // whitecaps when it blows
-    col = mix(col, vec3(.85, .9, .95) * (.3 + .7 * day), crest);
-    col = mix(col, mix(deep, refl, .4), smoothstep(30., 140., d));
+    col += sunC * pow(max(dot(rr, sunL), 0.), 300.) * .9 * (1. - moonK * .6) * (1. - wx * .5);
+    float crest = smoothstep(1.05 - wx * .45, 1.35 - wx * .3, w0) * exp(-d * .03);
+    col = mix(col, vec3(.85, .9, .95) * (.3 + .7 * day), crest * .9);
+    // The crew boat's wake: foam that spreads and fades behind it.
+    float bz = 9.5, bx = mod(t * .32, 16.) - 8.;
+    float behind = (p.x - bx) * sign(-1.) ;
+    float wake = smoothstep(.0, 2.5, behind) * exp(-behind * .25) * exp(-pow((p.z - bz) / (.25 + behind * .12), 2.)) * (.5 + .5 * noise(p.xz * 4. + t));
+    col = mix(col, vec3(.9, .93, .96) * (.3 + .7 * day), wake * .7 * step(abs(p.z - bz), 1.5));
+    // Foam round the near tower's foot.
+    float foot = exp(-pow(length(p.xz - vec2(-1.3, 3.2)) / .22, 2.)) * (.6 + .4 * noise(p.xz * 8. + t * 2.));
+    col = mix(col, vec3(.9, .93, .96) * (.3 + .7 * day), foot * .6);
+    col = mix(col, skyAt(normalize(vec3(uv.x, .004, 1.)), day, t, wx), smoothstep(25., 200., d) * .92);
+    wet = 1.;
   }
-  // Haze: everything far fades toward the horizon colour.
-  vec3 hazeC = skyAt(normalize(vec3(uv.x, .01, 1.)), day, t);
-  // Turbines: a grid out at sea, far rows first so the near ones draw over them. Eye 1.2 above the sea; towers 1 tall.
-  float rot = t * (.9 + 1.6 * wind);
-  float white = .6 + .4 * day;
-  for (int r = 0; r < 6; r++) for (int c = 0; c < 5; c++) {
-    float fr = 5. - float(r), fc = float(c);
-    float z = 5.5 + fr * fr * 2.2 + fr * 4. + h21(vec2(fr, fc)) * .5;
-    float x = (fc - 2.) * (3.2 + fr * 1.1) + sin(fr * 2. + fc) * .4 - 1.5;
-    float bx = x / z;
-    float vis = step(abs(bx - uv.x), 1.2 / z + .02);
-    vec2 base = vec2(bx, -1.2 / z + .03);
-    float h = 1. / z;
-    float ph = h21(vec2(fc, fr + 9.)) * 6.28, sp = .9 + .2 * h21(vec2(fr, fc + 3.));
-    float m = turbine(uv, base, h, rot * sp + ph, .006 / sqrt(z) + .0012) * vis;
-    vec3 tc = mix(vec3(.96, .97, 1.) * white, hazeC, .35 + .6 * smoothstep(5., 80., z));
-    tc = mix(tc, tc * .6, smoothstep(base.y + h * .5, base.y, uv.y) * .3);      // darker toward the water
-    col = mix(col, tc, m * (1. - smoothstep(60., 140., z)));
-    // A soft streak of the tower in the water under it.
-    float streak = exp(-abs(uv.x - bx) * 220. * sqrt(z)) * smoothstep(base.y, base.y - h * .9, uv.y) * smoothstep(base.y - h * 1.1, base.y - h * .3, uv.y);
-    col += tc * streak * vis * .25 * (.5 + .5 * noise(vec2(uv.x * 200., uv.y * 60. + t)));
-    // Aviation light at night, blinking.
-    float blink = step(.4, sin(t * 1.6 + ph)) * (1. - smoothstep(0., .3, day));
-    col += vec3(1., .2, .15) * blink * vis * exp(-length(uv - base - vec2(0., h)) * 900. * sqrt(z) / 4.) * .9;
+  // The crew boat: an orange hull with a white wheelhouse, bobbing, crossing the field.
+  { float bz = 9.5, bx = mod(t * .32, 16.) - 8., bob = .03 * sin(t * 1.3);
+    vec2 bb = vec2(bx, -E + bob) / bz; float sc = 1. / bz;
+    float hull = step(abs(uv.x - bb.x), .32 * sc) * step(bb.y - .04 * sc, uv.y) * step(uv.y, bb.y + .09 * sc + .06 * sc * smoothstep(.1, .32, uv.x - bb.x));
+    float house = step(abs(uv.x - bb.x - .04 * sc), .11 * sc) * step(bb.y + .09 * sc, uv.y) * step(uv.y, bb.y + .2 * sc);
+    float win = house * step(bb.y + .14 * sc, uv.y) * step(uv.y, bb.y + .18 * sc);
+    vec3 hc = vec3(.95, .45, .08) * (.3 + .7 * day) * (.7 + .3 * smoothstep(bb.y - .04 * sc, bb.y + .09 * sc, uv.y));
+    col = mix(col, hc, hull); col = mix(col, vec3(.92) * (.3 + .7 * day), house); col = mix(col, vec3(.2, .3, .4) * (.5 + .5 * day), win);
+    col += vec3(1., .9, .6) * exp(-length(uv - bb - vec2(.04, .2) * sc) * 500.) * (1. - day) * .8; }
+  // Aviation lights, blinking together at night; gulls wheeling round the near tower; the deck rail.
+  float blink = step(.6, fract(t * .7)) * (1. - smoothstep(0., .3, day));
+  for (int i = 0; i < 11; i++) {
+    float fi = float(i); vec3 base = i == 0 ? vec3(-1.3, -E, 3.2) : i < 5 ? vec3(-6. + float(i - 1) * 4., -E, 8.5 + .5 * sin(fi * 3.)) : vec3(-12.5 + float(i - 5) * 5., -E, 17. + .8 * sin(fi * 2.));
+    vec2 hs = (base.xy + vec2(0., 1.8) - eye.xy) / base.z;
+    col += vec3(1., .2, .15) * blink * exp(-length(uv - hs) * 220. * base.z / 3.) * 1.2;
   }
-  // The service boat: a small hull with a wheelhouse, bobbing on its way across.
-  float bz = 9.5, bxp = mod(t * .18, 10.) - 5.;
-  vec2 bb = vec2(bxp / bz, -1.2 / bz + .03 + .003 * sin(t * 1.3));
-  float hull = step(abs(uv.x - bb.x), .028) * step(bb.y - .005, uv.y) * step(uv.y, bb.y + .006) + step(abs(uv.x - bb.x - .006), .009) * step(bb.y + .006, uv.y) * step(uv.y, bb.y + .018);
-  col = mix(col, vec3(.95, .5, .1) * (.3 + .7 * day), clamp(hull, 0., 1.));
-  col += vec3(1.) * exp(-length(uv - bb - vec2(.004, .014)) * 600.) * (1. - day) * .6;
-  col = mix(col, hazeC, smoothstep(.02, -.01, abs(uv.y - horizonY)) * .35 * (.5 + .5 * wind));    // sea haze at the horizon
+  for (int g = 0; g < 4; g++) {
+    float fg = float(g), ph = t * (.35 + .07 * fg) + fg * 1.7;
+    vec2 gp = vec2(-1.3 / 3.2, (1.8 - E) / 3.2 + .1) + vec2(cos(ph) * (.14 + .04 * fg), sin(ph) * (.05 + .02 * fg) + .03 * sin(ph * 2.));
+    vec2 gv = (uv - gp) * (110. + 20. * fg); float flap = .35 + .3 * sin(t * 6. + fg * 2.);
+    float gull = smoothstep(.12, .04, abs(gv.y - flap * abs(gv.x))) * step(abs(gv.x), 1.) * step(0., rd.y);
+    col = mix(col, vec3(.25, .25, .28) * (.3 + .7 * day), gull * .9);
+  }
+  float railY = -.4; float rail = smoothstep(.006, .003, abs(uv.y - railY)) + step(abs(fract(uv.x * 3. + .5) - .5), .012) * step(uv.y, railY) * step(-.5, uv.y);
+  vec3 railC = mix(vec3(.3, .32, .35), vec3(.75, .78, .8), .5 + .5 * smoothstep(-.004, .004, uv.y - railY + .002)) * (.3 + .7 * day);
+  col = mix(col, railC, clamp(rail, 0., 1.));
+  col = mix(col, railC * .6, step(uv.y, railY - .006) * .0);
   col = 1. - exp(-col * 1.5);
   col += dither(t);
   gl_FragColor = vec4(col, 1.);
 }`;
-export const offshoreScene = () => build(OFFSHORE, byClock({ res: .8 }));
+export const offshoreScene = () => build(OFFSHORE, byClock({ res: .8, heavy: true }));
 
 /* Power Blueprint: the valley as an engineer's drawing. White line-work on blueprint blue with a fine grid: the dam in
    section with hatching, the ridge line, turbines turning, the solar array, pylons with the lines strung between them,
