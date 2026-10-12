@@ -3,7 +3,7 @@
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { audioCtx, setDuck, setLockLine } from './music.js';
-import { registerMenu, closeMenus } from './menus.js';
+import { whenSheetOpens } from './sheet.js';
 
 const el = id => document.getElementById(id);
 const timer = { f: 25, b: 5, lb: 15, every: 4, count: 0, mode: 'focus', left: 25 * 60, running: false, last: 0 };
@@ -13,7 +13,7 @@ if (state.timer && state.timer.f) {
   if (s.running && s.at) { timer.running = true; timer.left -= (Date.now() - s.at) / 1000; }
 }
 let sceneName = () => '';
-const tBtn = el('tStart'), tMore = el('tMore'), tMenu = el('tMenu');
+const tBtn = el('tStart'), tMenu = el('tMenu');
 const fmt = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 function save() { saveState({ timer: { f: timer.f, b: timer.b, lb: timer.lb, every: timer.every, count: timer.count, mode: timer.mode, left: timer.left, running: timer.running, at: Date.now() } }); }
 function draw() {
@@ -58,7 +58,7 @@ export function toggleTimer() {
   draw(); save();
 }
 function reset(keepCount = false) { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; if (!keepCount) timer.count = 0; setDuck(false); draw(); save(); }
-// Completed focus blocks, kept locally, summarised as a line in Settings.
+// Completed focus blocks, kept locally, summarised as a line in the sheet.
 export function weekLine() {
   const log = state.sessions || [], week = Date.now() - 7 * 86400000, recent = log.filter(s => s.at > week);
   if (!recent.length) return 'No focus blocks this week yet.';
@@ -92,19 +92,18 @@ setInterval(() => {
   draw();
 }, 250);
 tBtn.addEventListener('click', toggleTimer);
-registerMenu(tMore, tMenu, () => { el('tF').value = timer.f; el('tB').value = timer.b; el('tLB').value = timer.lb; el('tEvery').value = timer.every; });
+whenSheetOpens(() => { el('tF').value = timer.f; el('tB').value = timer.b; el('tLB').value = timer.lb; el('tEvery').value = timer.every; });
 tMenu.querySelectorAll('button[data-f]').forEach(b => b.addEventListener('click', () => {
-  timer.f = +b.dataset.f; timer.b = +b.dataset.b; timer.lb = +b.dataset.lb; reset(true); closeMenus();
+  timer.f = +b.dataset.f; timer.b = +b.dataset.b; timer.lb = +b.dataset.lb; reset(true); drawPresets();
 }));
+const drawPresets = () => tMenu.querySelectorAll('button[data-f]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.f === timer.f && +b.dataset.b === timer.b)));
+drawPresets();
 el('tApply').addEventListener('click', () => {
   const n = (id, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(el(id).value) || 0)));
   timer.f = n('tF', 1, 180); timer.b = n('tB', 1, 60); timer.lb = n('tLB', 1, 90); timer.every = n('tEvery', 0, 12);
-  reset(true); closeMenus();
+  reset(true); drawPresets();
 });
-el('tReset').addEventListener('click', () => { reset(); closeMenus(); });
+el('tReset').addEventListener('click', () => reset());
 window.addEventListener('pagehide', save);
-// Presets set the durations without touching the count.
-export const timerDurations = () => ({ f: timer.f, b: timer.b, lb: timer.lb, every: timer.every });
-export function setTimerDurations(d) { Object.assign(timer, { f: d.f, b: d.b, lb: d.lb, every: d.every }); if (!timer.running) { timer.mode = 'focus'; timer.left = timer.f * 60; } draw(); save(); }
 export const timerRunning = () => timer.running;
 export function initTimer(opts) { sceneName = opts.sceneName; setDuck(timer.mode !== 'focus'); draw(); }

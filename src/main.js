@@ -9,7 +9,7 @@ import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume } from './music.js';
-import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
+import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
 import { report, gpuName, diagOn, setDiag } from './diag.js';
@@ -21,7 +21,7 @@ import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
-import { initPresets } from './presets.js';
+import { openSheet, sheetOpen, cycleFollow } from './sheet.js';
 import { wizardOpen } from './soundtrack-ui.js';
 import { timerRunning } from './timer.js';
 
@@ -143,8 +143,8 @@ function show(i) {
 }
 function updateText() {
   const s = SCENES[cur];
-  el('eyebrow').textContent = `${s.group} · Scene ${cur + 1} of ${SCENES.length}`;
-  el('title').textContent = s.name;
+  el('eyebrow').textContent = `${s.group} · ${cur + 1} of ${SCENES.length}`;
+  el('title').textContent = s.name; el('pickTitle').textContent = s.name;
   el('desc').textContent = s.desc;
   const art = el('art');
   const info = s.bgs ? BGS[instances[cur].bg].art : s.art;
@@ -193,7 +193,7 @@ function go(i) {
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); onSceneChange();
   noteSceneChange(); scheduleThumb();
-  if (document.body.classList.contains('idle')) caption(SCENES[cur].name);
+  if (document.body.classList.contains('idle') && picker.hidden) caption(SCENES[cur].name);
   if (still) render(0);
 }
 // While the controls are hidden, a scene change shows just its name for a moment.
@@ -215,9 +215,8 @@ function render(dt) {
   if (fade > 0) { fade = Math.max(0, 1 - (performance.now() - fadeAt) / 1400); fadeCv.style.opacity = fade; }
 }
 
-/* Phone layout: More folds the controls out; Share builds a link with the scene, the track and the ambience level */
-const moreBtn = el('moreBtn');
-moreBtn.addEventListener('click', () => { const on = !document.body.classList.contains('more'); document.body.classList.toggle('more', on); moreBtn.setAttribute('aria-pressed', String(on)); });
+/* Share builds a link with the scene, the track and the ambience level; Previous lives in the sheet */
+el('prevBtn').addEventListener('click', () => prevTrack());
 function setLink() {
   const parts = [slug(SCENES[cur])], ct = currentTrack();
   if (ct && !ct.live && !ct.own) parts.push('m-' + trackSlug(ct));   // your own music stays on your device
@@ -286,12 +285,6 @@ setInvalidate(() => { if (still) render(0); });
 initTimer({ sceneName: () => SCENES[cur].name });
 initDrift({ go, current: () => cur, cards });
 initSettings({ drawDiag });
-initPresets({
-  sceneName: () => SCENES[cur].name,
-  goToName: name => { const i = SCENES.findIndex(s => s.name === name); if (i >= 0) go(i); },
-  syncAmbience: () => { amb.value = ambienceLevel; amb.dispatchEvent(new Event('input')); },
-  lively: () => lively, setLively,
-});
 
 const clock = el('clock');
 const tick = () => { const d = new Date(); clock.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
@@ -310,7 +303,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .lib, .help, .hint1, .diag, .picker, .mini, .wiz');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -357,7 +350,8 @@ window.addEventListener('keydown', e => {
     case 'ArrowUp': e.preventDefault(); setVolume(volume() + .05); showLevel('right', 'Music', volume()); break;
     case 'ArrowDown': e.preventDefault(); setVolume(volume() - .05); showLevel('right', 'Music', volume()); break;
     case 'l': case 'L': openLib(!libOpen()); break;
-    case 'm': case 'M': setFollow(!follow); break;
+    case 'm': case 'M': caption(`Music follows ${{ none: 'nothing', scene: 'the scene', timer: 'the timer', both: 'the scene and the timer' }[cycleFollow()]}`); break;
+    case 'o': case 'O': case ',': openSheet(); break;
     case 't': case 'T': toggleTimer(); break;
     case 'f': case 'F': toggleFs(); break;
     case 'v': case 'V': setLively(!lively); break;
@@ -367,7 +361,7 @@ window.addEventListener('keydown', e => {
     case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else closeMenus(); break;
+    case 'Escape': if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
   }
 });
 
@@ -494,6 +488,7 @@ function openPicker() {
 }
 function closePicker() { picker.hidden = true; }
 el('pickerClose').addEventListener('click', closePicker);
+el('sceneBtn').addEventListener('click', () => openPicker());
 
 // A scene link in the hash switches scenes (so the back button walks through them).
 window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i >= 0) go(i); });

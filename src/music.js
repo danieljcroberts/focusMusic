@@ -97,7 +97,7 @@ export function tickFades(now) {
 // tone (calm, warm, cold, dark, bright, pulse); tracks carry a mood. The preferred track plays unless it was heard recently,
 // then another of the same mood takes its place, so a scene does not sound the same on every visit.
 export let follow = state.follow ?? true;   // on unless the viewer turned it off
-export function setFollow(v) { follow = v; el('follow').setAttribute('aria-pressed', String(v)); saveState({ follow: v }); }
+export function setFollow(v) { follow = v; saveState({ follow: v }); }
 let sceneKey = null, sceneTone = null;
 const recent = [];
 export function setScene(k, tone) { sceneKey = k; sceneTone = tone || null; }
@@ -360,8 +360,6 @@ ui.next.addEventListener('click', nextTrack);
 try { const v = localStorage.getItem('sw-volume'); if (v !== null) ui.vol.value = v; } catch (e) {}
 master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g));
 ui.vol.addEventListener('input', () => { master = Number(ui.vol.value); players.forEach(p => setGain(p, p._g)); try { localStorage.setItem('sw-volume', ui.vol.value); } catch (e) {} });
-el('follow').addEventListener('click', () => setFollow(!follow));
-setFollow(follow);
 el('who').addEventListener('click', () => playTrack(sceneTrack()));
 
 // The "Your music" part of the Library: add a folder or files, see what's there, play or remove a track.

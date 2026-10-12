@@ -294,18 +294,10 @@ async function rescan() {
   if (W.groups.every(g => known[g.name] && ST.byId(known[g.name]))) { W.keep = ST.byId(W.groups[0].to).free ? 'mix' : 'only'; stepCopy(); } else stepMap();
 }
 
-/* Settings entries, the timer, and tracks added before soundtracks existed */
+/* Sheet entries, the scene and timer followers, and tracks added before soundtracks existed */
 el('stEditBtn').addEventListener('click', () => { closeMenus(); openEditor(); });
 el('stWizBtn').addEventListener('click', () => { closeMenus(); openWizard(); });
 window.addEventListener('sw-wizard', () => openWizard());
-const timerBtn = el('stTimerBtn');
-const drawTimerBtn = () => timerBtn.setAttribute('aria-pressed', String(!!state.stTimer));
-timerBtn.addEventListener('click', () => { saveState({ stTimer: !state.stTimer }); drawTimerBtn(); });
-drawTimerBtn();
-const sceneBtn = el('stSceneBtn');
-const drawSceneBtn = () => sceneBtn.setAttribute('aria-pressed', String(!!state.stScene));
-sceneBtn.addEventListener('click', () => { saveState({ stScene: !state.stScene }); drawSceneBtn(); });
-drawSceneBtn();
 el('stRescanRow').append(rescanBtn());
 // The scene suggests a built-in soundtrack from its tone; only a built-in gives way to it, so a soundtrack of your own stays.
 window.addEventListener('sw-scene', e => {

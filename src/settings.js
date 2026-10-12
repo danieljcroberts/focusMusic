@@ -1,5 +1,5 @@
-// The Settings panel: weather and time-of-day overrides, local weather, the week's focus blocks, offline music,
-// the film finish, the shortcut list and the diagnostics toggle. The sleep timer and drift interval live in their modules.
+// Settings that live in the sheet: weather and time-of-day overrides, local weather, offline music, the film finish,
+// the shortcut list and the diagnostics toggle. The sleep timer and drift interval live in their modules.
 import { M } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
@@ -10,11 +10,12 @@ import { localOn, enableLocal, disableLocal } from './local.js';
 import { diagOn, toggleDiag } from './diag.js';
 import { finishOn, setFinish } from './finish.js';
 import { weekLine } from './timer.js';
-import { registerMenu, closeMenus } from './menus.js';
+import { closeMenus } from './menus.js';
+import { whenSheetOpens } from './sheet.js';
 import { openAbout } from './about.js';
 
 const el = id => document.getElementById(id);
-const setBtn = el('setBtn'), setMenu = el('setMenu'), wx = el('wx'), wxAuto = el('wxAuto');
+const wx = el('wx'), wxAuto = el('wxAuto');
 const TOD = { auto: null, night: 0, dusk: .5, day: 1 };
 
 function applyWeather(v) {
@@ -82,7 +83,7 @@ let drawDiag = () => {};
 export function setDiagOn(on) { toggleDiag(on); diagBtn.setAttribute('aria-pressed', String(on)); if (on) drawDiag(); }
 diagBtn.addEventListener('click', () => setDiagOn(!diagOn()));
 
-registerMenu(setBtn, setMenu, () => {
+whenSheetOpens(() => {
   if (wxAuto.getAttribute('aria-pressed') === 'true') wx.value = weather;
   el('weekLine').textContent = weekLine();
 });
