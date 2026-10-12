@@ -1,106 +1,12 @@
-// More scenes drawn in code: a lighthouse, a night train, a distant storm, a plane window, a pond and an aquarium.
+// More scenes drawn in code: a night train, a distant storm, a pond and an aquarium.
 // The outdoor ones follow the viewer's clock through daylight() and rebuild their sky as the light changes.
 import { W, H, ctx } from '../view.js';
 import { rand, hash, rgb, layer, glow, stars } from '../util.js';
 import { weather } from '../weather.js';
 import { daylight, skyMix } from '../daylight.js';
 
-// A vertical gradient whose stops are [position, night, dusk, day] colours, blended by the daylight d.
-function paintSky(g, stops, d, h = H) {
-  const gr = g.createLinearGradient(0, 0, 0, h);
-  for (const [p, n, k, y] of stops) gr.addColorStop(p, rgb(skyMix(n, k, y, d)));
-  g.fillStyle = gr; g.fillRect(0, 0, W, h + 1);
-}
 // Scenes rebuild when the light has moved noticeably since they were drawn.
 const stale = built => Math.abs(daylight() - built) > .04;
-// Low Tide's water: rows of faint horizontal strokes, denser toward the viewer.
-function waterRows(hy, t, col, alpha) {
-  const rows = 40; ctx.lineCap = 'round';
-  for (let k = 1; k <= rows; k++) {
-    const p = k / rows, y = hy + (H - hy) * p * p;
-    ctx.strokeStyle = rgb(col, alpha * (.3 + .9 * p)); ctx.lineWidth = .6 + p;
-    ctx.beginPath();
-    for (let x = 0; x <= W; x += 24) {
-      const yy = y + Math.sin(x * .012 / (p + .15) + t * (.4 + p * .6) + k) * 1.6 * p;
-      x === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
-    }
-    ctx.stroke();
-  }
-}
-
-/* Lighthouse: a headland at night, the beam sweeping through fog, a buoy blinking out on the water */
-export function lighthouseScene() {
-  let sky, land, fogBand, built = 0, lamp, buoy, blink = 0;
-  const hy = () => H * .6;
-  const api = {
-    init() {
-      const d = daylight(); built = d; let g;
-      [sky, g] = layer(W, H);
-      paintSky(g, [[0, [3, 6, 18], [38, 34, 78], [96, 150, 220]], [.6, [9, 16, 36], [190, 110, 100], [190, 215, 235]], [1, [6, 10, 22], [60, 50, 70], [120, 150, 170]]], d);
-      if (d < .5) { g.globalAlpha = 1 - d * 2; stars(g, Math.round(W * H / 2600), hy() * .9); g.globalAlpha = 1; }
-      const sea = g.createLinearGradient(0, hy(), 0, H);
-      sea.addColorStop(0, rgb(skyMix([10, 18, 40], [70, 55, 90], [50, 110, 160], d))); sea.addColorStop(1, rgb(skyMix([3, 6, 14], [16, 16, 34], [20, 50, 80], d)));
-      g.fillStyle = sea; g.fillRect(0, hy(), W, H - hy());
-      [land, g] = layer(W, H);
-      const s = Math.min(W, H) / 800, ridgeY = x => hy() - H * .18 * Math.pow(Math.max(0, (x - W * .55) / (W * .45)), .6) + Math.sin(x * .02) * 3 * s;
-      const rock = skyMix([8, 9, 14], [26, 20, 30], [58, 60, 56], d), grass = skyMix([10, 16, 12], [40, 48, 30], [86, 120, 62], d);
-      const rg = g.createLinearGradient(0, hy() - H * .2, 0, H);
-      rg.addColorStop(0, rgb(grass)); rg.addColorStop(.3, rgb(rock)); rg.addColorStop(1, rgb(rock.map(v => v * .45)));
-      g.fillStyle = rg; g.beginPath(); g.moveTo(W * .55, H);
-      for (let x = W * .55; x <= W + 2; x += 6) g.lineTo(x, ridgeY(x));
-      g.lineTo(W + 2, H); g.fill();
-      g.save(); g.beginPath(); g.moveTo(W * .55, H); for (let x = W * .55; x <= W + 2; x += 6) g.lineTo(x, ridgeY(x)); g.lineTo(W + 2, H); g.clip();
-      g.strokeStyle = rgb(rock.map(v => v * .7), .7); g.lineWidth = 2;   // strata in the cliff face
-      for (let k = 0; k < 14; k++) {
-        g.beginPath();
-        for (let x = W * .55; x <= W + 2; x += 20) g.lineTo(x, hy() - H * .02 + k * H * .04 + Math.sin(x * .03 + k) * 4 + (x - W * .55) * .02);
-        g.stroke();
-      }
-      g.restore();
-      const tx = W * .82, ty = ridgeY(tx), th = H * .22, tw = 15 * s;
-      lamp = { x: tx, y: ty - th - 6 * s };
-      const body = g.createLinearGradient(tx - tw, 0, tx + tw, 0);
-      const wall = skyMix([30, 32, 44], [140, 120, 130], [236, 236, 230], d);
-      body.addColorStop(0, rgb(wall.map(v => v * .55))); body.addColorStop(.45, rgb(wall)); body.addColorStop(1, rgb(wall.map(v => v * .5)));
-      g.fillStyle = body; g.beginPath(); g.moveTo(tx - tw, ty + 4); g.lineTo(tx - tw * .7, ty - th); g.lineTo(tx + tw * .7, ty - th); g.lineTo(tx + tw, ty + 4); g.fill();
-      g.fillStyle = rgb(skyMix([60, 20, 24], [160, 50, 50], [200, 60, 60], d));
-      for (const f of [.25, .6]) g.fillRect(tx - tw * (1 - f * .3), ty - th * f, tw * 2 * (1 - f * .3), th * .09);
-      g.fillStyle = rgb(rock); g.fillRect(tx - tw * .95, ty - th - 7 * s, tw * 1.9, 8 * s);
-      g.beginPath(); g.moveTo(tx - tw * .8, ty - th - 7 * s); g.lineTo(tx, ty - th - 22 * s); g.lineTo(tx + tw * .8, ty - th - 7 * s); g.fill();
-      [fogBand, g] = layer(W, H);
-      const fg = g.createLinearGradient(0, hy() - H * .22, 0, hy() + H * .1);
-      fg.addColorStop(0, 'rgba(150,165,190,0)'); fg.addColorStop(.6, 'rgba(150,165,190,.55)'); fg.addColorStop(1, 'rgba(150,165,190,0)');
-      g.fillStyle = fg; g.fillRect(0, 0, W, H);
-      buoy = { x: W * .28, y: hy() + H * .09 };
-    },
-    draw(t, dt) {
-      if (stale(built)) api.init();
-      const d = daylight(), night = 1 - d;
-      ctx.drawImage(sky, 0, 0, W, H);
-      waterRows(hy(), t, skyMix([170, 190, 230], [255, 200, 180], [230, 245, 255], d), .09);
-      const fog = .25 + .55 * weather;
-      ctx.globalAlpha = fog * (.5 + .5 * night); ctx.drawImage(fogBand, 0, 0, W, H); ctx.globalAlpha = 1;
-      // The lamp turns once every eight seconds. The beam is widest and brightest when it faces us.
-      const th = t * .785, toward = Math.max(0, Math.sin(th)), dir = Math.cos(th);
-      const len = W * 1.3, ex = lamp.x + dir * len, ey = lamp.y - len * (.1 - .22 * toward);
-      ctx.globalCompositeOperation = 'lighter';
-      const a = (.05 + .22 * fog) * (.35 + .65 * toward) * (.25 + .75 * night);
-      const bg = ctx.createLinearGradient(lamp.x, lamp.y, ex, ey);
-      bg.addColorStop(0, `rgba(255,236,190,${a})`); bg.addColorStop(1, 'rgba(255,236,190,0)');
-      const spread = .035 + .06 * toward, nx = -(ey - lamp.y), ny = ex - lamp.x, nl = Math.hypot(nx, ny) || 1;
-      ctx.fillStyle = bg; ctx.beginPath(); ctx.moveTo(lamp.x, lamp.y);
-      ctx.lineTo(ex + nx / nl * len * spread, ey + ny / nl * len * spread); ctx.lineTo(ex - nx / nl * len * spread, ey - ny / nl * len * spread); ctx.fill();
-      glow(ctx, lamp.x, lamp.y, 14 + 90 * toward * toward, [255, 236, 190], (.3 + .7 * toward) * (.3 + .7 * night));
-      blink = (blink + dt) % 3;
-      if (blink < .3) glow(ctx, buoy.x, buoy.y, 16, [255, 60, 50], .7 * night + .15);
-      ctx.fillStyle = `rgba(255,230,180,${.8 * toward * toward * night})`; ctx.beginPath(); ctx.arc(lamp.x, lamp.y, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = 'rgba(20,14,16,.9)'; ctx.fillRect(buoy.x - 3, buoy.y - 10, 6, 10);
-      ctx.drawImage(land, 0, 0, W, H);
-    }
-  };
-  return api;
-}
 
 /* Night Train: the carriage window, lights sliding past at three depths, a lit station now and then */
 export function trainScene() {
@@ -239,55 +145,6 @@ export function stormScene() {
       ctx.drawImage(ground, 0, 0, W, H);
     }
   };
-}
-
-/* Above the Clouds: a plane window at the hour the clock says, cloud decks sliding by, the wingtip light blinking */
-export function cloudsScene() {
-  let sky, decks, wing, built = 0, tip;
-  const api = {
-    init() {
-      const d = daylight(); built = d; let g;
-      [sky, g] = layer(W, H);
-      paintSky(g, [[0, [4, 6, 20], [22, 30, 90], [70, 130, 225]], [.5, [12, 16, 40], [130, 70, 120], [150, 195, 240]], [.62, [20, 20, 50], [250, 150, 90], [220, 230, 245]], [1, [10, 12, 30], [60, 40, 70], [170, 190, 210]]], d);
-      if (d < .5) { g.globalAlpha = 1 - d * 2; stars(g, Math.round(W * H / 3000), H * .5); g.globalAlpha = 1; }
-      if (d > .1) glow(g, W * .72, H * .6, W * .35, [255, 200, 130], .5 * Math.min(1, d * 2));
-      const top = skyMix([40, 44, 70], [255, 190, 150], [255, 255, 255], d), under = skyMix([14, 16, 30], [90, 60, 100], [170, 185, 205], d);
-      decks = [[.52, 6, .35, 60], [.64, 14, .8, 110], [.84, 32, .9, 150]].map(([y, v, alpha, size]) => {
-        const w = Math.ceil(W * 2), [c, cg] = layer(w, H * .5);
-        for (let i = 0; i < 110; i++) {
-          const r = rand(size * .4, size) * Math.max(.6, W / 1400), x = rand(0, w), yy = rand(H * .02, H * .2);
-          const k = yy / (H * .2), col = top.map((v, j) => Math.round(v + (under[j] - v) * k));
-          const cg2 = cg.createRadialGradient(x, yy, 0, x, yy, r);
-          cg2.addColorStop(0, rgb(col, .55)); cg2.addColorStop(1, rgb(col, 0));
-          cg.fillStyle = cg2; cg.beginPath(); cg.arc(x, yy, r, 0, Math.PI * 2); cg.fill();
-        }
-        return { c, y: H * y, v, alpha, w, x: 0 };
-      });
-      [wing, g] = layer(W, H);
-      const wy = H * .76, tx = W * .6, ty = H * .83;
-      tip = { x: tx, y: ty };
-      const wg = g.createLinearGradient(0, wy, 0, H);
-      wg.addColorStop(0, rgb(skyMix([38, 40, 50], [120, 90, 100], [200, 205, 215], d))); wg.addColorStop(.3, rgb(skyMix([20, 22, 30], [60, 50, 65], [140, 145, 158], d))); wg.addColorStop(1, '#0a0b10');
-      g.fillStyle = wg; g.beginPath(); g.moveTo(-2, wy); g.lineTo(tx, ty); g.lineTo(tx + 10, ty + H * .03); g.lineTo(-2, H * .97); g.fill();
-      g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-2, wy); g.lineTo(tx, ty); g.stroke();
-    },
-    draw(t, dt) {
-      if (stale(built)) api.init();
-      ctx.drawImage(sky, 0, 0, W, H);
-      for (const dk of decks) {
-        dk.x = (dk.x + dk.v * dt) % dk.w;
-        ctx.globalAlpha = dk.alpha;
-        for (let x = -dk.x; x < W; x += dk.w) ctx.drawImage(dk.c, x, dk.y + Math.sin(t * .1 + dk.y) * 2, dk.w, H * .5);
-      }
-      ctx.globalAlpha = 1;
-      ctx.drawImage(wing, 0, 0, W, H);
-      ctx.globalCompositeOperation = 'lighter';
-      glow(ctx, tip.x - 6, tip.y, 10, [255, 40, 40], .8);
-      const c = t % 1.5; if (c < .07 || (c > .2 && c < .27)) glow(ctx, tip.x - 2, tip.y - 2, 60, [255, 255, 255], .9);
-      ctx.globalCompositeOperation = 'source-over';
-    }
-  };
-  return api;
 }
 
 /* Pond: rain rings on dark water, lily pads, a fish shadow now and then */
