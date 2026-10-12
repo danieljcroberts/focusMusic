@@ -106,10 +106,4 @@ el('tApply').addEventListener('click', () => {
 el('tReset').addEventListener('click', () => reset());
 window.addEventListener('pagehide', save);
 export const timerRunning = () => timer.running;
-// Where a running block is: its mode and how far through it is (0 to 1), or null when nothing runs.
-export function timerProgress() {
-  if (!timer.running && timer.mode === 'focus') return null;
-  const total = (timer.mode === 'focus' ? timer.f : timer.mode === 'long' ? timer.lb : timer.b) * 60;
-  return { mode: timer.mode, p: Math.max(0, Math.min(1, 1 - timer.left / total)) };
-}
 export function initTimer(opts) { sceneName = opts.sceneName; setDuck(timer.mode !== 'focus'); draw(); }

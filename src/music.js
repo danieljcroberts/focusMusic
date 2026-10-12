@@ -133,26 +133,6 @@ function setMeta(parts, href, label) {
 // What plays is the current soundtrack: its free tracks (when on), the viewer's own tracks sorted into it, and random
 // finds from the Internet Archive when it asks for them. See soundtracks.js.
 const allowed = t => playable(t) && ST.freeAllows(t);
-// Sequencing: the next free track is drawn with weights, not evenly. Each soundtrack has an energy arc: during a focus
-// block it starts calm, lifts through the middle and settles toward the end; a break sits higher; with no timer it
-// breathes on a slow twenty-minute cycle. Tracks near the arc's current level are favoured, and the mood of the track
-// just played is less likely to come straight back, so it never sits in one drone for an hour.
-let timerProbe = () => null, lastMood = null;
-export const setTimerProbe = f => { timerProbe = f; };
-function targetEnergy() {
-  const tp = timerProbe(), like = ST.current().like || 'work';
-  const base = { focus: .2, work: .4, energise: .72, wind: .15 }[like] ?? .4, lift = { focus: .28, work: .2, energise: .18, wind: .12 }[like] ?? .2;
-  if (tp && tp.mode === 'focus') return base + lift * Math.sin(tp.p * Math.PI);
-  if (tp) return base + lift * .6;
-  return base + lift * .5 * (1 + Math.sin(performance.now() / 1.2e6 * Math.PI * 2)) * .8;
-}
-function drawFree(list) {
-  const target = targetEnergy();
-  const w = list.map(t => { const e = typeof t.energy === 'number' ? t.energy : .35; return (.15 + Math.exp(-Math.pow((e - target) / .18, 2))) * (t.mood === lastMood ? .4 : 1); });
-  let r = Math.random() * w.reduce((a, v) => a + v, 0);
-  for (let i = 0; i < list.length; i++) if ((r -= w[i]) < 0) return list[i];
-  return list[list.length - 1];
-}
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
@@ -196,7 +176,6 @@ function start(url) {
 }
 export function playTrack(t) {
   if (!t) return;
-  lastMood = t.mood || lastMood;
   if (!playable(t)) {
     setStatus(t.stream ? (iaOnline === null ? 'Checking the connection to archive.org. Try again in a moment.' : BLOCKED) : 'This track is only on its source page. Open the link to listen.');
     return;
@@ -288,7 +267,7 @@ function pickNext(relaxed = false) {
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
   // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
   if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(own[Math.floor(Math.random() * own.length)])]);
-  if (free.length) pools.push([1, () => playTrack(drawFree(free))]);
+  if (free.length) pools.push([1, () => playTrack(free[Math.floor(Math.random() * free.length)])]);
   if (st.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
   if (!pools.length) {
     if (!relaxed) return pickNext(true);                       // everything was played recently: allow it again
