@@ -9,7 +9,8 @@
     ],
     "src": "https://chriszabriskie.bandcamp.com/track/chance-luck-errors-in-nature-destruction-as-a-finale",
     "stream": "https://archive.org/download/Reappear-11948/Chris_Zabriskie_-_06_-_Chance_Luck_Errors_in_Nature_Fate_Destruction_As_a_Finale.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "classical"
   },
   {
     "a": "Calling Sister Midnight",
@@ -21,7 +22,8 @@
     ],
     "src": "http://ccmixter.org/files/romancito/23741",
     "conf": "confirmed",
-    "note": "Also credit SackJo22 and Gurdonark (sampled). ccMixter refuses direct streaming since October 2026; listen on its page."
+    "note": "Also credit SackJo22 and Gurdonark (sampled). ccMixter refuses direct streaming since October 2026; listen on its page.",
+    "genre": "misc"
   },
   {
     "a": "Preslav Literary School",
@@ -32,7 +34,8 @@
       "66"
     ],
     "src": "https://preslavliteraryschool.bandcamp.com/album/mycelium-2",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Preslav Literary School",
@@ -43,7 +46,8 @@
       "73"
     ],
     "src": "https://preslavliteraryschool.bandcamp.com/album/veer",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -54,7 +58,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -65,7 +70,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -76,7 +82,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -87,7 +94,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -98,7 +106,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -109,7 +118,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/planetarium",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -122,7 +132,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "conf": "confirmed",
     "file": "miles-tilmann-particle-song-1.mp3",
-    "note": "From the XMASEP 2 release on Bandcamp"
+    "note": "From the XMASEP 2 release on Bandcamp",
+    "genre": "downtempo"
   },
   {
     "a": "Miles Tilmann",
@@ -133,7 +144,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/cellula-2",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "minimalist"
   },
   {
     "a": "Miles Tilmann",
@@ -144,7 +156,8 @@
       "11"
     ],
     "src": "https://milestilmann.bandcamp.com/album/cellula-2",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "minimalist"
   },
   {
     "a": "Esa Ruoho",
@@ -157,7 +170,8 @@
     "src": "https://archive.org/details/mhrk083",
     "stream": "https://archive.org/download/mhrk083/mhrk083_Esa_Ruoho_07_Glasnevin.mp3",
     "conf": "confirmed",
-    "note": "Netlabel release only; the Bandcamp reissue is all rights reserved"
+    "note": "Netlabel release only; the Bandcamp reissue is all rights reserved",
+    "genre": "ambient"
   },
   {
     "a": "Ian Hawgood",
@@ -169,7 +183,8 @@
     ],
     "src": "https://archive.org/details/IanHawgood-BeforeILetTheSunshineRotphch012",
     "stream": "https://archive.org/download/IanHawgood-BeforeILetTheSunshineRotphch012/01BeforeILetTheSunshineRot.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "classical"
   },
   {
     "a": "Pulse Emitter",
@@ -183,7 +198,8 @@
     "src": "https://archive.org/details/Longing_Thresholds-11457",
     "stream": "https://archive.org/download/Longing_Thresholds-11457/Pulse_Emitter_-_LongingThresholds.mp3",
     "conf": "confirmed",
-    "note": "Free Music Archive copy; Bandcamp now says all rights reserved"
+    "note": "Free Music Archive copy; Bandcamp now says all rights reserved",
+    "genre": "ambient"
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -195,7 +211,8 @@
     ],
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
     "conf": "confirmed",
-    "file": "agents-of-the-culture-industry-reality-effect-kafkadub.mp3"
+    "file": "agents-of-the-culture-industry-reality-effect-kafkadub.mp3",
+    "genre": "downtempo"
   },
   {
     "a": "Renniac",
@@ -207,7 +224,8 @@
     ],
     "src": "https://archive.org/details/gruen012",
     "stream": "https://archive.org/download/gruen012/gruen012_ennui_06-renniac_-_earth_night.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "_nono_",
@@ -218,7 +236,8 @@
       "25"
     ],
     "src": "https://soundcloud.com/nono-16/commfault",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "downtempo"
   },
   {
     "a": "아버지",
@@ -230,7 +249,8 @@
     ],
     "src": "https://father.2006.kr/album/reflection",
     "conf": "confirmed",
-    "note": "Built from short samples; the licence may not cover the sampled material"
+    "note": "Built from short samples; the licence may not cover the sampled material",
+    "genre": "misc"
   },
   {
     "a": "Glochids",
@@ -242,7 +262,8 @@
     ],
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "conf": "confirmed",
-    "file": "glochids-pulse-sjilver.mp3"
+    "file": "glochids-pulse-sjilver.mp3",
+    "genre": "downtempo"
   },
   {
     "a": "Holger Flinsch",
@@ -254,7 +275,8 @@
     ],
     "src": "https://archive.org/details/raam004",
     "stream": "https://archive.org/download/raam004/raam004_01_holger_flinsch_-_organon.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "synth"
   },
   {
     "a": "Gaston Arevalo",
@@ -267,7 +289,8 @@
     "src": "https://archive.org/details/f_pass009",
     "stream": "https://archive.org/download/f_pass009/pass009_-_02_gaston_arevalo_-_agreste.mp3",
     "file": "gaston-arevalo-agreste.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Maps And Diagrams",
@@ -280,7 +303,8 @@
     "src": "https://archive.org/details/YkYk019",
     "stream": "https://archive.org/download/YkYk019/ykyk019-02_maps_and_diagrams_-_eleemosyn.mp3",
     "file": "maps-and-diagrams-eleemosyn.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Lomov",
@@ -292,7 +316,8 @@
     ],
     "src": "https://archive.org/details/apl028",
     "stream": "https://archive.org/download/apl028/apl028-02-lomov_-_sommersumpf.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Sable",
@@ -304,7 +329,8 @@
     ],
     "src": "https://archive.org/details/apl010",
     "stream": "https://archive.org/download/apl010/apl010_a1-epoq_-_sable_benthal.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Bannister Boy",
@@ -317,7 +343,8 @@
     "src": "https://archive.org/details/drift005",
     "stream": "https://archive.org/download/drift005/05._-_Entrance_to_Golden_Suburbia.mp3",
     "file": "bannister-boy-entrance-to-golden-suburbia.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "lofi"
   },
   {
     "a": "Khonnor",
@@ -330,7 +357,8 @@
     "src": "https://archive.org/details/pls001",
     "stream": "https://archive.org/download/pls001/pls001-06-Khonnor-I_Was_Everything_You_Wanted_Until_I_Quit.mp3",
     "file": "khonnor-i-was-everything-you-wanted-until-i-quit.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "lofi"
   },
   {
     "a": "SiJ",
@@ -342,7 +370,8 @@
     ],
     "src": "https://archive.org/details/gv491",
     "stream": "https://archive.org/download/gv491/01.%20SiJ%20-%20There%20Is%20No%20Life%20Without%20Love.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Zen Savauge",
@@ -355,7 +384,8 @@
     "src": "https://www.subsource.de/sub/054",
     "stream": "https://archive.org/download/sub054/sub054-03_zensavauge_contrast_quiet_view.mp3",
     "file": "zen-savauge-quiet-view.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "minimalist"
   },
   {
     "a": "Downliners Sekt",
@@ -367,7 +397,8 @@
     ],
     "src": "https://archive.org/details/Meet_the_Decline-9490",
     "stream": "https://archive.org/download/Meet_the_Decline-9490/Downliners_Sekt_-_04_-_hockey_nights_in_Canada.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "downtempo"
   },
   {
     "a": "adamned.age",
@@ -380,7 +411,8 @@
     "src": "https://hanneadam.bandcamp.com/album/eiskind",
     "stream": "https://archive.org/download/Adamned.age-EiskindEp/Cam103eiskind-01-agecalmer_adamnedage.mp3",
     "file": "adamned-age-calmer.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "downtempo"
   },
   {
     "a": "Vultrapia",
@@ -393,7 +425,8 @@
     "src": "https://archive.org/details/apl008",
     "stream": "https://archive.org/download/apl008/apl008-01-vultrapia_-_scali.mp3",
     "file": "vultrapia-scali.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "migloJE",
@@ -405,7 +438,8 @@
     ],
     "src": "https://archive.org/details/MigloJE_Ayesteeyah",
     "stream": "https://archive.org/download/MigloJE_Ayesteeyah/kahvi174g_migloje-leti_vejai.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "misc"
   },
   {
     "a": "Space Dimension Controller",
@@ -417,7 +451,8 @@
     ],
     "src": "https://archive.org/details/acp046_space_dimension_controller_-_unidentified_flying_oscillator",
     "stream": "https://archive.org/download/acp046_space_dimension_controller_-_unidentified_flying_oscillator/01_Unidentified_Flying_Oscillator.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "synth"
   },
   {
     "a": "The Inventors of Aircraft",
@@ -429,7 +464,8 @@
     ],
     "src": "https://archive.org/details/ser017",
     "stream": "https://archive.org/download/ser017/ser017_05_the_inventors_of_aircraft_-_hazel.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "postrock"
   },
   {
     "a": "D_rradio",
@@ -442,7 +478,8 @@
     "src": "https://freemusicarchive.org/music/D_rradio/Intelligent_Toys_We_Make_Music/08_D_rradio_-_Leaves",
     "stream": "https://archive.org/download/sute027/3.08_D_rradio_-_Leaves.mp3",
     "file": "d-rradio-leaves.mp3",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "postrock"
   },
   {
     "a": "Puffin On My Side",
@@ -453,7 +490,8 @@
       "25"
     ],
     "src": "https://puffinonmyside.bandcamp.com/album/early-morning",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "misc"
   },
   {
     "a": "Off The Sky vs Gyges",
@@ -464,7 +502,8 @@
       "9"
     ],
     "src": "https://files.scene.org/view/music/groups/thinner/320/%5Bthn100%5D-320-00-va_-_100.nfo",
-    "conf": "confirmed"
+    "conf": "confirmed",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -476,7 +515,8 @@
     ],
     "src": "https://archive.org/details/exp038",
     "conf": "likely",
-    "note": "Experimedia netlabel; licence not shown on the item"
+    "note": "Experimedia netlabel; licence not shown on the item",
+    "genre": "ambient"
   },
   {
     "a": "Not Your Average Hippy",
@@ -488,7 +528,8 @@
     ],
     "src": "http://relaxedmachinery.com/earthmantra/about.php",
     "conf": "likely",
-    "note": "Earth Mantra states all releases use this licence"
+    "note": "Earth Mantra states all releases use this licence",
+    "genre": "ambient"
   },
   {
     "a": "Manrico Montero & Alexandre Navarro",
@@ -501,7 +542,8 @@
     "src": "https://archive.org/details/Montero__Navarro_Bootleg_Remix-8523",
     "stream": "https://archive.org/download/Montero__Navarro_Bootleg_Remix-8523/Offthesky_-_03_-_MonteroNavarro_Bootleg_Remix.mp3",
     "conf": "likely",
-    "note": "Free Music Archive mirror of the netlabel release"
+    "note": "Free Music Archive mirror of the netlabel release",
+    "genre": "ambient"
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -513,7 +555,8 @@
     ],
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/f-r-a-g-m-e-n-t-o-r-a-critique-of-aesthetic-property-relations",
     "conf": "likely",
-    "note": "Probably an excerpt of this album"
+    "note": "Probably an excerpt of this album",
+    "genre": "downtempo"
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -525,7 +568,8 @@
     ],
     "src": "https://agentsofthecultureindustry.bandcamp.com/",
     "conf": "likely",
-    "note": "Release not found; all their releases are BY-NC 4.0"
+    "note": "Release not found; all their releases are BY-NC 4.0",
+    "genre": "downtempo"
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -536,7 +580,8 @@
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
     "file": "agents-of-the-culture-industry-everything-is-changing.mp3",
     "conf": "confirmed",
-    "note": "Beyond Infinity, part 1 (34 min). Licence confirmed on the album page, 2026-10-10."
+    "note": "Beyond Infinity, part 1 (34 min). Licence confirmed on the album page, 2026-10-10.",
+    "genre": "downtempo"
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -547,7 +592,8 @@
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
     "file": "agents-of-the-culture-industry-another-world-is-necessary.mp3",
     "conf": "confirmed",
-    "note": "Beyond Infinity, part 3 (11 min). Licence confirmed on the album page, 2026-10-10."
+    "note": "Beyond Infinity, part 3 (11 min). Licence confirmed on the album page, 2026-10-10.",
+    "genre": "downtempo"
   },
   {
     "a": "Glochids",
@@ -558,7 +604,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "file": "glochids-smell.mp3",
     "conf": "confirmed",
-    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10."
+    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   },
   {
     "a": "Glochids",
@@ -569,7 +616,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "file": "glochids-on-gel.mp3",
     "conf": "confirmed",
-    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10."
+    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "minimalist"
   },
   {
     "a": "Glochids",
@@ -580,7 +628,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "file": "glochids-tescent.mp3",
     "conf": "confirmed",
-    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10."
+    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   },
   {
     "a": "Glochids",
@@ -591,7 +640,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "file": "glochids-mercuset.mp3",
     "conf": "confirmed",
-    "note": "BE I-X (9 min). Licence confirmed on the album page, 2026-10-10."
+    "note": "BE I-X (9 min). Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   },
   {
     "a": "Glochids",
@@ -602,7 +652,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "file": "glochids-plummi.mp3",
     "conf": "confirmed",
-    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10."
+    "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -613,7 +664,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-winder.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "downtempo"
   },
   {
     "a": "Miles Tilmann",
@@ -624,7 +676,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-mercury-2.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   },
   {
     "a": "Miles Tilmann",
@@ -635,7 +688,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-alpha-chime.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2 (10 min). Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2 (10 min). Licence confirmed on the album page, 2026-10-10.",
+    "genre": "minimalist"
   },
   {
     "a": "Miles Tilmann",
@@ -646,7 +700,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-middle-fields.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "downtempo"
   },
   {
     "a": "Miles Tilmann",
@@ -657,7 +712,8 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-particle-3.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
+    "genre": "downtempo"
   },
   {
     "a": "Miles Tilmann",
@@ -668,6 +724,7 @@
     "src": "https://milestilmann.bandcamp.com/album/xmasep-2",
     "file": "miles-tilmann-melt.mp3",
     "conf": "confirmed",
-    "note": "XMASEP 2 (11 min). Licence confirmed on the album page, 2026-10-10."
+    "note": "XMASEP 2 (11 min). Licence confirmed on the album page, 2026-10-10.",
+    "genre": "ambient"
   }
 ]

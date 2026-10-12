@@ -34,9 +34,9 @@ for (const d of sheet.querySelectorAll('details')) {
 const followButtons = [...el('followSeg').querySelectorAll('button')];
 const NOTES = {
   none: 'The soundtrack only changes when you pick one.',
-  scene: 'Each scene suggests one of the four built-in soundtracks (a pulse scene wants Energise, a warm one Easy work). A soundtrack of your own stays put.',
-  timer: 'Deep focus during focus blocks, Energise in breaks.',
-  both: 'The scene suggests a built-in soundtrack; the timer switches between Deep focus and Energise.',
+  scene: 'Each scene suggests a built-in soundtrack from its mood: calm scenes Ambient, warm ones Lo-fi, lively ones Downtempo Electronic or Synthwave & Techno. A soundtrack of your own stays put.',
+  timer: 'Ambient during focus blocks, Downtempo Electronic in breaks.',
+  both: 'The scene suggests a built-in soundtrack; the timer switches between Ambient and Downtempo Electronic.',
 };
 export const followMode = () => state.stScene && state.stTimer ? 'both' : state.stScene ? 'scene' : state.stTimer ? 'timer' : 'none';
 export function setFollowMode(k) {

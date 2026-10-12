@@ -21,7 +21,9 @@ const counts = s => {
 
 /* The chip and its menu */
 const stBtn = el('stBtn'), stMenu = el('stMenu');
-function drawChip() { const s = ST.current(); el('stName').textContent = s.name; el('stDot').style.background = s.color; stBtn.title = `Soundtrack: ${s.name} (${counts(s).text})`; }
+// A soundtrack's icon: a small line drawing in its colour.
+export const icon = (s, cls = '') => { const n = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('class', 'sticon ' + cls); n.setAttribute('aria-hidden', 'true'); n.style.color = s.color; const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', s.icon || 'M12 5v14M5 12h14'); n.append(p); return n; };
+function drawChip() { const s = ST.current(); el('stName').textContent = s.name; const dot = el('stDot'); dot.textContent = ''; dot.append(icon(s)); stBtn.title = `Soundtrack: ${s.name} (${counts(s).text})`; }
 function choose(id) {
   ST.setCurrent(id); closeMenus();
   const s = ST.current();
@@ -33,7 +35,7 @@ function fillMenu() {
   stMenu.append(h('span', { className: 'lbl', textContent: 'Soundtrack' }));
   for (const s of ST.soundtracks()) {
     const c = counts(s);
-    const b = h('button', { type: 'button', className: 'opt' }, h('i', { style: `background:${s.color}` }), s.name, h('small', { textContent: c.own || c.free || s.live ? (c.own ? `${c.own} yours` : 'free') : 'empty' }));
+    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? `${c.free} free` : s.live ? 'random finds' : 'add your own' }));
     b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(s.id === ST.current().id));
     b.addEventListener('click', () => choose(s.id));
     stMenu.append(b);
@@ -90,7 +92,7 @@ export function openWizard(target = null) {
   if (target) return stepPick();
   show('Your music',
     h('p', { className: 'step', textContent: 'Step 1 of 4' }),
-    h('p', { textContent: 'Add music from this device to your soundtracks: Deep focus, Easy work, Energise and Wind down, or new ones of your own.' }),
+    h('p', { textContent: 'Add music from this device to your soundtracks: Ambient, Minimalist, Modern Classical, Downtempo Electronic, Lo-fi, Post-rock, Jazz, Misc, French language, Synthwave & Techno and High energy, or new ones of your own.' }),
     h('p', { className: 'muted', textContent: 'Your files are copied into the app on this device, so they play offline. Nothing is uploaded, and they use space on your phone like any other copy.' }),
     h('div', { className: 'actions' }, btn('Not now', hide), btn('Continue', stepHow, 'pbtn primary')));
 }
@@ -103,7 +105,7 @@ function stepHow() {
   show('Your music',
     h('p', { className: 'step', textContent: 'Step 2 of 4' }),
     h('p', { textContent: 'How is your music organised?' }),
-    choice('I have a folder for each type', 'For example Music/Focus, Music/Classical, Music/Running. You pick the folder that holds them, and each one becomes or joins a soundtrack.', true),
+    choice('I have a folder for each type', 'For example Music/Jazz, Music/Lo-fi, Music/French. You pick the folder that holds them, and each one joins the matching soundtrack or becomes a new one.', true),
     choice('It is all in one place', 'You pick a folder or some files. The app listens to each track, suggests a soundtrack, and asks you about the ones it is unsure of.', false),
     h('div', { className: 'actions' }, btn('Back', openWizard)));
 }
@@ -202,7 +204,7 @@ function stepSort(i) {
   const { e, guess } = W.unsure[i];
   const put = id => { ST.moveOwnTo(id, e.id); W.touched.add(id); stepSort(i + 1); };
   const choices = h('div', { className: 'stbtns' }, ...ST.soundtracks().map(s => {
-    const b = btn(s.name, () => put(s.id), s.id === guess ? 'pbtn primary' : 'pbtn');
+    const b = btn(s.name, () => put(s.id), s.id === guess ? 'pbtn primary' : 'pbtn'); b.prepend(icon(s, 'inline'));
     return b;
   }));
   show('Where does this go?',
@@ -223,7 +225,7 @@ export function openSorter(recentOnly = true) {
 }
 function stepDone() {
   if (W.mode === 'resort') { window.dispatchEvent(new CustomEvent('sw-own-changed')); return openEditor(); }
-  const rows = [...W.touched].map(id => ST.byId(id)).filter(Boolean).map(s => h('tr', {}, h('td', {}, h('i', { style: `display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:${s.color}` }), s.name), h('td', { className: 'muted', textContent: counts(s).text })));
+  const rows = [...W.touched].map(id => ST.byId(id)).filter(Boolean).map(s => h('tr', {}, h('td', {}, icon(s, 'inline'), s.name), h('td', { className: 'muted', textContent: counts(s).text })));
   const first = [...W.touched][0];
   show('All set',
     h('p', { textContent: W.added ? `Added ${plural(W.added, 'track')}.` : 'Everything was already here; the soundtracks are updated.' }),
@@ -243,7 +245,7 @@ export function openEditor(opts = {}) {
     if (s.builtIn) opts2.append(tog('Free tracks', 'free', 'Mix in the free tracks that come with the app'));
     else {
       const like = h('select', { 'aria-label': 'Free tracks to mix in' });
-      like.append(h('option', { value: '', textContent: 'No free tracks' }), ...['focus', 'work', 'energise', 'wind'].map(k => h('option', { value: k, textContent: `Free tracks like ${ST.byId(k).name}` })));
+      like.append(h('option', { value: '', textContent: 'No free tracks' }), ...ST.genres().map(g => h('option', { value: g.id, textContent: `${g.name} free tracks` })));
       like.value = s.like || '';
       like.addEventListener('change', () => { ST.update(s.id, { like: like.value || null, free: !!like.value }); openEditor(); });
       opts2.append(like);
@@ -254,14 +256,14 @@ export function openEditor(opts = {}) {
     let armed = false;
     const del = s.builtIn ? null : btn('Delete', ev => { if (!armed) { armed = true; ev.target.textContent = 'Tap again to delete'; return; } ST.remove(s.id); openEditor(); });
     return h('div', { className: 'stcard' },
-      h('div', { className: 'top' }, h('i', { style: `background:${s.color}` }), name, h('small', { className: 'muted', textContent: c.text })),
+      h('div', { className: 'top' }, icon(s), name, h('small', { className: 'muted', textContent: c.text })),
       opts2,
       mine.length ? tracks : h('p', { className: 'muted', textContent: 'None of your own tracks yet.' }),
       h('div', { className: 'actions' }, h('span', {}, btn('Play this', () => { hide(); choose(s.id); if (!musicPlaying) togglePlay(); }), ' ', btn('Add music…', () => openWizard(s.id))), del));
   });
-  const newName = h('input', { type: 'text', placeholder: 'Name, e.g. Classical', maxLength: 32, 'aria-label': 'New soundtrack name' });
+  const newName = h('input', { type: 'text', placeholder: 'Name, e.g. Film scores', maxLength: 32, 'aria-label': 'New soundtrack name' });
   const newLike = h('select', { 'aria-label': 'Free tracks to mix in' });
-  newLike.append(h('option', { value: '', textContent: 'No free tracks' }), ...['focus', 'work', 'energise', 'wind'].map(k => h('option', { value: k, textContent: `Free tracks like ${ST.byId(k).name}` })));
+  newLike.append(h('option', { value: '', textContent: 'No free tracks' }), ...ST.genres().map(g => h('option', { value: g.id, textContent: `${g.name} free tracks` })));
   const create = h('div', { className: 'stcard' }, h('b', { textContent: 'New soundtrack' }), newName, newLike,
     h('div', { className: 'actions' }, h('span'), btn('Create and add music', () => { if (!newName.value.trim()) { newName.focus(); return; } const id = ST.create(newName.value, newLike.value || null); openWizard(id); }, 'pbtn primary')));
   const tools = h('div', { className: 'stcard' }, h('b', { textContent: 'Your tracks' }),
@@ -302,12 +304,12 @@ el('stRescanRow').append(rescanBtn());
 // The scene suggests a built-in soundtrack from its tone; only a built-in gives way to it, so a soundtrack of your own stays.
 window.addEventListener('sw-scene', e => {
   if (!state.stScene || !ST.current().builtIn) return;
-  const id = ST.forScene(e.detail.tone, e.detail.mood);
+  const id = ST.forScene(e.detail.tone);
   if (ST.current().id !== id) { ST.setCurrent(id); if (musicPlaying && !follow) nextTrack(); }   // with "scene picks music" on, that change picks the track
 });
 window.addEventListener('sw-timer', e => {
   if (!state.stTimer) return;
-  const id = e.detail === 'focus' ? 'focus' : 'energise';
+  const id = ST.forTimer(e.detail);
   if (ST.current().id !== id) { ST.setCurrent(id); if (musicPlaying) nextTrack(); }
 });
 window.addEventListener('sw-own-loaded', () => {
