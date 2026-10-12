@@ -390,26 +390,103 @@ export function cometScene() {
   };
 }
 
-/* Deep Field: a slow pan across Webb's first deep field, thousands of galaxies */
+/* Deep Field: a journey through Webb's first deep field. The photograph is the far layer; two fields of nearer stars
+   slide across it with parallax, so the view has depth. The camera travels between the field's landmarks (the bright star,
+   the lensing arcs round the cluster, the spirals) and lingers, with a slow roll. The brightest points bloom and twinkle,
+   breathing with the bass. */
+const DEEP_FS = `
+uniform sampler2D uImg; uniform float uZoom, uReady, uRoll;
+const float AR = .98;                                                // the photograph's width over its height
+float lum(vec3 c){ return dot(c, vec3(.3, .55, .15)); }
+// A field of faint stars in a plane nearer than the photograph; d is how much nearer.
+vec3 nearStars(vec2 uv, vec2 c, float z, float d, float seed, float t){
+  float zz = pow(z, 1. + d);
+  vec2 q = (c - .5) * (1. + d) * 2. + uv / zz * 1.4;                 // moves and grows faster than the far layer
+  float N = 26. + seed * 6.;
+  vec2 g = q * N;
+  vec2 cell = floor(g), f = fract(g) - .5;
+  float h = h21(cell + seed);
+  vec2 o = (vec2(h21(cell + 1.3 + seed), h21(cell + 7.1 + seed)) - .5) * .6;
+  float r = length(f - o) / N * zz / 1.4;                              // back to screen units
+  float px = 1. / uRes.y;
+  float size = (.5 + 1.1 * pow(h21(cell + 3.3 + seed), 4.)) * px * (1. + .5 * d);
+  float star = smoothstep(size * 1.8, size * .3, r) * step(.975 - d * .01, h);
+  float tw = .7 + .3 * sin(t * (1.5 + h * 3.) + h * 40.);
+  vec3 col = mix(vec3(.85, .9, 1.), vec3(1., .9, .75), step(.5, h21(cell + 9.9 + seed)));
+  return col * star * tw * (.3 + .4 * d);
+}
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
+  float cr = cos(uRoll), sr = sin(uRoll); uv = vec2(cr * uv.x - sr * uv.y, sr * uv.x + cr * uv.y);
+  float t = uT, asp = uRes.x / uRes.y;
+  float s = max(asp / AR, 1.);                                        // cover the screen at zoom 1
+  vec2 c = vec2(uA, uB);
+  vec2 tc = c + uv / (uZoom * s) * vec2(1. / AR, 1.);
+  vec3 col = vec3(0.);
+  if (uReady > .5) {
+    vec3 im = texture2D(uImg, tc).rgb;
+    // Bloom: the brightest points get a soft halo from a ring of samples, pulsing with the bass and twinkling.
+    float px = 1. / (uRes.y * uZoom * s);
+    vec3 halo = vec3(0.);
+    for (int i = 0; i < 12; i++) {
+      float a = float(i) * .5236;
+      vec2 o = vec2(cos(a) / AR, sin(a)) * px * 3.5;
+      vec3 sm = texture2D(uImg, tc + o).rgb;
+      halo += max(sm - .5, 0.) * .5;
+      sm = texture2D(uImg, tc + o * 2.4).rgb;
+      halo += max(sm - .62, 0.) * .3;
+    }
+    halo /= 12.;
+    vec2 cell = floor(tc * vec2(AR, 1.) * 900.);
+    float h = h21(cell);
+    float tw = .8 + .2 * sin(t * (2. + 2. * h) + h * 60.) * (.5 + .5 * uTreble);
+    col = im + halo * (1.3 + 2.2 * uBass) * tw * vec3(1., .95, .88);
+    col += im * max(lum(im) - .75, 0.) * .5 * (.6 + .8 * uBass);        // cores and spikes brighten with the beat
+    float inside = step(0., tc.x) * step(tc.x, 1.) * step(0., tc.y) * step(tc.y, 1.);
+    col *= inside;
+  }
+  // Nearer stars, two planes, and a few motes close by.
+  col += nearStars(uv, c, uZoom, .35, 0., t);
+  col += nearStars(uv, c, uZoom, .8, 5., t) * .8;
+  col = mix(col, col * .55, smoothstep(.55, 1.2, length(uv)) * .8);    // vignette
+  col += dither(t);
+  gl_FragColor = vec4(col, 1.);
+}`;
 export function deepfieldScene() {
   const src = 'deep-field.jpg';
-  return {
-    init() { img(src); },
-    draw(t) {
-      ctx.fillStyle = '#020306'; ctx.fillRect(0, 0, W, H);
+  // Landmarks as fractions of the photograph from its top left, with how close to go.
+  const SPOTS = [[.43, .39, 2.6], [.52, .52, 2.3], [.64, .43, 3.2], [.86, .38, 3.4], [.57, .07, 3.], [.71, .57, 3.2], [.44, .68, 3.], [.17, .74, 2.6], [.5, .5, 1.12]];
+  let leg = null, legs = 0, tex = null, uZoom, uReady, uImgLoc, uRoll, prog;
+  const sm = x => x * x * x * (x * (x * 6 - 15) + 10);
+  const pick = from => { let i; do { i = legs % 3 === 2 ? SPOTS.length - 1 : Math.floor(Math.random() * (SPOTS.length - 1)); } while (SPOTS[i] === from); return SPOTS[i]; };
+  return shaderScene('float dither(float t){ return (h21(gl_FragCoord.xy + fract(t)) - .5) / 160.; }\n' + DEEP_FS, {
+    res: 1.25, speed: 1,
+    before(t, dt, gl, u) {
+      if (!prog) { prog = gl.getParameter(gl.CURRENT_PROGRAM); uZoom = gl.getUniformLocation(prog, 'uZoom'); uReady = gl.getUniformLocation(prog, 'uReady'); uImgLoc = gl.getUniformLocation(prog, 'uImg'); uRoll = gl.getUniformLocation(prog, 'uRoll'); }
       const im = img(src);
-      if (!ok(im)) return;
-      const iw = im.naturalWidth, ih = im.naturalHeight;
-      const z = 1.35 + .3 * Math.sin(t * .0061 + .8);
-      const s = Math.max(W / iw, H / ih) * z, w = iw * s, h = ih * s;
-      const fx = .5 + .45 * Math.sin(t * .0083 + 1.1), fy = .5 + .45 * Math.sin(t * .0057 + 2.3);
-      const x = -(w - W) * fx, y = -(h - H) * fy;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(im, x, y, w, h);
-      const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .35, W / 2, H / 2, Math.max(W, H) * .75);
-      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+      if (!tex && ok(im)) {
+        tex = gl.createTexture(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, tex);
+        for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im);
+        gl.uniform1i(uImgLoc, 2);
+      }
+      if (tex) { gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, tex); }
+      gl.uniform1f(uReady, tex ? 1 : 0);
+      // The journey: ease from one landmark to the next over a minute or so, linger, move on. Every third stop is the wide view.
+      const speed = (lively ? 1.7 : 1) * (lowPower ? .8 : 1);
+      if (!leg) leg = { from: SPOTS[SPOTS.length - 1], to: SPOTS[0], t0: t, dur: 75, hold: 22 };
+      let k = (t - leg.t0) * speed / leg.dur;
+      if (k >= 1 + leg.hold / leg.dur) { legs++; leg = { from: leg.to, to: pick(leg.to), t0: t, dur: 60 + Math.random() * 40, hold: 15 + Math.random() * 20 }; k = 0; }
+      const e = sm(Math.max(0, Math.min(1, k)));
+      let cx = leg.from[0] + (leg.to[0] - leg.from[0]) * e, cy = leg.from[1] + (leg.to[1] - leg.from[1]) * e;
+      const z = Math.exp(Math.log(leg.from[2]) + (Math.log(leg.to[2]) - Math.log(leg.from[2])) * e);
+      // A slow drift round the landmark while lingering, and a slow roll of the whole view.
+      cx += Math.sin(t * .05) * .012 / z; cy += Math.cos(t * .041) * .012 / z;
+      const s = Math.max(W / H / .98, 1), hx = .5 / (z * s * .98) + .002, hy = .5 / (z * s) + .002;
+      cx = Math.max(hx, Math.min(1 - hx, cx)); cy = Math.max(hy, Math.min(1 - hy, cy));
+      gl.uniform1f(u.uA, cx); gl.uniform1f(u.uB, 1 - cy); gl.uniform1f(uZoom, z); gl.uniform1f(uRoll, Math.sin(t * .023) * .035);
     }
-  };
+  });
 }
 
 /* Mars Dust Storm: the view from a rover's mast camera as dust veils sweep across the plain */

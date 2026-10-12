@@ -169,7 +169,7 @@ export const SCENES = [
   { group: 'Space', key: 'comet', name: 'Comet Pass', sw: '#7fa8e0', sound: 'space', mood: 'night', tone: 'cold', art: ORIGINAL, music: 'Miles Tilmann|Alpha Chime',
     desc: 'A comet crosses the stars over twenty minutes. Its curved dust tail and its straight blue ion tail grow longer as it nears a sun just out of sight.' },
   { group: 'Space', key: 'deepfield', name: 'Deep Field', sw: '#c8743a', sound: 'space', mood: 'night', tone: 'dark', art: { who: 'Webb\'s first deep field (SMACS 0723), NASA, ESA, CSA, STScI', lic: 'Public domain', url: 'https://images.nasa.gov/details/webb_first_deep_field' }, music: 'Renniac|Earth Night',
-    desc: 'The view drifts slowly across Webb\'s first deep field, where nearly every point of light is a galaxy. Lensed arcs curve around a cluster billions of light years away.' },
+    desc: 'A journey through Webb\'s first deep field. The view travels between the bright star, the lensing arcs round the cluster and the spirals, and lingers, while nearer stars slide past with depth. The brightest points bloom and twinkle with the music.' },
   { group: 'Space', key: 'mars', name: 'Mars Dust Storm', sw: '#c08a5c', sound: 'wind', mood: 'day', tone: 'warm', art: ORIGINAL, music: 'Holger Flinsch|Organon',
     desc: 'From a rover\'s mast you look across a rocky ochre plain under a butterscotch sky. Veils of dust sweep past, and the small pale sun dims and returns.' },
 
