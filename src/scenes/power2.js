@@ -62,10 +62,30 @@ vec3 skyAt(vec3 rd, float day, float t, float wx){
   }
   return sky;
 }
+float chop(float s){ float c = s * .5 + .5; return 1. - (1. - c) * (1. - c); }   // sharper crests, flatter troughs
 float wave(vec2 p, float t, float wx){
-  float w = .5 * sin(p.y * 1.1 - t * 1.) + .25 * sin((p.x * .6 + p.y * 1.2) * 1.9 + t * 1.5) + .15 * sin((p.x * 1.4 - p.y * .8) * 3.3 - t * 2.1);
-  w += .35 * noise(p * 1.1 + vec2(t * .3, -t * .5)) + .25 * noise(p * 2.6 - vec2(t * .5, t * .2)) + .18 * noise(p * 6. + vec2(t * .9, t * .4)) * (.5 + wx);
-  return w;
+  float k = .6 + .8 * wx;
+  float h = .5 * sin(dot(p, vec2(.35, .95)) * .9 - t * .8) + .28 * sin(dot(p, vec2(-.6, .8)) * 1.4 + t * 1.1);      // long swell
+  h += k * (.24 * chop(sin(dot(p, vec2(.8, .6)) * 2.6 - t * 2.)) + .14 * chop(sin(dot(p, vec2(-.3, .95)) * 4.1 - t * 2.6)));   // wind waves
+  h += .16 * noise(p * 1.7 + vec2(t * .4, -t * .6)) + .1 * noise(p * 4.2 - vec2(t * .6, t * .3)) + .07 * noise(p * 9. + t * .8) * (.5 + wx);
+  return h;
+}
+// The crew boat in its own units: the waterline at y = 0, the bow at +x. Colour and coverage.
+vec4 boat(vec2 q, float day, float t){
+  float deck = .13 + .07 * smoothstep(0., .62, q.x) + .02 * smoothstep(-.55, -.35, q.x);
+  float bowX = .38 + .26 * clamp(q.y / .2, 0., 1.);
+  float hull = step(-.55, q.x) * step(q.x, bowX) * step(-.05, q.y) * step(q.y, deck);
+  float boot = hull * step(q.y, .025);
+  float house = step(-.32, q.x) * step(q.x, .14 - .06 * smoothstep(deck, deck + .2, q.y)) * step(deck - .001, q.y) * step(q.y, deck + .2);
+  float win = house * step(deck + .1, q.y) * step(q.y, deck + .16) * step(.25, fract(q.x * 14.)) * step(q.x, .08) * step(-.28, q.x);
+  float mast = step(abs(q.x + .08), .008) * step(deck + .2, q.y) * step(q.y, deck + .42) + step(abs(q.x + .08), .06) * step(abs(q.y - deck - .36), .008);
+  float lit = .3 + .7 * day;
+  vec3 col = vec3(.95, .47, .1) * (.75 + .35 * smoothstep(-.05, deck, q.y)) * lit;
+  col = mix(col, vec3(.12, .1, .1) * lit, boot);
+  col = mix(col, vec3(.9, .92, .94) * lit * (.8 + .2 * smoothstep(deck, deck + .2, q.y)), house);
+  col = mix(col, vec3(.1, .15, .22) * lit + vec3(1., .85, .5) * (1. - day) * .5, win);
+  col = mix(col, vec3(.25, .27, .3) * lit, mast);
+  return vec4(col, clamp(hull + house + mast, 0., 1.));
 }
 // One turbine as seen from an eye at o: tower, nacelle and three blades, tapering, each a segment in the view plane of
 // that eye. Returns coverage in .a and colour in .rgb. Everything is in world units: the sea is at y = -E.
@@ -155,41 +175,53 @@ void main(){
   } else {
     float d = min((E + eye.y) / -rd.y, 400.);                              // the horizon rows would otherwise run off to infinity
     vec3 p = eye + rd * d;
-    float amp = exp(-d * .015) * (1. + .5 * wx);
-    float e = .02 + d * .004;
+    float amp = exp(-d * .012);
+    float e = .015 + d * .005;
     float w0 = wave(p.xz, t, wx), wxx = wave(p.xz + vec2(e, 0.), t, wx), wz = wave(p.xz + vec2(0., e), t, wx);
-    vec3 n = normalize(vec3(-(wxx - w0) / e * .07 * amp, 1., -(wz - w0) / e * .07 * amp));
+    vec3 n = normalize(vec3(-(wxx - w0) / e * .13 * amp, 1., -(wz - w0) / e * .13 * amp));
     vec3 rr = reflect(rd, n); rr.y = abs(rr.y);
     vec3 refl = skyAt(rr, day, t, wx);
     // The turbines in the water: the same farm seen from this point on the sea along the reflected ray.
     if (rr.z > .15 && d < 40.) { vec4 f = farm(rr.xy / rr.z, p, rot, day, wx, t, 22.); refl = mix(refl, f.rgb * .9, f.a * .6); }
-    float fres = .04 + .96 * pow(1. - max(dot(-rd, n), 0.), 5.);
-    vec3 deep = dmix(vec3(.01, .02, .04), vec3(.08, .08, .13), vec3(.03, .2, .32), day);
-    deep = mix(deep, vec3(.08, .11, .13) * (.2 + .8 * day), wx * .5);
-    col = mix(deep, refl, clamp(fres * 1.6, 0., 1.));
-    col += sunC * pow(max(dot(rr, sunL), 0.), 300.) * .9 * (1. - moonK * .6) * (1. - wx * .5);
-    float crest = smoothstep(1.05 - wx * .45, 1.35 - wx * .3, w0) * exp(-d * .03);
-    col = mix(col, vec3(.85, .9, .95) * (.3 + .7 * day), crest * .9);
-    // The crew boat's wake: foam that spreads and fades behind it.
-    float bz = 9.5, bx = mod(t * .32, 16.) - 8.;
-    float behind = (p.x - bx) * sign(-1.) ;
-    float wake = smoothstep(.0, 2.5, behind) * exp(-behind * .25) * exp(-pow((p.z - bz) / (.25 + behind * .12), 2.)) * (.5 + .5 * noise(p.xz * 4. + t));
-    col = mix(col, vec3(.9, .93, .96) * (.3 + .7 * day), wake * .7 * step(abs(p.z - bz), 1.5));
-    // Foam round the near tower's foot.
+    // The water itself: deep teal, lifting to a greener crest colour where a wave stands up against the light.
+    vec3 deep = dmix(vec3(.008, .018, .035), vec3(.07, .07, .12), vec3(.02, .15, .25), day);
+    vec3 shallow = dmix(vec3(.02, .05, .07), vec3(.16, .15, .2), vec3(.1, .4, .42), day);
+    deep = mix(deep, vec3(.07, .1, .12) * (.2 + .8 * day), wx * .5); shallow = mix(shallow, vec3(.2, .26, .28) * (.2 + .8 * day), wx * .5);
+    float crest = smoothstep(.1, 1.1, w0);
+    float sss = crest * pow(max(dot(rd, sunL), 0.), 2.) * .8 * (1. - moonK);
+    vec3 water = mix(deep, shallow, clamp(crest * .45 + sss, 0., 1.));
+    float fres = .03 + .97 * pow(1. - max(dot(-rd, n), 0.), 5.);
+    col = mix(water, refl, clamp(fres * 1.5, 0., 1.));
+    float sd = max(dot(rr, sunL), 0.);
+    col += sunC * (pow(sd, 700.) * 2.2 + pow(sd, 40.) * .12) * (1. - moonK * .5) * (1. - wx * .4);   // glitter
+    // Foam: on the sharpest crests, with a lace texture; more as it blows.
+    float lace = .45 + .55 * smoothstep(.3, .7, fbm3o(p.xz * 5. + vec2(t * .5, 0.)));
+    float foam = smoothstep(1. - wx * .5, 1.45 - wx * .4, w0) * lace * exp(-d * .025);
+    // The boat: its bow wave and wake on the water, then its reflection.
+    float bz = 6.5, bx = 5.5 - mod(t * .2, 16.), bobB = .035 * sin(t * 1.1);
+    float behind = p.x - bx - .3, along = p.z - bz;
+    float wake = smoothstep(0., 1.5, behind) * exp(-behind * .22) * exp(-pow(along / (.2 + behind * .14), 2.)) * (.5 + .5 * noise(p.xz * 4. + vec2(t, 0.)));
+    float bow = exp(-pow(length((p.xz - vec2(bx - .7, bz)) * vec2(1., 1.8)) / .3, 2.)) * (.6 + .4 * noise(p.xz * 9. + t * 2.));
+    foam = max(foam, max(wake * .8, bow));
     float foot = exp(-pow(length(p.xz - vec2(-1.3, 3.2)) / .22, 2.)) * (.6 + .4 * noise(p.xz * 8. + t * 2.));
-    col = mix(col, vec3(.9, .93, .96) * (.3 + .7 * day), foot * .6);
+    foam = max(foam, foot * .7);
+    col = mix(col, vec3(.88, .92, .95) * (.3 + .7 * day), foam * .85);
+    vec2 bb = vec2(bx, -E + bobB - eye.y) / bz; float sc = 1. / bz;
+    vec2 qm = vec2(-(uv.x - bb.x), -(uv.y - bb.y)) / sc + n.xz * vec2(.6, 2.5);   // mirrored, bent by the wave slope
+    vec4 bm = boat(qm, day, t);
+    col = mix(col, bm.rgb * .55, bm.a * .55 * step(uv.y, bb.y) * (1. - foam));
     col = mix(col, skyAt(normalize(vec3(uv.x, .004, 1.)), day, t, wx), smoothstep(25., 200., d) * .92);
     wet = 1.;
   }
-  // The crew boat: an orange hull with a white wheelhouse, bobbing, crossing the field.
-  { float bz = 9.5, bx = mod(t * .32, 16.) - 8., bob = .03 * sin(t * 1.3);
-    vec2 bb = vec2(bx, -E + bob) / bz; float sc = 1. / bz;
-    float hull = step(abs(uv.x - bb.x), .32 * sc) * step(bb.y - .04 * sc, uv.y) * step(uv.y, bb.y + .09 * sc + .06 * sc * smoothstep(.1, .32, uv.x - bb.x));
-    float house = step(abs(uv.x - bb.x - .04 * sc), .11 * sc) * step(bb.y + .09 * sc, uv.y) * step(uv.y, bb.y + .2 * sc);
-    float win = house * step(bb.y + .14 * sc, uv.y) * step(uv.y, bb.y + .18 * sc);
-    vec3 hc = vec3(.95, .45, .08) * (.3 + .7 * day) * (.7 + .3 * smoothstep(bb.y - .04 * sc, bb.y + .09 * sc, uv.y));
-    col = mix(col, hc, hull); col = mix(col, vec3(.92) * (.3 + .7 * day), house); col = mix(col, vec3(.2, .3, .4) * (.5 + .5 * day), win);
-    col += vec3(1., .9, .6) * exp(-length(uv - bb - vec2(.04, .2) * sc) * 500.) * (1. - day) * .8; }
+  // The crew boat, heading left across the field, bobbing and rolling a little.
+  { float bz = 6.5, bx = 5.5 - mod(t * .2, 16.), bobB = .035 * sin(t * 1.1), rl = .03 * sin(t * .9);
+    vec2 bb = vec2(bx, -E + bobB - eye.y) / bz; float sc = 1. / bz;
+    vec2 q = vec2(-(uv.x - bb.x), uv.y - bb.y) / sc;
+    q = vec2(cos(rl) * q.x - sin(rl) * q.y, sin(rl) * q.x + cos(rl) * q.y);
+    vec4 bt = boat(q, day, t);
+    col = mix(col, bt.rgb, bt.a);
+    col += vec3(1., .9, .6) * exp(-length(uv - bb - vec2(.08, .34) * sc) * 400.) * (1. - day) * .9;   // a masthead light at night
+  }
   // Aviation lights, blinking together at night; gulls wheeling round the near tower; the deck rail.
   float blink = step(.6, fract(t * .7)) * (1. - smoothstep(0., .3, day));
   for (int i = 0; i < 11; i++) {
