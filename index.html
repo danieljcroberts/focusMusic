@@ -61,6 +61,7 @@
           <button type="button" data-follow="none" aria-pressed="false">Nothing</button><button type="button" data-follow="scene" aria-pressed="false">The scene</button><button type="button" data-follow="timer" aria-pressed="false">The timer</button><button type="button" data-follow="both" aria-pressed="false">Both</button>
         </div>
         <span class="note" id="followNote"></span>
+        <div class="row wrap"><button type="button" class="tog" id="stTrackBtn" aria-pressed="false">Scenes change the track</button><span class="note">Off: a new scene keeps the music playing. On: it crossfades to a track that suits the scene, from the current soundtrack.</span></div>
         <span class="lbl">Soundtracks</span>
         <div class="row wrap"><button type="button" id="stEditBtn">Edit soundtracks</button><button type="button" id="stWizBtn">Add your music…</button></div>
         <div class="row wrap" id="stRescanRow"></div>
@@ -161,7 +162,7 @@
     <dt>Space</dt><dd>Play or pause</dd>
     <dt>N / P</dt><dd>Next / previous track</dd>
     <dt>↑ ↓</dt><dd>Music volume</dd>
-    <dt>M</dt><dd>What the music follows: nothing, the scene, the timer, both</dd>
+    <dt>M</dt><dd>Scenes change the track, on or off</dd>
     <dt>O</dt><dd>Everything else (the sheet)</dd>
     <dt>S</dt><dd>Favourite this scene</dd>
     <dt>D</dt><dd>Drift between favourites</dd>

@@ -33,20 +33,23 @@ for (const d of sheet.querySelectorAll('details')) {
 /* What the music follows: one choice in place of three toggles. */
 const followButtons = [...el('followSeg').querySelectorAll('button')];
 const NOTES = {
-  none: 'The soundtrack and the track only change when you ask.',
-  scene: 'Each scene picks a track that suits it, and suggests one of the four built-in soundtracks. A soundtrack of your own stays put.',
+  none: 'The soundtrack only changes when you pick one.',
+  scene: 'Each scene suggests one of the four built-in soundtracks (a pulse scene wants Energise, a warm one Easy work). A soundtrack of your own stays put.',
   timer: 'Deep focus during focus blocks, Energise in breaks.',
-  both: 'The scene picks the track and suggests a soundtrack; the timer switches between Deep focus and Energise.',
+  both: 'The scene suggests a built-in soundtrack; the timer switches between Deep focus and Energise.',
 };
-export const followMode = () => (follow || state.stScene) && state.stTimer ? 'both' : (follow || state.stScene) ? 'scene' : state.stTimer ? 'timer' : 'none';
+export const followMode = () => state.stScene && state.stTimer ? 'both' : state.stScene ? 'scene' : state.stTimer ? 'timer' : 'none';
 export function setFollowMode(k) {
-  const scene = k === 'scene' || k === 'both', timerOn = k === 'timer' || k === 'both';
-  setFollow(scene); saveState({ stScene: scene, stTimer: timerOn });
+  saveState({ stScene: k === 'scene' || k === 'both', stTimer: k === 'timer' || k === 'both' });
   drawFollow();
 }
+// Whether a scene change also changes the track: off by default, so a new scene keeps the music going.
+const trackBtn = el('stTrackBtn');
+export function setSceneTrack(v) { setFollow(v); trackBtn.setAttribute('aria-pressed', String(v)); if (sheetOpen()) summarise(); }
+trackBtn.addEventListener('click', () => setSceneTrack(!follow));
+trackBtn.setAttribute('aria-pressed', String(follow));
 function drawFollow() { const k = followMode(); followButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.follow === k))); el('followNote').textContent = NOTES[k]; if (sheetOpen()) summarise(); }
 followButtons.forEach(b => b.addEventListener('click', () => setFollowMode(b.dataset.follow)));
-export function cycleFollow() { const order = ['none', 'scene', 'timer', 'both']; setFollowMode(order[(order.indexOf(followMode()) + 1) % 4]); return followMode(); }
 drawFollow();
 
 /* The summary lines. */
@@ -54,7 +57,7 @@ const FOLLOW_WORDS = { none: 'follows nothing', scene: 'follows the scene', time
 function summarise() {
   const t = currentTrack();
   el('sumNow').textContent = t ? `${musicPlaying ? '' : 'paused · '}${t.t} — ${t.a}` : 'Nothing playing';
-  el('sumMusic').textContent = `${ST.current().name} · ${FOLLOW_WORDS[followMode()]}`;
+  el('sumMusic').textContent = `${ST.current().name} · ${FOLLOW_WORDS[followMode()]}${follow ? ' · scenes change the track' : ''}`;
   const tl = el('tStart').textContent, count = el('tCount').textContent, sleep = [...el('sleepSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true');
   el('sumTimer').textContent = [tl, count, sleep && sleep.dataset.sleep !== '0' ? `sleep in ${sleep.textContent}` : ''].filter(Boolean).join(' · ');
   const tod = [...el('todSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true'), auto = el('wxAuto').getAttribute('aria-pressed') === 'true';

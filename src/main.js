@@ -21,7 +21,8 @@ import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
-import { openSheet, sheetOpen, cycleFollow } from './sheet.js';
+import { openSheet, sheetOpen, setSceneTrack } from './sheet.js';
+import { follow } from './music.js';
 import { wizardOpen } from './soundtrack-ui.js';
 import { timerRunning } from './timer.js';
 
@@ -350,7 +351,7 @@ window.addEventListener('keydown', e => {
     case 'ArrowUp': e.preventDefault(); setVolume(volume() + .05); showLevel('right', 'Music', volume()); break;
     case 'ArrowDown': e.preventDefault(); setVolume(volume() - .05); showLevel('right', 'Music', volume()); break;
     case 'l': case 'L': openLib(!libOpen()); break;
-    case 'm': case 'M': caption(`Music follows ${{ none: 'nothing', scene: 'the scene', timer: 'the timer', both: 'the scene and the timer' }[cycleFollow()]}`); break;
+    case 'm': case 'M': setSceneTrack(!follow); caption(follow ? 'Scenes change the track' : 'Scenes keep the track'); break;
     case 'o': case 'O': case ',': openSheet(); break;
     case 't': case 'T': toggleTimer(); break;
     case 'f': case 'F': toggleFs(); break;
