@@ -337,6 +337,17 @@ function toggleFs() {
 }
 fsBtn.addEventListener('click', toggleFs);
 document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+// On phones the first tap on the scene goes full screen (browsers allow it only from a gesture), hiding the clock and
+// battery bar. On by default where the pointer is a finger; the installed app also asks for full screen in its manifest.
+const fsAutoBtn = el('fsAutoBtn');
+let fsAuto = state.fsAuto ?? window.matchMedia('(pointer: coarse)').matches;
+function setFsAuto(v) { fsAuto = v; fsAutoBtn.setAttribute('aria-pressed', String(v)); saveState({ fsAuto: v }); }
+fsAutoBtn.addEventListener('click', () => setFsAuto(!fsAuto));
+setFsAuto(fsAuto);
+window.addEventListener('touchend', e => {
+  if (!fsAuto || document.fullscreenElement || !document.fullscreenEnabled || !onScene(e)) return;
+  const p = document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {});
+}, { passive: true });
 
 /* Keyboard. Form controls keep their own keys, so arrows on the volume slider only change the volume. */
 window.addEventListener('keydown', e => {

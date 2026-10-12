@@ -62,5 +62,5 @@ function summarise() {
   el('sumTimer').textContent = [tl, count, sleep && sleep.dataset.sleep !== '0' ? `sleep in ${sleep.textContent}` : ''].filter(Boolean).join(' · ');
   const tod = [...el('todSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true'), auto = el('wxAuto').getAttribute('aria-pressed') === 'true';
   el('sumScene').textContent = [drift ? `drift every ${driftMin} min` : 'no drift', `${favs.size} favourite${favs.size === 1 ? '' : 's'}`, auto ? `weather ${Math.round(weather * 100)}% (auto)` : `weather ${Math.round(weather * 100)}%`, tod && tod.dataset.tod !== 'auto' ? tod.textContent.toLowerCase() : '', localOn ? 'local sky' : '', lively ? 'lively' : '', finishOn ? '' : 'no film finish'].filter(Boolean).join(' · ');
-  el('sumApp').textContent = [lowPower ? 'low power' : '', document.fullscreenElement ? 'full screen' : ''].filter(Boolean).join(' · ') || 'all as usual';
+  el('sumApp').textContent = [lowPower ? 'low power' : '', document.fullscreenElement ? 'full screen' : el('fsAutoBtn').getAttribute('aria-pressed') === 'true' ? 'full screen on tap' : ''].filter(Boolean).join(' · ') || 'all as usual';
 }
