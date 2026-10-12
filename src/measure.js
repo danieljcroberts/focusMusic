@@ -1,10 +1,18 @@
 // Measures how energetic a track is, on the device, from about a minute of its sound: loudness, how much it moves
 // (the strength of its onsets) and its tempo. Used only to suggest a soundtrack; the viewer always has the last word.
-// Decodes the start of the file only, so a long track costs no more than a short one. Returns {} when it can't decode.
+// Decodes two windows, the start and the middle of the file, so a quiet intro doesn't make a lively track read as calm,
+// and a long track costs no more than a short one. The livelier window counts. Returns {} when it can't decode.
 const norm = (v, lo, hi) => Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
 
 export async function measure(file) {
-  const buf = await file.slice(0, 2800000).arrayBuffer();
+  const a = await window_(file, 0);
+  // The middle slice only decodes for formats that can start anywhere (MP3); the rest keep the start.
+  let b = {}; if (file.size > 7000000) { try { b = await window_(file, Math.floor(file.size / 2)); } catch (e) { b = {}; } }
+  if (typeof b.energy === 'number' && (typeof a.energy !== 'number' || b.energy > a.energy)) return b;
+  return a;
+}
+async function window_(file, at) {
+  const buf = await file.slice(at, at + 2800000).arrayBuffer();
   const ctx = new OfflineAudioContext(1, 1, 22050);
   const ab = await ctx.decodeAudioData(buf);
   const d = ab.getChannelData(0), sr = ab.sampleRate;

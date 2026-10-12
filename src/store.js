@@ -17,6 +17,9 @@ function open() {
 export async function kvSet(key, value) {
   try { const db = await open(); await new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).put(value, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); } catch (e) {}
 }
+export async function kvGet(key) {
+  try { const db = await open(); return await new Promise((res, rej) => { const r = db.transaction(STORE).objectStore(STORE).get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); } catch (e) { return undefined; }
+}
 // Every entry whose key starts with the prefix, as {key: value}.
 export async function kvAll(prefix) {
   const out = {};

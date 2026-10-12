@@ -6,6 +6,7 @@ import { setStatus } from './status.js';
 import { weather, tickWeather } from './weather.js';
 import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
+import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, follow, setFollow, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
@@ -57,7 +58,8 @@ const cards = SCENES.map((s, i) => {
   const b = document.createElement('button');
   b.type = 'button'; b.id = 'scene-' + i; b.className = 'card'; b.dataset.i = i;
   const th = document.createElement('span'); th.className = 'thumb'; th.style.background = s.sw;
-  const im = document.createElement('img'); im.alt = ''; im.hidden = true;
+  const im = document.createElement('img'); im.alt = ''; im.hidden = false; im.loading = 'lazy'; im.decoding = 'async'; im.src = `assets/thumbs/${slug(s)}.jpg`;
+  im.addEventListener('error', () => { if (!thumbs[s.name]) im.hidden = true; }, { once: true });
   th.appendChild(im);
   const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = s.name;
   const star = document.createElement('span'); star.className = 'star'; star.textContent = '★'; star.hidden = !(state.favs || []).includes(s.name);
@@ -72,7 +74,7 @@ const cards = SCENES.map((s, i) => {
   try { old = JSON.parse(localStorage.getItem('sw-thumbs') || 'null'); localStorage.removeItem('sw-thumbs'); } catch (e) {}
   if (old) for (const [name, url] of Object.entries(old)) kvSet('thumb:' + name, url);
   const saved = await kvAll('thumb:');
-  for (const [k, url] of Object.entries(saved)) { const name = k.slice(6); thumbs[name] = url; const i = SCENES.findIndex(s => s.name === name); if (i >= 0 && !cards[i].im.src) { cards[i].im.src = url; cards[i].im.hidden = false; } }
+  for (const [k, url] of Object.entries(saved)) { const name = k.slice(6); thumbs[name] = url; const i = SCENES.findIndex(s => s.name === name); if (i >= 0) { cards[i].im.src = url; cards[i].im.hidden = false; } }
   if (old) for (const [name, url] of Object.entries(old)) { thumbs[name] = thumbs[name] || url; const i = SCENES.findIndex(s => s.name === name); if (i >= 0) { cards[i].im.src = thumbs[name]; cards[i].im.hidden = false; } }
 })();
 // Group chips above the strip scroll to the first card of a group.
@@ -153,6 +155,7 @@ function updateText() {
   el('bgRow').hidden = !s.bgs;
   if (s.bgs) bgButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === instances[cur].bg)));
   setScene(s.music, s.tone);
+  window.dispatchEvent(new CustomEvent('sw-scene', { detail: { tone: s.tone, mood: s.mood } }));
   setAmbienceKind(s.sound || 'none');
   const mt = byKey[s.music];
   el('who').textContent = mt ? `${mt.t} — ${mt.a}` : '';
@@ -263,7 +266,7 @@ function drawDiag() {
   const s = SCENES[cur], inst = instances[cur], st = stageOf(inst), amb = ambienceState();
   setDiag([
     `${s.name} · ${inst.kind} ${st.width || st.videoWidth || '?'}×${st.height || st.videoHeight || '?'} · DPR ${DPR}${lowPower ? ' · low power' : ''}${lively ? ' · lively' : ''}${broken[cur] ? ' · BROKEN' : ''}`,
-    `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}`,
+    `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}${inst.kind === 'webgl' && (governor.scale < 1 || governor.skip) ? ` · governor ${Math.round(governor.scale * 100)}%${governor.skip ? ', half rate' : ''}` : ''}`,
     `weather ${weather.toFixed(2)} · daylight ${daylight().toFixed(2)}${localOn ? ' (local)' : ''}`,
     `music ${musicPlaying ? 'playing' : 'off'} · level ${musicLevel.toFixed(2)} · bass ${bands.bass.toFixed(2)} mid ${bands.mid.toFixed(2)} treble ${bands.treble.toFixed(2)}`,
     `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
@@ -471,7 +474,8 @@ function buildPicker() {
     if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; pickerGrid.append(h); }
     const b = document.createElement('button'); b.type = 'button';
     const t = document.createElement('span'); t.className = 'pt'; t.style.background = s.sw;
-    const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.hidden = true; t.append(im);
+    const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.src = `assets/thumbs/${slug(s)}.jpg`; t.append(im);
+    im.addEventListener('error', () => { if (!thumbs[s.name]) im.hidden = true; }, { once: true });
     b.append(t, s.name);
     // The lift of the long press that opened the grid would otherwise pick whatever tile is under the finger.
     b.addEventListener('click', () => { if (holding || performance.now() - liftAt < 400) return; closePicker(); go(i); });

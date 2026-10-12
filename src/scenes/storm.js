@@ -107,7 +107,7 @@ export function supercellScene() {
   // each a quick rise and a slower fade with a second or third flicker, and never more than one every 1.2 s.
   let env = 0, wait = 3, flick = [], seed = .37;
   const build = steps => shaderScene(FS.replace('${STEPS}', String(steps)), {
-    speed: 1, res: .7,
+    speed: 1, res: .7, heavy: true,
     before(t, dt, gl, u) {
       wait -= dt * (1 + bands.bass * 2.5 + weather * .8);
       if (wait <= 0) {

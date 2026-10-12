@@ -173,7 +173,7 @@ void main(){
   gl_FragColor = vec4(col, 1.);
 }`;
 export function cloudsScene() {
-  return build(CLOUDS.replace('${STEPS}', String(lowPower ? 20 : 34)), byClock({ res: .7 }));
+  return build(CLOUDS.replace('${STEPS}', String(lowPower ? 20 : 34)), byClock({ res: .7, heavy: true }));
 }
 
 /* Low Tide: a beach at the hour your clock says. Sky and clouds lit by the sun, a sea with real wave shapes that mirror
@@ -437,5 +437,5 @@ void main(){
   gl_FragColor = vec4(col, 1.);
 }`;
 export function lighthouseScene() {
-  return build(LIGHTHOUSE.replace('${STEPS}', String(lowPower ? 18 : 30)), byClock({ res: .75 }));
+  return build(LIGHTHOUSE.replace('${STEPS}', String(lowPower ? 18 : 30)), byClock({ res: .75, heavy: true }));
 }

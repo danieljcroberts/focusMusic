@@ -88,6 +88,10 @@ export function remove(id) {
 export function addOwnTo(id, ids) { const s = byId(id); if (!s) return; s.own = [...new Set([...s.own, ...ids])]; save(); }
 export function removeOwnFrom(id, ownId) { const s = byId(id); if (!s) return; s.own = s.own.filter(x => x !== ownId); save(); }
 export const memberOf = ownId => list.filter(s => s.own.includes(ownId));
+// Put one of the viewer's tracks in a single soundtrack, taking it out of any others.
+export function moveOwnTo(id, ownId) { for (const s of list) s.own = s.own.filter(x => x !== ownId); const s = byId(id); if (s) s.own.push(ownId); save(); }
+// The built-in that suits a scene, from its music tone and the time of day it is for.
+export const forScene = (tone, mood) => tone === 'pulse' ? 'energise' : tone === 'warm' || tone === 'bright' ? 'work' : mood === 'night' && tone === 'calm' ? 'wind' : 'focus';
 // Forget tracks that are no longer on the device.
 export function prune(existing) { const ok = new Set(existing); let changed = false; for (const s of list) { const n = s.own.filter(i => ok.has(i)); if (n.length !== s.own.length) { s.own = n; changed = true; } } if (changed) save(); }
 

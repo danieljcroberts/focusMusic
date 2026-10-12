@@ -69,7 +69,8 @@
           <button type="button" id="offlineBtn">Save music for offline use (250 MB)</button>
           <span class="lbl">Soundtracks</span>
           <div class="row wrap"><button type="button" id="stEditBtn">Edit soundtracks</button><button type="button" id="stWizBtn">Add your music…</button></div>
-          <button type="button" class="tog" id="stTimerBtn" aria-pressed="false" title="Deep focus during focus blocks, Energise in breaks">Soundtrack follows the timer</button>
+          <div class="row wrap"><button type="button" class="tog" id="stTimerBtn" aria-pressed="false" title="Deep focus during focus blocks, Energise in breaks">Soundtrack follows the timer</button><button type="button" class="tog" id="stSceneBtn" aria-pressed="false" title="Each scene suggests one of the four built-in soundtracks; one of your own stays put">Soundtrack follows the scene</button></div>
+          <div class="row wrap" id="stRescanRow"></div>
           <span class="lbl">Presets</span>
           <div class="presets" id="presetList"></div>
           <div class="row"><input type="text" id="presetName" maxlength="24" placeholder="Name, e.g. Late night" aria-label="Preset name"><button type="button" id="presetSave">Save current</button></div>

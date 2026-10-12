@@ -22,9 +22,15 @@ vec3 hsv(float h, float s, float v){ vec3 k = abs(fract(vec3(h) + vec3(0., 2. / 
 
 // One full-screen shader on its own stage. o.speed scales the scene clock, o.res caps the render scale,
 // o.spectrum uploads the analyser's bins as uSpec, o.wave the waveform as uWave (512×1, .5 is silence), o.before(t, dt, gl, u) sets scene uniforms.
+// Each scene governs its own cost: while frames come slowly it trims its render scale, a step at a time down to .4 of
+// the cap, and eases back up once they are quick again. o.heavy scenes (the volumetric ones) first drop to drawing
+// every other frame, which the eye doesn't see on a slow scene but halves the GPU work.
+export const governor = { scale: 1, skip: false };   // what the current scene settled on, for the diagnostics overlay
 export function shaderScene(fs, o = {}) {
   let stage, kit, failed = false, clock = 0, specC, specG, specIm, waveC, waveG, waveIm;
+  let scale = 1, skip = false, ema = 1 / 60, slow = 0, quick = 0, odd = false;
   const u = {}, smooth = new Float32Array(256);
+  const size = () => { const r = Math.min(DPR, lowPower ? .7 : (o.res ?? 1.5)) * scale; stage.width = Math.max(2, Math.round(W * r)); stage.height = Math.max(2, Math.round(H * r)); };
   return {
     kind: 'webgl',
     get canvas() { return stage; },
@@ -38,11 +44,21 @@ export function shaderScene(fs, o = {}) {
         waveC = document.createElement('canvas'); waveC.width = 512; waveC.height = 1; waveG = waveC.getContext('2d'); waveIm = waveG.createImageData(512, 1);
       }
       if (failed) return;
-      const r = Math.min(DPR, lowPower ? .7 : (o.res ?? 1.5)); stage.width = Math.round(W * r); stage.height = Math.round(H * r);
+      size();
     },
     draw(t, dt) {
       if (failed) { glFailed(stage); return; }
       clock += dt * (lively ? 2.2 : 1) * (o.speed ?? 1);   // the scene keeps its own clock so the toggle never jumps
+      // The governor. Frames over 40 ms for two seconds mean trim; under 20 ms for eight seconds mean room to grow.
+      if (dt > 0 && dt < .5 && !document.hidden) {
+        ema += (dt - ema) * .1;
+        if (ema > .04) { slow += dt; quick = 0; } else if (ema < .02) { quick += dt; slow = 0; } else { slow = quick = 0; }
+        if (slow > 2) { slow = 0; ema = .03; if (o.heavy && !skip) skip = true; else if (scale > .4) { scale = Math.max(.4, scale - .15); size(); } }
+        if (quick > 8) { quick = 0; ema = .03; if (scale < 1) { scale = Math.min(1, scale + .15); size(); } else if (skip) skip = false; }
+        governor.scale = scale; governor.skip = skip;
+      }
+      odd = !odd;
+      if (skip && odd) return;                             // the stage keeps its last frame (preserveDrawingBuffer)
       const gl = kit.gl, k = lively ? 1.8 : 1;
       gl.uniform1f(u.uT, clock); gl.uniform2f(u.uRes, stage.width, stage.height);
       gl.uniform1f(u.uBass, Math.min(1, bands.bass * k)); gl.uniform1f(u.uMid, Math.min(1, bands.mid * k)); gl.uniform1f(u.uTreble, Math.min(1, bands.treble * k));

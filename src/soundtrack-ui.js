@@ -4,7 +4,8 @@
 import * as ST from './soundtracks.js';
 import { addOwn, ownTracks, isAudio } from './mine.js';
 import { measure } from './measure.js';
-import { musicPlaying, nextTrack, previewOwn, togglePlay } from './music.js';
+import { musicPlaying, nextTrack, previewOwn, togglePlay, follow } from './music.js';
+import { kvGet, kvSet } from './store.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { registerMenu, closeMenus } from './menus.js';
@@ -59,11 +60,28 @@ const filePicker = folder => {
   if (folder) { inp.webkitdirectory = true; inp.setAttribute('webkitdirectory', ''); }
   return inp;
 };
-function pick(folder, then) {
+const canKeepFolder = !!window.showDirectoryPicker;
+// Every audio file under a directory handle, each tagged with its path below the chosen folder.
+async function walk(dir, prefix = '') {
+  const out = [];
+  for await (const [name, h] of dir.entries()) {
+    if (h.kind === 'directory') out.push(...await walk(h, prefix + name + '/'));
+    else if (isAudio({ name })) { const f = await h.getFile(); if (isAudio(f)) { f.relPath = dir.name + '/' + prefix + name; out.push(f); } }
+  }
+  return out;
+}
+async function pick(folder, then) {
+  if (folder && canKeepFolder) {
+    let dir; try { dir = await window.showDirectoryPicker({ mode: 'read', id: 'music' }); } catch (e) { return; }   // cancelled
+    const files = await walk(dir);
+    if (!files.length) return setStatus('No music files found there.');
+    W.dir = dir; then(files); return;
+  }
   const inp = filePicker(folder); body.append(inp);
   inp.addEventListener('change', () => { const files = [...inp.files].filter(isAudio); inp.remove(); if (files.length) then(files); else setStatus('No music files found there.'); });
   inp.click();
 }
+const relPath = f => f.relPath || f.webkitRelativePath || f.name;
 const MB = files => files.reduce((a, f) => a + f.size, 0) / 1e6;
 const sizeNote = files => { const mb = MB(files); return mb > 1500 ? `${(mb / 1000).toFixed(1)} GB will be copied onto this device. Make sure there is room.` : `${mb.toFixed(0)} MB will be copied onto this device.`; };
 
@@ -97,12 +115,12 @@ function stepPick() {
       // Group by the first folder below the one chosen; files right in it form a group named after it.
       const groups = new Map();
       for (const f of files) {
-        const parts = (f.webkitRelativePath || f.name).split('/');
+        const parts = relPath(f).split('/');
         const name = parts.length >= 3 ? parts[1] : parts.length === 2 ? parts[0] : 'Chosen files';
         if (!groups.has(name)) groups.set(name, []);
         groups.get(name).push(f);
       }
-      W.groups = [...groups].map(([name, fs]) => ({ name, files: fs, to: ST.matchName(name) || 'new' }));
+      W.groups = [...groups].map(([name, fs]) => ({ name, files: fs, to: (W.known && W.known[name] && ST.byId(W.known[name]) ? W.known[name] : null) || ST.matchName(name) || 'new' }));
       stepMap();
     } else {
       W.groups = [{ name: 'Chosen', files, to: W.mode === 'target' ? W.target : null }];
@@ -170,31 +188,47 @@ async function stepCopy() {
   }
   W.touched = touched;
   if (W.mode !== 'target') for (const id of touched) { const s = ST.byId(id); if (s && (s.builtIn || s.like)) ST.update(id, { free: W.keep === 'mix' }); }
+  if (W.dir && W.mode === 'folders') {                 // keep the folder and where each subfolder went, for "Check for new music"
+    const map = Object.assign({}, W.known || {});
+    for (const g of W.groups) map[g.name] = g.to === 'new' ? W.made.get(g.name) : g.to;
+    await kvSet('mine:folder', W.dir); await kvSet('mine:folderMap', map);
+    rescanBtns.forEach(b => { b.hidden = false; });
+  }
   window.dispatchEvent(new CustomEvent('sw-own-changed'));
   if (W.unsure.length) stepSort(0); else stepDone();
 }
 function stepSort(i) {
   if (i >= W.unsure.length) return stepDone();
   const { e, guess } = W.unsure[i];
-  const put = id => { ST.addOwnTo(id, [e.id]); W.touched.add(id); stepSort(i + 1); };
+  const put = id => { ST.moveOwnTo(id, e.id); W.touched.add(id); stepSort(i + 1); };
   const choices = h('div', { className: 'stbtns' }, ...ST.soundtracks().map(s => {
     const b = btn(s.name, () => put(s.id), s.id === guess ? 'pbtn primary' : 'pbtn');
     return b;
   }));
   show('Where does this go?',
-    h('p', { className: 'step', textContent: `${i + 1} of ${W.unsure.length} the app was unsure about` }),
+    h('p', { className: 'step', textContent: W.mode === 'resort' ? `${i + 1} of ${W.unsure.length}` : `${i + 1} of ${W.unsure.length} the app was unsure about` }),
     h('p', {}, h('b', { textContent: e.t }), ' — ', e.a),
     h('div', { className: 'actions' }, btn('▶ Listen', () => previewOwn(e.id)), h('span', { className: 'muted', textContent: guess ? `Best guess: ${ST.byId(guess).name}` : '' })),
     choices,
-    h('div', { className: 'actions' }, btn('Skip this one', () => stepSort(i + 1)), btn(`Put the rest in their best guess`, () => { for (const u of W.unsure.slice(i)) { ST.addOwnTo(u.guess, [u.e.id]); W.touched.add(u.guess); } stepDone(); })));
+    h('div', { className: 'actions' }, btn('Skip this one', () => stepSort(i + 1)), W.mode === 'resort' ? btn('Done', stepDone) : btn(`Put the rest in their best guess`, () => { for (const u of W.unsure.slice(i)) { ST.addOwnTo(u.guess, [u.e.id]); W.touched.add(u.guess); } stepDone(); })));
+}
+// Re-sort tracks one at a time: the most recently added first. Each one shows where it is now.
+export function openSorter(recentOnly = true) {
+  const when = e => parseInt(e.id.slice(0, -6), 36) || 0;
+  let list = ownTracks().slice().sort((a, b) => when(b) - when(a));
+  if (recentOnly) list = list.slice(0, 30);
+  if (!list.length) return setStatus('No tracks of your own yet.');
+  W = { mode: 'resort', groups: [], keep: 'mix', made: new Map(), touched: new Set(), added: 0, unsure: list.map(e => ({ e, guess: (ST.memberOf(e.id)[0] || {}).id || ST.suggest(e).id })) };
+  stepSort(0);
 }
 function stepDone() {
+  if (W.mode === 'resort') { window.dispatchEvent(new CustomEvent('sw-own-changed')); return openEditor(); }
   const rows = [...W.touched].map(id => ST.byId(id)).filter(Boolean).map(s => h('tr', {}, h('td', {}, h('i', { style: `display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:${s.color}` }), s.name), h('td', { className: 'muted', textContent: counts(s).text })));
   const first = [...W.touched][0];
   show('All set',
     h('p', { textContent: W.added ? `Added ${plural(W.added, 'track')}.` : 'Everything was already here; the soundtracks are updated.' }),
     rows.length ? h('table', {}, ...rows) : null,
-    h('p', { className: 'muted', textContent: 'Switch soundtracks from the chip next to Play. To add more later, use "Add your music…" in that menu; files already here are skipped.' }),
+    h('p', { className: 'muted', textContent: W.dir && W.mode === 'folders' ? 'Switch soundtracks from the chip next to Play. When you add music to that folder later, "Check for new music" under Edit soundtracks picks it up.' : 'Switch soundtracks from the chip next to Play. To add more later, use "Add your music…" in that menu; files already here are skipped.' }),
     h('div', { className: 'actions' }, btn('Edit soundtracks', () => openEditor()), btn('Start listening', () => { if (first) ST.setCurrent(first); hide(); if (!musicPlaying) togglePlay(); else nextTrack(); }, 'pbtn primary')));
 }
 
@@ -230,8 +264,34 @@ export function openEditor(opts = {}) {
   newLike.append(h('option', { value: '', textContent: 'No free tracks' }), ...['focus', 'work', 'energise', 'wind'].map(k => h('option', { value: k, textContent: `Free tracks like ${ST.byId(k).name}` })));
   const create = h('div', { className: 'stcard' }, h('b', { textContent: 'New soundtrack' }), newName, newLike,
     h('div', { className: 'actions' }, h('span'), btn('Create and add music', () => { if (!newName.value.trim()) { newName.focus(); return; } const id = ST.create(newName.value, newLike.value || null); openWizard(id); }, 'pbtn primary')));
-  show('Soundtracks', ...(opts.create ? [create, ...cards] : [...cards, create]));
+  const tools = h('div', { className: 'stcard' }, h('b', { textContent: 'Your tracks' }),
+    h('p', { className: 'muted', textContent: 'Go through your tracks one at a time and move any that are in the wrong soundtrack.' }),
+    h('div', { className: 'actions' }, h('span', {}, btn('Re-sort recent tracks', () => openSorter(true)), ' ', btn('Re-sort all', () => openSorter(false))), rescanBtn()));
+  show('Soundtracks', ...(opts.create ? [create, ...cards, tools] : [...cards, create, tools]));
   if (opts.create) newName.focus();
+}
+
+/* Checking the kept folder for new music (browsers with the File System Access API; phones mostly don't have it yet) */
+const rescanBtns = [];
+function rescanBtn() {
+  const b = btn('Check for new music', rescan); b.hidden = !canKeepFolder || !folderKept; rescanBtns.push(b); return b;
+}
+let folderKept = false;
+kvGet('mine:folder').then(d => { folderKept = !!d; rescanBtns.forEach(b => { b.hidden = !canKeepFolder || !folderKept; }); });
+async function rescan() {
+  const dir = await kvGet('mine:folder'), known = (await kvGet('mine:folderMap')) || {};
+  if (!dir) return setStatus('No folder kept yet: add your music with "I have a folder for each type" first.');
+  try { if ((await dir.queryPermission({ mode: 'read' })) !== 'granted' && (await dir.requestPermission({ mode: 'read' })) !== 'granted') return setStatus('The app was not allowed to read that folder.'); }
+  catch (e) { return setStatus('That folder is no longer available.'); }
+  setStatus('Looking for new music…');
+  const files = (await walk(dir)).filter(f => !ownTracks().some(e => e.name === f.name && e.size === f.size));
+  if (!files.length) return setStatus('No new music in ' + dir.name + '.');
+  W = { mode: 'folders', target: null, groups: [], keep: 'mix', made: new Map(), dir, known };
+  const groups = new Map();
+  for (const f of files) { const parts = relPath(f).split('/'); const name = parts.length >= 3 ? parts[1] : parts.length === 2 ? parts[0] : 'Chosen files'; if (!groups.has(name)) groups.set(name, []); groups.get(name).push(f); }
+  W.groups = [...groups].map(([name, fs]) => ({ name, files: fs, to: (known[name] && ST.byId(known[name]) ? known[name] : null) || ST.matchName(name) || 'new' }));
+  // Folders already mapped go straight in; only new folders need checking.
+  if (W.groups.every(g => known[g.name] && ST.byId(known[g.name]))) { W.keep = ST.byId(W.groups[0].to).free ? 'mix' : 'only'; stepCopy(); } else stepMap();
 }
 
 /* Settings entries, the timer, and tracks added before soundtracks existed */
@@ -242,6 +302,17 @@ const timerBtn = el('stTimerBtn');
 const drawTimerBtn = () => timerBtn.setAttribute('aria-pressed', String(!!state.stTimer));
 timerBtn.addEventListener('click', () => { saveState({ stTimer: !state.stTimer }); drawTimerBtn(); });
 drawTimerBtn();
+const sceneBtn = el('stSceneBtn');
+const drawSceneBtn = () => sceneBtn.setAttribute('aria-pressed', String(!!state.stScene));
+sceneBtn.addEventListener('click', () => { saveState({ stScene: !state.stScene }); drawSceneBtn(); });
+drawSceneBtn();
+el('stRescanRow').append(rescanBtn());
+// The scene suggests a built-in soundtrack from its tone; only a built-in gives way to it, so a soundtrack of your own stays.
+window.addEventListener('sw-scene', e => {
+  if (!state.stScene || !ST.current().builtIn) return;
+  const id = ST.forScene(e.detail.tone, e.detail.mood);
+  if (ST.current().id !== id) { ST.setCurrent(id); if (musicPlaying && !follow) nextTrack(); }   // with "scene picks music" on, that change picks the track
+});
 window.addEventListener('sw-timer', e => {
   if (!state.stTimer) return;
   const id = e.detail === 'focus' ? 'focus' : 'energise';
