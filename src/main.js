@@ -9,6 +9,7 @@ import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume } from './music.js';
+import { setTimerProbe } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -16,7 +17,7 @@ import { report, gpuName, diagOn, setDiag } from './diag.js';
 import { kvAll, kvSet } from './store.js';
 import './finish.js';
 import { closeMenus } from './menus.js';
-import { initTimer, toggleTimer } from './timer.js';
+import { initTimer, toggleTimer, timerProgress } from './timer.js';
 import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
@@ -283,6 +284,7 @@ if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); },
 setInvalidate(() => { if (still) render(0); });
 
 initTimer({ sceneName: () => SCENES[cur].name });
+setTimerProbe(timerProgress);
 initDrift({ go, current: () => cur, cards });
 initSettings({ drawDiag });
 

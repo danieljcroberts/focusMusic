@@ -5,7 +5,10 @@
 import TRACKS from './data/tracks.json';
 import { state, saveState } from './state.js';
 
-// Free-track moods for the four built-ins (the moods in tracks.json).
+// Free-track moods for the four built-ins (the moods in tracks.json). The two calm soundtracks also take any track
+// measured quiet enough (0 calm to 1 lively): a soft track with a gentle beat suits Deep focus whatever its mood tag.
+// Only the quiet side is trusted; the measurement overstates slow swells, so it never promotes a track to Energise.
+export const BAND = { focus: [0, .4], wind: [0, .3] };
 export const LIKE = {
   focus: ['calm', 'cold', 'dark'],
   work: ['warm', 'bright', 'calm'],
@@ -66,11 +69,9 @@ export const current = () => byId(currentId) || list[0];
 export function setCurrent(id) { if (byId(id)) { currentId = id; save(); } }
 
 // Free tracks a soundtrack draws from, when its free tracks are on.
-export function freeTracks(s = current()) {
-  const moods = LIKE[s.like] || [];
-  return s.free && moods.length ? TRACKS.filter(t => moods.includes(t.mood)) : [];
-}
-export const freeAllows = (t, s = current()) => s.free && (LIKE[s.like] || []).includes(t.mood);
+const suits = (t, like) => (LIKE[like] || []).includes(t.mood) || (BAND[like] && typeof t.energy === 'number' && t.energy >= BAND[like][0] && t.energy <= BAND[like][1]);
+export function freeTracks(s = current()) { return s.free && s.like ? TRACKS.filter(t => suits(t, s.like)) : []; }
+export const freeAllows = (t, s = current()) => !!(s.free && s.like && suits(t, s.like));
 export const ownIds = (s = current()) => s.own;
 
 export function create(name, like = null) {
