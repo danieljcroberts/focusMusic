@@ -324,14 +324,45 @@ setInterval(() => {
 export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }
 // Where you left off: the current mix track and position are saved every few seconds; the first Play after a reload
 // resumes it (a shared link can queue a track the same way).
-let resume = null, resumeAt = null;
+// Picking up where you left off. What was playing (a free track or one of your own) and where in it is saved every few
+// seconds and when the page goes into the background. On the next open the app tries to carry straight on: the installed
+// app is allowed to, and so is a browser after a gesture, so if the browser refuses, the first tap anywhere resumes it.
+let resume = null, resumeAt = null, resumeOwn = null;
 export function queueResume(t, at) { resume = t; resumeAt = at; ui.title.textContent = `${t.t} — ${t.a}`; setMeta(['press Play to resume', t.lic], t.src, 'Source ↗'); }
-if (state.np && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
-setInterval(() => { if (hasSrc && !audio.paused && curTrack && !curTrack.live && !curTrack.own) saveState({ np: { key: key(curTrack), t: Math.floor(audio.currentTime) } }); }, 5000);
+function saveNow(playing) {
+  if (!hasSrc || !curTrack || curTrack.live) return;
+  saveState({ np: curTrack.own ? { own: curTrack.id, t: Math.floor(audio.currentTime), playing } : { key: key(curTrack), t: Math.floor(audio.currentTime), playing } });
+}
+setInterval(() => { if (!audio.paused) saveNow(true); }, 5000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(!audio.paused); });
+window.addEventListener('pagehide', () => saveNow(!audio.paused));
+if (state.np) {
+  if (state.np.key && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
+  else if (state.np.own) resumeOwn = state.np;     // its entry arrives once your music has loaded
+}
+async function carryOn() {
+  if (!resume || !state.np || !state.np.playing || (!resume.own && !playable(resume))) return;
+  const r = resume, at = resumeAt;
+  try {
+    if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (!e) return; resume = null; await playOwn(e); } else { resume = null; playTrack(r); }
+    resumeAt = at;
+    await new Promise((res, rej) => { const p = audio; const ok = () => res(); p.addEventListener('playing', ok, { once: true }); setTimeout(() => (p.paused ? rej(new Error('blocked')) : res()), 1500); });
+    if (actx && actx.state === 'suspended') throw new Error('blocked');
+  } catch (e) {
+    // The browser wants a gesture first: hold the place, and go on at the first one.
+    audio.pause(); resume = r; resumeAt = at; ui.meta.textContent = 'tap anywhere to carry on';
+    const go = () => { if (resume === r) togglePlay(); };
+    for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, go, { once: true, passive: true });
+  }
+}
+window.addEventListener('sw-own-loaded', () => {
+  if (resumeOwn) { const e = ownTracks().find(x => x.id === resumeOwn.own); if (e) { resume = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' }; resumeAt = resumeOwn.t || 0; ui.title.textContent = `${e.t} — ${e.a}`; setMeta(['press Play to resume', 'your music']); } resumeOwn = null; }
+  carryOn();
+});
 for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} resumeAt = null; } });
 export function togglePlay() {
   if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
-  if (resume) { const r = resume; resume = null; if (playable(r)) { playTrack(r); return; } resumeAt = null; }
+  if (resume) { const r = resume; resume = null; if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (e) { playOwn(e); return; } } else if (playable(r)) { playTrack(r); return; } resumeAt = null; }
   if (follow) { const t = pickFor(sceneKey, sceneTone); if (t) { playTrack(t); return; } }   // the scene's track, if its source is on
   pickNext();
 }
