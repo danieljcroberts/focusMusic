@@ -89,6 +89,8 @@ export const SCENES = [
     desc: 'The valley cut from coloured paper. Sky, sun, clouds, mountains, fjord, dam, hills, the solar field, turbines and pylons are flat shapes stacked with soft shadows between the layers; the clouds drift, the turbines turn, and the colours follow the clock.' },
   { group: 'Places', key: 'solarNoon', name: 'Solar Noon', sw: '#a8d8f0', sound: 'wind', mood: 'day', tone: 'bright', art: ORIGINAL, music: 'Miles Tilmann|Middle Fields',
     desc: 'Low across a solar farm under a hard blue sky. Rows of panels run to the horizon with the sky in their glass, the air shimmers with heat, a hawk circles, and turbines turn far off. Follows the clock.' },
+  { group: 'Places', key: 'holmestrand', name: 'Holmestrand', sw: '#e0a862', sound: 'wind', mood: 'any', tone: 'calm', art: ORIGINAL, music: 'Zen Savauge|Quiet View',
+    desc: 'From the path on the hill above Holmestrand, looking east over the fjord at the hour your clock says. The gold gets under the cloud at dawn and dusk and lies along the water, the ferry crosses, the harbour and the rows of white and ochre houses sit below, and the autumn maples stir over the guardrail.' },
 
   { group: 'Pixel art', key: 'woods', name: 'Pixel Woods', sw: '#d08a3c', sound: 'wind', mood: 'day', tone: 'warm', music: 'adamned.age|Calmer',
     art: { who: 'Parallax Forest by ansimuz', lic: 'CC0', url: 'https://opengameart.org/content/forest-background' },

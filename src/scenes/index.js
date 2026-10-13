@@ -12,6 +12,7 @@ import { videoScene } from './video.js';
 import { cleanPowerScene } from './power.js';
 import { supercellScene } from './storm.js';
 import { offshoreScene, blueprintScene, paperValleyScene, solarNoonScene } from './power2.js';
+import { holmestrandScene } from './holmestrand.js';
 import { synthwaveScene, neonHighwayScene, vectorScene, laserShowScene, memphisScene } from './eighties.js';
 import { spectrumBarsScene, feedbackScene, superscopeScene, beatStarsScene, dancingScopeScene } from './visualisers.js';
 import { tramScene, libraryScene, lamproomScene, portholeScene, greenhouseNightScene, cabinScene } from './interiors.js';
@@ -46,6 +47,7 @@ const FACTORIES = {
   blueprint: blueprintScene,
   paperValley: paperValleyScene,
   solarNoon: solarNoonScene,
+  holmestrand: holmestrandScene,
   synthwave: synthwaveScene,
   neonhighway: neonHighwayScene,
   vector: vectorScene,
