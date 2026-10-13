@@ -8,7 +8,7 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume } from './music.js';
+import { prevTrack, volume, setVolume, currentArt } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -457,6 +457,8 @@ function syncMini() {
   el('miniArtist').textContent = artist || 'Tap play for music';
   const playing = el('play').textContent === 'Pause';
   miniPlay.textContent = playing ? 'Pause' : 'Play'; miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  const art = currentArt(), im = el('miniArt');            // a small cover, when the track carries one
+  if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
 }
 function showMini() { syncMini(); mini.hidden = false; bumpMini(); haptic(); }
 function hideMini() { clearTimeout(miniTimer); mini.hidden = true; }

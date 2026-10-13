@@ -20,7 +20,7 @@ export async function loadOwn() {
   return index;
 }
 
-// Artist, title and genre from ID3v2 tags (TPE1, TIT2, TCON), which most MP3s carry; otherwise from an "Artist - Title" file name.
+// Artist, title, genre and the cover (TPE1, TIT2, TCON, APIC) from ID3v2 tags, which most MP3s carry; otherwise from an "Artist - Title" file name.
 function text(bytes, enc) {
   try {
     if (enc === 0) return new TextDecoder('latin1').decode(bytes);
@@ -32,15 +32,25 @@ function text(bytes, enc) {
 async function tags(file) {
   const out = {};
   try {
-    const b = new Uint8Array(await file.slice(0, 131072).arrayBuffer());
+    let b = new Uint8Array(await file.slice(0, 16).arrayBuffer());
     if (b[0] !== 0x49 || b[1] !== 0x44 || b[2] !== 0x33) return out;      // "ID3"
     const ver = b[3], size = (b[6] << 21) | (b[7] << 14) | (b[8] << 7) | b[9];
+    b = new Uint8Array(await file.slice(0, Math.min(size + 10, 2500000)).arrayBuffer());   // the whole tag, within reason: covers can be large
     let i = 10;
     while (i + 10 < Math.min(b.length, size + 10)) {
       const id = String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
       if (!/^[A-Z0-9]{4}$/.test(id)) break;
       const n = ver === 4 ? (b[i + 4] << 21) | (b[i + 5] << 14) | (b[i + 6] << 7) | b[i + 7] : (b[i + 4] << 24) | (b[i + 5] << 16) | (b[i + 6] << 8) | b[i + 7];
       if (n <= 0) break;
+      if (id === 'APIC' && !out.APIC && n < 2000000) {
+        // Encoding, a MIME string, a picture type, a description (in that encoding), then the picture.
+        const fl = b[i + 9]; let d = b.subarray(i + 10 + (ver === 4 && fl & 1 ? 4 : 0), i + 10 + n);
+        if (b[5] & 0x80 || (ver === 4 && fl & 2)) d = d.filter((v, k) => !(v === 0 && k && d[k - 1] === 0xff));
+        const enc = d[0]; let j = 1; while (j < d.length && d[j]) j++;
+        const mime = text(d.subarray(1, j), 0); j += 2;                                  // past the terminator and the picture type
+        if (enc === 1 || enc === 2) { while (j + 1 < d.length && (d[j] || d[j + 1])) j += 2; j += 2; } else { while (j < d.length && d[j]) j++; j++; }
+        if (j < d.length) out.APIC = new Blob([d.subarray(j)], { type: mime.includes('/') ? mime : 'image/jpeg' });
+      }
       if (id === 'TIT2' || id === 'TPE1' || id === 'TCON') {
         // ID3v2.4 frames may carry a 4-byte length first and be "unsynchronised" (0xFF 0x00 stands for 0xFF).
         const fl = b[i + 9];
@@ -60,6 +70,15 @@ function fromName(name) {
 }
 
 export const isAudio = f => AUDIO.test(f.name) || (f.type || '').startsWith('audio/');
+// The cover shrunk to a small square JPEG data URL, for the mini player and the lock screen; null when it can't be read.
+async function smallCover(blob) {
+  try {
+    const bm = await createImageBitmap(blob), s = 96, c = document.createElement('canvas'); c.width = c.height = s;
+    const g = c.getContext('2d'), k = Math.max(s / bm.width, s / bm.height);
+    g.drawImage(bm, (s - bm.width * k) / 2, (s - bm.height * k) / 2, bm.width * k, bm.height * k); bm.close();
+    return c.toDataURL('image/jpeg', .72);
+  } catch (e) { return null; }
+}
 // A file's length in seconds. MP3s are read exactly from their headers (a Xing/Info frame count, or the size over a
 // constant bitrate); other formats ask an audio element for the metadata. 0 when it can't be read. Remembered per file.
 const DUR = new WeakMap();
@@ -119,6 +138,7 @@ export async function addOwn(files, progress = () => {}, opts = {}) {
     if (have) { out.push(have); continue; }                                     // already here
     const tg = await tags(f), nm = fromName(f.name);
     const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, a: tg.TPE1 || nm.a || 'Unknown artist', t: tg.TIT2 || nm.t, size: f.size, genre: (tg.TCON || '').replace(/^\(\d+\)/, ''), dur: Math.round(await duration(f)) };
+    if (tg.APIC) { const art = await smallCover(tg.APIC); if (art) e.art = art; }
     if (opts.measure) { try { Object.assign(e, await opts.measure(f)); } catch (err) {} }
     let stored = false;
     if (dir) {

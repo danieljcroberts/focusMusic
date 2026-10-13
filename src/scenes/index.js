@@ -78,6 +78,7 @@ const FACTORIES = {
   deepfield: deepfieldScene,
   mars: marsScene,
   ink: inkScene,
+  inkBeat: () => inkScene({ beat: true }),
   reaction: reactionScene,
   flow: flowScene,
   voronoi: voronoiScene,

@@ -23,11 +23,13 @@ function bassHits(gap = 3) {
 }
 const smooth01 = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
 
-/* Ink in Water: drops of ink falling into a clear tank and curling into clouds (a small stable-fluids solver) */
-export function inkScene() {
+/* Ink in Water: drops of ink falling into a clear tank and curling into clouds (a small stable-fluids solver).
+   With opts.beat, a drop (or a few) falls on every beat, the ink is thicker and the water swirls with the music. */
+export function inkScene(opts = {}) {
+  const BEAT = !!opts.beat;
   const INKS = [[38, 56, 148], [176, 36, 72], [18, 122, 134], [206, 142, 36], [104, 40, 122], [222, 88, 66], [24, 84, 160]];
   let gw, gh, dw, dh, u, v, u2, v2, p, dv, cu, dye, dye2, bg, buf, bg2, im, glass, drops, nextDrop, ink = 0;
-  const hit = bassHits(4);
+  const hit = bassHits(BEAT ? .22 : 4);
   const at = (a, x, y) => a[Math.min(gh - 1, Math.max(0, y)) * gw + Math.min(gw - 1, Math.max(0, x))];
   function sample(a, x, y) {
     if (x < 0) x = 0; else if (x > gw - 1.001) x = gw - 1.001;
@@ -49,9 +51,10 @@ export function inkScene() {
         dye[k] += col[0] * w; dye[k + 1] += col[1] * w; dye[k + 2] += col[2] * w;
       }
   }
-  function drop() {
+  function drop(force = 1) {
     const c = INKS[ink % INKS.length].map(v => -Math.log(Math.max(.04, v / 255)));
-    drops.push({ x: gw * (.2 + .6 * ((ink * .618 + .3) % 1)), y: gh * rand(.06, .22), vy: gh * rand(.22, .32), wob: rand(0, 6), life: 0, c, r: Math.max(1.6, Math.min(gw, gh) / 30) });
+    const x = BEAT ? gw * rand(.08, .92) : gw * (.2 + .6 * ((ink * .618 + .3) % 1));
+    drops.push({ x, y: gh * rand(.06, .22), vy: gh * rand(.22, .32) * (BEAT ? .8 + .8 * force : 1), wob: rand(0, 6), life: 0, c, r: Math.max(1.6, Math.min(gw, gh) / (BEAT ? 24 : 30)) * (BEAT ? .7 + .6 * force : 1), amt: BEAT ? 8 : 4.5 });
     ink++;
   }
   function project() {
@@ -100,27 +103,31 @@ export function inkScene() {
     draw(t, dt) {
       const sp = lively ? 1.6 : 1, h = dt * sp;
       nextDrop -= h;
-      if (nextDrop <= 0 || hit(dt)) { drop(); nextDrop = rand(6, 10); }
+      if (BEAT) {
+        // A drop on every beat, sometimes two or three on a strong one; a few seconds of silence still gets one.
+        if (hit(dt)) { const n = 1 + (bands.bass > .7 ? 2 : bands.bass > .55 ? 1 : 0); for (let k = 0; k < n; k++) drop(Math.min(1, bands.bass)); nextDrop = 2.5; }
+        else if (nextDrop <= 0) { drop(.4); nextDrop = rand(2, 3.5); }
+      } else if (nextDrop <= 0 || hit(dt)) { drop(); nextDrop = rand(6, 10); }
       for (let i = drops.length - 1; i >= 0; i--) {   // each drop sinks, slowing, and keeps feeding ink into its plume
         const d = drops[i]; d.life += h;
         const fade = Math.max(0, 1 - d.life / 2.6);
-        splat(d.x + Math.sin(d.life * 3 + d.wob) * .3, d.y, d.r, 0, d.vy * h * 3 * fade, fade > 0 ? d.c : null, h * 4.5 * fade);
+        splat(d.x + Math.sin(d.life * 3 + d.wob) * .3, d.y, d.r, 0, d.vy * h * 3 * fade, fade > 0 ? d.c : null, h * d.amt * fade);
         d.y += d.vy * h; d.vy *= Math.exp(-h * .9);
         if (fade <= 0) drops.splice(i, 1);
       }
-      const ph = t * .07, amb = gw * .004 * (1 + bands.mid * 1.5);   // a faint convection keeps the water from going still
+      const ph = t * .07, amb = gw * .004 * (1 + bands.mid * (BEAT ? 2.5 : 1.5));   // a faint convection keeps the water from going still; the beat version swirls with the mids
       for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
         const k = y * gw + x, X = x / gw * 6.28, Y = y / gh * 6.28;
         u[k] += Math.sin(Y * 1.3 + ph) * amb * h; v[k] += Math.sin(X * 1.1 - ph * .8) * amb * h * .6;
       }
-      confine(h, 3);
+      confine(h, BEAT ? 4.5 + 3 * bands.treble : 3);
       project();
       for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
         const k = y * gw + x;
         u2[k] = sample(u, x - h * u[k], y - h * v[k]) * (1 - h * .08); v2[k] = sample(v, x - h * u[k], y - h * v[k]) * (1 - h * .08);
       }
       [u, u2] = [u2, u]; [v, v2] = [v2, v];
-      const keep = 1 - h * .009;
+      const keep = 1 - h * (BEAT ? .02 : .009);   // thicker ink has to clear faster or the tank goes black
       for (let j = 0; j < dh; j++) for (let i = 0; i < dw; i++) {
         const gx = (i - .5) * .5, gy = (j - .5) * .5;
         let sx = i - 2 * h * sample(u, gx, gy), sy = j - 2 * h * sample(v, gx, gy);

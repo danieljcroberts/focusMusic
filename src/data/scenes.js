@@ -191,6 +191,8 @@ export const SCENES = [
     desc: 'The old sine-sum plasma, slowed right down and softened. Turn on Lively for the full colour.' },
   { group: 'Trip', key: 'ink', name: 'Ink in Water', sw: '#c8d8dc', sound: 'pond', mood: 'day', tone: 'bright', art: ORIGINAL, music: 'Miles Tilmann|Melt',
     desc: 'Drops of coloured ink fall into a clear tank and curl slowly into clouds, then fade. A strong beat lets another drop fall.' },
+  { group: 'Trip', key: 'inkBeat', name: 'Ink on the Beat', sw: '#b02448', sound: 'pond', mood: 'any', tone: 'pulse', art: ORIGINAL, music: 'Miles Tilmann|Particle Song 1',
+    desc: 'The ink tank, driven by the music. A drop falls on every beat, two or three on a strong one, the plumes are thicker, and the water swirls with the mids and treble. Keep this one or the calm one.' },
   { group: 'Trip', key: 'reaction', name: 'Reaction-Diffusion', sw: '#e0866a', sound: 'none', mood: 'any', tone: 'calm', art: ORIGINAL, music: 'Glochids|On Gel',
     desc: 'Coral and spot patterns grow, split and wander as two chemicals react, drifting between forms over a few minutes. The music speeds the growth a little.' },
   { group: 'Trip', key: 'flow', name: 'Flow Field', sw: '#5a4f8a', sound: 'none', mood: 'night', tone: 'calm', art: ORIGINAL, music: 'Miles Tilmann|Particle Song 1',

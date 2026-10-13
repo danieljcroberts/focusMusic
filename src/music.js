@@ -141,11 +141,13 @@ export function setArtworkSource(fn) { artwork = fn; }
 // The focus timer's state, shown on the lock screen in place of the album line while a block runs.
 let lockLine = '';
 export function setLockLine(text) { if (text === lockLine) return; lockLine = text; announce(); }
+// The cover of the playing track, when it carries one (your own MP3s with embedded art).
+export const currentArt = () => (curTrack && curTrack.art) || null;
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
-    const art = artwork();
-    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
+    const cover = t.art || null, art = artwork();
+    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: cover ? [{ src: cover, sizes: '96x96', type: 'image/jpeg' }] : art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
   } catch (e) {}
 }
 if (ms) {
@@ -243,7 +245,7 @@ async function nextLive() {
 let ownBlob = null;
 async function playOwn(e) {
   source = 'own'; setStatus('');
-  curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' };
+  curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music', art: e.art || null };
   remember({ kind: 'own', e });
   recent.push('own:' + e.id); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${e.t} — ${e.a}`;
