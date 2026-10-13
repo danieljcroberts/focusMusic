@@ -167,16 +167,28 @@ export async function probe() {
   renderLib(); done();
 }
 
+// Starts a track. When a place in it is wanted (picking up where you left off), the element loads its metadata first,
+// seeks there silently, and only then plays, fading in: otherwise a moment of the track's start would be heard before
+// the jump, and the jump itself would click. The promise of that play() is kept, so a refusal can be noticed.
+let pendingPlay = Promise.resolve();
+function begin(p, seekTo) {
+  if (seekTo == null) { pendingPlay = p.play(); pendingPlay.catch(() => {}); return; }
+  pendingPlay = new Promise((res, rej) => {
+    const go = () => { try { if (isFinite(p.duration)) p.currentTime = Math.min(seekTo, Math.max(0, p.duration - 5)); } catch (e) {} p.play().then(res, rej); };
+    if (p.readyState >= 1) go(); else { p.addEventListener('loadedmetadata', go, { once: true }); p.preload = 'metadata'; p.load(); }   // the players don't preload on their own
+  });
+  pendingPlay.catch(() => {});
+}
 function start(url) {
   hasSrc = true; queued = false;
-  const cors = corsOk(url), prev = audio;
+  const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
-  if (next === prev) { setGain(prev, 1); prev.src = url; prev.play().catch(() => {}); return; }
+  if (next === prev) { setGain(prev, 0); prev.src = url; begin(prev, seekTo); rampTo(prev, 1, seekTo == null ? .4 : 1.2, false); return; }
   if (!prev.paused) rampTo(prev, 0, FADE, true); else prev.pause();
-  audio = next; setGain(next, 0); next.src = url; next.play().catch(() => {});
-  rampTo(next, 1, FADE, false);
+  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo);
+  rampTo(next, 1, seekTo == null ? FADE : 1.2, false);
 }
 export function playTrack(t) {
   if (!t) return;
@@ -350,15 +362,15 @@ async function carryOn() {
   const r = resume, at = resumeAt;
   if (!(await readyFor(r)) || resume !== r) return;
   try {
-    if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (!e) return; resume = null; await playOwn(e); } else { resume = null; playTrack(r); }
     resumeAt = at;
+    if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (!e) return; resume = null; await playOwn(e); } else { resume = null; playTrack(r); }
     // The browser says no with a rejected play(); otherwise it is on its way, however long the track takes to load.
-    await audio.play();
+    await pendingPlay;
     if (actx && actx.state === 'suspended') { await actx.resume().catch(() => {}); if (actx.state === 'suspended') throw new Error('blocked'); }
     setStatus(`Carrying on: ${r.t} — ${r.a}.`);
   } catch (e) {
     // The browser wants a gesture first: hold the place, and go on at the first one.
-    audio.pause(); resume = r; resumeAt = audio.readyState >= 1 ? null : at; ui.meta.textContent = 'tap anywhere to carry on';   // the place is already set once the metadata is in setStatus(`Tap anywhere to carry on with ${r.t}.`);
+    audio.pause(); resume = r; resumeAt = null; ui.meta.textContent = 'tap anywhere to carry on'; setStatus(`Tap anywhere to carry on with ${r.t}.`);   // the place is set, or will be when the metadata is in
     const go = () => { if (resume === r) togglePlay(); };
     for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, go, { once: true, passive: true });
   }
@@ -367,14 +379,13 @@ window.addEventListener('sw-own-loaded', () => {
   if (resumeOwn) { const e = ownTracks().find(x => x.id === resumeOwn.own); if (e) { resume = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' }; resumeAt = resumeOwn.t || 0; ui.title.textContent = `${e.t} — ${e.a}`; setMeta(['press Play to resume', 'your music']); } resumeOwn = null; }
   carryOn();
 });
-for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} } resumeAt = null; });
 export function togglePlay() {
-  if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
+  if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 0); audio.play().catch(() => {}); rampTo(audio, 1, .8, false); } else audio.pause(); return; }
   if (resume) {
     const r = resume; resume = null;
     if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (e) { playOwn(e); return; } }
     else if (playable(r)) { playTrack(r); return; }
-    else if (r.stream && iaOnline === null) { const at = resumeAt; readyFor(r).then(ok => { if (ok) { playTrack(r); resumeAt = at; } else pickNext(); }); return; }   // the check is still running
+    else if (r.stream && iaOnline === null) { const at = resumeAt; readyFor(r).then(ok => { if (ok) { resumeAt = at; playTrack(r); } else pickNext(); }); return; }   // the check is still running
     resumeAt = null;
   }
   if (follow) { const t = pickFor(sceneKey, sceneTone); if (t) { playTrack(t); return; } }   // the scene's track, if its source is on
