@@ -157,12 +157,14 @@ if (ms) {
 }
 
 // One small request tells us whether outside APIs and audio are reachable.
+let probeDone;
 export async function probe() {
+  let done; probeDone = new Promise(r => { done = r; });
   try {
     const r = await fetch('https://archive.org/advancedsearch.php?q=identifier%3Araam004&fl%5B%5D=identifier&rows=1&output=json', { cache: 'no-store' });
     iaOnline = r.ok;
   } catch (e) { iaOnline = false; }
-  renderLib();
+  renderLib(); done();
 }
 
 function start(url) {
@@ -333,24 +335,30 @@ function saveNow(playing) {
   if (!hasSrc || !curTrack || curTrack.live) return;
   saveState({ np: curTrack.own ? { own: curTrack.id, t: Math.floor(audio.currentTime), playing } : { key: key(curTrack), t: Math.floor(audio.currentTime), playing } });
 }
-setInterval(() => { if (!audio.paused) saveNow(true); }, 5000);
+setInterval(() => { if (!audio.paused) saveNow(true); }, 2000);
+for (const p of players) p.addEventListener('pause', () => { if (p === audio) saveNow(false); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(!audio.paused); });
 window.addEventListener('pagehide', () => saveNow(!audio.paused));
 if (state.np) {
   if (state.np.key && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
   else if (state.np.own) resumeOwn = state.np;     // its entry arrives once your music has loaded
 }
+// Streams need the archive.org check to have finished before they count as playable; a few seconds at most.
+const readyFor = async t => { if (t && t.stream && iaOnline === null && probeDone) await Promise.race([probeDone, new Promise(r => setTimeout(r, 6000))]); return t.own || playable(t); };
 async function carryOn() {
-  if (!resume || !state.np || !state.np.playing || (!resume.own && !playable(resume))) return;
+  if (!resume || !state.np || !state.np.playing) return;
   const r = resume, at = resumeAt;
+  if (!(await readyFor(r)) || resume !== r) return;
   try {
     if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (!e) return; resume = null; await playOwn(e); } else { resume = null; playTrack(r); }
     resumeAt = at;
-    await new Promise((res, rej) => { const p = audio; const ok = () => res(); p.addEventListener('playing', ok, { once: true }); setTimeout(() => (p.paused ? rej(new Error('blocked')) : res()), 1500); });
-    if (actx && actx.state === 'suspended') throw new Error('blocked');
+    // The browser says no with a rejected play(); otherwise it is on its way, however long the track takes to load.
+    await audio.play();
+    if (actx && actx.state === 'suspended') { await actx.resume().catch(() => {}); if (actx.state === 'suspended') throw new Error('blocked'); }
+    setStatus(`Carrying on: ${r.t} — ${r.a}.`);
   } catch (e) {
     // The browser wants a gesture first: hold the place, and go on at the first one.
-    audio.pause(); resume = r; resumeAt = at; ui.meta.textContent = 'tap anywhere to carry on';
+    audio.pause(); resume = r; resumeAt = audio.readyState >= 1 ? null : at; ui.meta.textContent = 'tap anywhere to carry on';   // the place is already set once the metadata is in setStatus(`Tap anywhere to carry on with ${r.t}.`);
     const go = () => { if (resume === r) togglePlay(); };
     for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, go, { once: true, passive: true });
   }
@@ -359,10 +367,16 @@ window.addEventListener('sw-own-loaded', () => {
   if (resumeOwn) { const e = ownTracks().find(x => x.id === resumeOwn.own); if (e) { resume = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' }; resumeAt = resumeOwn.t || 0; ui.title.textContent = `${e.t} — ${e.a}`; setMeta(['press Play to resume', 'your music']); } resumeOwn = null; }
   carryOn();
 });
-for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} resumeAt = null; } });
+for (const p of players) p.addEventListener('loadedmetadata', () => { if (p === audio && resumeAt != null && isFinite(p.duration)) { try { p.currentTime = Math.min(resumeAt, p.duration - 5); } catch (e) {} } resumeAt = null; });
 export function togglePlay() {
   if (hasSrc && !audio.ended) { if (audio.paused) { setGain(audio, 1); audio.play().catch(() => {}); } else audio.pause(); return; }
-  if (resume) { const r = resume; resume = null; if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (e) { playOwn(e); return; } } else if (playable(r)) { playTrack(r); return; } resumeAt = null; }
+  if (resume) {
+    const r = resume; resume = null;
+    if (r.own) { const e = ownTracks().find(x => x.id === r.id); if (e) { playOwn(e); return; } }
+    else if (playable(r)) { playTrack(r); return; }
+    else if (r.stream && iaOnline === null) { const at = resumeAt; readyFor(r).then(ok => { if (ok) { playTrack(r); resumeAt = at; } else pickNext(); }); return; }   // the check is still running
+    resumeAt = null;
+  }
   if (follow) { const t = pickFor(sceneKey, sceneTone); if (t) { playTrack(t); return; } }   // the scene's track, if its source is on
   pickNext();
 }
