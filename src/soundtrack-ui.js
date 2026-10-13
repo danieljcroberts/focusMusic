@@ -2,7 +2,7 @@
 // The wizard asks one thing per screen: how the music is organised, where each folder goes, whether to keep the free
 // tracks, then copies, sorts what it couldn't place, and shows a summary. Everything stays on this device.
 import * as ST from './soundtracks.js';
-import { addOwn, ownTracks, isAudio } from './mine.js';
+import { addOwn, ownTracks, isAudio, durations, fmtDur } from './mine.js';
 import { measure } from './measure.js';
 import { musicPlaying, nextTrack, previewOwn, togglePlay, follow } from './music.js';
 import { kvGet, kvSet } from './store.js';
@@ -15,9 +15,16 @@ const h = (tag, props = {}, ...kids) => { const n = Object.assign(document.creat
 const btn = (text, onClick, cls = 'pbtn') => { const b = h('button', { type: 'button', className: cls, textContent: text }); b.addEventListener('click', onClick); return b; };
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const counts = s => {
-  const own = s.own.filter(id => ownTracks().some(e => e.id === id)).length, free = ST.freeTracks(s).length;
-  return { own, free, text: [own && `${own} of yours`, free && `${free} free`, s.live && 'random finds'].filter(Boolean).join(' + ') || 'empty' };
+  const mine = ownTracks().filter(e => s.own.includes(e.id)), own = mine.length, free = ST.freeTracks(s).length;
+  const secs = mine.reduce((a, e) => a + (e.dur || 0), 0);
+  return { own, free, text: [own && `${own} of yours${secs ? ` (${fmtDur(secs)})` : ''}`, free && `${free} free`, s.live && 'random finds'].filter(Boolean).join(' + ') || 'empty' };
 };
+// A line that fills in the total length of some files once it is known: "12 tracks" then "12 tracks · 48 min".
+function lengthNote(files, text) {
+  const n = h('small', { textContent: text(null) });
+  durations(files, secs => { n.textContent = text(secs); });
+  return n;
+}
 
 /* The chip and its menu */
 const stBtn = el('stBtn'), stMenu = el('stMenu');
@@ -85,7 +92,8 @@ async function pick(folder, then) {
 }
 const relPath = f => f.relPath || f.webkitRelativePath || f.name;
 const MB = files => files.reduce((a, f) => a + f.size, 0) / 1e6;
-const sizeNote = files => { const mb = MB(files); return mb > 1500 ? `${(mb / 1000).toFixed(1)} GB will be copied onto this device. Make sure there is room.` : `${mb.toFixed(0)} MB will be copied onto this device.`; };
+const sizeNote = (files, secs) => { const mb = MB(files), size = mb > 1500 ? `${(mb / 1000).toFixed(1)} GB` : `${mb.toFixed(0)} MB`; return `${plural(files.length, 'track')}${secs ? `, ${fmtDur(secs)}` : ''}: ${size} will be copied onto this device.${mb > 1500 ? ' Make sure there is room.' : ''}`; };
+const sizeLine = files => { const p = h('p', { className: 'muted', textContent: sizeNote(files) }); durations(files, secs => { p.textContent = sizeNote(files, secs); }); return p; };
 
 export function openWizard(target = null) {
   W = { mode: target ? 'target' : null, target, groups: [], keep: 'mix', made: new Map() };
@@ -143,13 +151,13 @@ function stepMap() {
     for (const s of ST.soundtracks()) sel.append(h('option', { value: s.id, textContent: s.name }));
     sel.append(h('option', { value: 'new', textContent: `New soundtrack: ${g.name}` }), h('option', { value: 'skip', textContent: 'Skip this folder' }));
     sel.value = g.to; sel.addEventListener('change', () => { g.to = sel.value; });
-    return h('tr', {}, h('td', {}, g.name, h('small', { textContent: plural(g.files.length, 'track') })), h('td', {}, sel));
+    return h('tr', {}, h('td', {}, g.name, lengthNote(g.files, secs => `${plural(g.files.length, 'track')}${secs ? ` · ${fmtDur(secs)}` : ''}`)), h('td', {}, sel));
   });
   show('Your music',
     h('p', { className: 'step', textContent: 'Step 3 of 4' }),
     h('p', { textContent: `Found ${plural(W.groups.length, 'folder')} with ${plural(all.length, 'track')}. Check where each folder goes; change any that are wrong.` }),
     h('table', {}, ...rows),
-    h('p', { className: 'muted', textContent: sizeNote(all) }),
+    sizeLine(all),
     h('div', { className: 'actions' }, btn('Back', stepPick), btn('Continue', stepKeep, 'pbtn primary')));
 }
 function stepKeep() {
@@ -165,7 +173,7 @@ function stepKeep() {
     h('p', { textContent: 'Keep the free tracks that come with the app in these soundtracks?' }),
     opt('mix', 'Mix them in (recommended)', 'Your music plays most of the time, with the free tracks in between. Good while your collection is small.'),
     opt('only', 'Only my music', 'The soundtracks you add to play only your own tracks. You can change this per soundtrack later.'),
-    W.mode === 'loose' ? h('p', { className: 'muted', textContent: sizeNote(all) }) : null,
+    W.mode === 'loose' ? sizeLine(all) : null,
     h('div', { className: 'actions' }, btn('Back', W.mode === 'folders' ? stepMap : stepPick), btn('Add my music', stepCopy, 'pbtn primary')));
 }
 async function stepCopy() {
@@ -173,14 +181,14 @@ async function stepCopy() {
   show('Adding your music', h('p', { textContent: 'Copying onto this device. Keep the app open until it finishes.' }), h('div', { className: 'bar' }, bar), line);
   onClose = null;
   const total = W.groups.reduce((a, g) => a + (g.to === 'skip' ? 0 : g.files.length), 0);
-  let done = 0; const touched = new Set(); W.unsure = []; W.added = 0;
+  let done = 0; const touched = new Set(); W.unsure = []; W.added = 0; W.addedSecs = 0;
   for (const g of W.groups) {
     if (g.to === 'skip') continue;
     let to = g.to;
     if (to === 'new') { to = W.made.get(g.name) || ST.create(g.name, ST.matchName(g.name)); W.made.set(g.name, to); }
     const entries = await addOwn(g.files, (i, of, name) => { bar.style.width = `${Math.round((done + i) / total * 100)}%`; line.textContent = `${done + i} of ${total}: ${name}`; },
       { measure: W.mode === 'loose' ? measure : null });
-    done += g.files.length; W.added += entries.added || 0;
+    done += g.files.length; W.added += entries.added || 0; W.addedSecs += entries.filter(e => entries.fresh.has(e.id)).reduce((a, e) => a + (e.dur || 0), 0);
     if (to) { ST.addOwnTo(to, entries.map(e => e.id)); touched.add(to); }
     else for (const e of entries) {                       // all in one place: sort by suggestion, keep the unsure ones to ask about
       if (ST.memberOf(e.id).length) { ST.memberOf(e.id).forEach(s => touched.add(s.id)); continue; }
@@ -228,7 +236,7 @@ function stepDone() {
   const rows = [...W.touched].map(id => ST.byId(id)).filter(Boolean).map(s => h('tr', {}, h('td', {}, icon(s, 'inline'), s.name), h('td', { className: 'muted', textContent: counts(s).text })));
   const first = [...W.touched][0];
   show('All set',
-    h('p', { textContent: W.added ? `Added ${plural(W.added, 'track')}.` : 'Everything was already here; the soundtracks are updated.' }),
+    h('p', { textContent: W.added ? `Added ${plural(W.added, 'track')}${W.addedSecs ? `, ${fmtDur(W.addedSecs)} of music` : ''}.` : 'Everything was already here; the soundtracks are updated.' }),
     rows.length ? h('table', {}, ...rows) : null,
     h('p', { className: 'muted', textContent: W.dir && W.mode === 'folders' ? 'Switch soundtracks from the chip next to Play. When you add music to that folder later, "Check for new music" under Edit soundtracks picks it up.' : 'Switch soundtracks from the chip next to Play. To add more later, use "Add your music…" in that menu; files already here are skipped.' }),
     h('div', { className: 'actions' }, btn('Edit soundtracks', () => openEditor()), btn('Start listening', () => { if (first) ST.setCurrent(first); hide(); if (!musicPlaying) togglePlay(); else nextTrack(); }, 'pbtn primary')));
