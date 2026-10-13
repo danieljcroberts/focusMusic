@@ -171,10 +171,16 @@ export async function probe() {
 // seeks there silently, and only then plays, fading in: otherwise a moment of the track's start would be heard before
 // the jump, and the jump itself would click. The promise of that play() is kept, so a refusal can be noticed.
 let pendingPlay = Promise.resolve();
-function begin(p, seekTo) {
-  if (seekTo == null) { pendingPlay = p.play(); pendingPlay.catch(() => {}); return; }
+function begin(p, seekTo, fade) {
+  if (seekTo == null) { pendingPlay = p.play(); pendingPlay.catch(() => {}); rampTo(p, 1, fade, false); return; }
+  // The fade only starts once playback has: a fade that ran while the track was still loading would leave it
+  // starting mid-waveform at full volume, which clicks.
   pendingPlay = new Promise((res, rej) => {
-    const go = () => { try { if (isFinite(p.duration)) p.currentTime = Math.min(seekTo, Math.max(0, p.duration - 5)); } catch (e) {} p.play().then(res, rej); };
+    const place = () => { try { if (isFinite(p.duration)) p.currentTime = Math.min(seekTo, Math.max(0, p.duration - 5)); } catch (e) {} };
+    const go = () => {
+      place();
+      p.play().then(() => { if (Math.abs(p.currentTime - seekTo) > 3) place(); rampTo(p, 1, fade, false); res(); }, rej);
+    };
     if (p.readyState >= 1) go(); else { p.addEventListener('loadedmetadata', go, { once: true }); p.preload = 'metadata'; p.load(); }   // the players don't preload on their own
   });
   pendingPlay.catch(() => {});
@@ -185,10 +191,9 @@ function start(url) {
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
-  if (next === prev) { setGain(prev, 0); prev.src = url; begin(prev, seekTo); rampTo(prev, 1, seekTo == null ? .4 : 1.2, false); return; }
+  if (next === prev) { setGain(prev, 0); prev.src = url; begin(prev, seekTo, seekTo == null ? .4 : 1.2); return; }
   if (!prev.paused) rampTo(prev, 0, FADE, true); else prev.pause();
-  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo);
-  rampTo(next, 1, seekTo == null ? FADE : 1.2, false);
+  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo, seekTo == null ? FADE : 1.2);
 }
 export function playTrack(t) {
   if (!t) return;
