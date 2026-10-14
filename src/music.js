@@ -24,7 +24,9 @@ function wireAnalyser() {
     analyser = actx.createAnalyser(); analyser.fftSize = 512; analyser.smoothingTimeConstant = .6;
     analyser.minDecibels = -90; analyser.maxDecibels = -12;   // headroom: loud music no longer pins every low bin at the top
     fdata = new Uint8Array(analyser.frequencyBinCount);
-    for (const p of players.slice(0, 2)) actx.createMediaElementSource(p).connect(analyser);
+    // Each player's level is a gain node, not the element's volume: a gain node ramps smoothly, where stepping the
+    // element's volume crackles on some phones. The element stays at full volume once wired.
+    for (const p of players.slice(0, 2)) { const g = actx.createGain(); g.gain.value = p.volume; p._gain = g; p.volume = 1; actx.createMediaElementSource(p).connect(g); g.connect(analyser); }
     analyser.connect(actx.destination);
   } catch (e) { analyser = null; }
 }
@@ -80,7 +82,10 @@ const FADE = 2.5;
 let fades = [];
 // Breaks duck the music to a third; the change ramps over a second and a half.
 let duck = 1, duckTarget = 1;
-function setGain(p, g) { p._g = g; p.volume = Math.max(0, Math.min(1, g * master * duck)); }
+function setGain(p, g) {
+  p._g = g; const v = Math.max(0, Math.min(1, g * master * duck));
+  if (p._gain) p._gain.gain.setTargetAtTime(v, actx.currentTime, .03); else p.volume = v;
+}
 export function setDuck(on) { duckTarget = on ? .35 : 1; }
 function rampTo(p, to, dur, stopAfter) { fades = fades.filter(x => x.p !== p); fades.push({ p, from: p._g, to, t0: performance.now(), dur, stopAfter }); }
 export function tickFades(now) {
@@ -179,7 +184,13 @@ function begin(p, seekTo, fade) {
     const place = () => { try { if (isFinite(p.duration)) p.currentTime = Math.min(seekTo, Math.max(0, p.duration - 5)); } catch (e) {} };
     const go = () => {
       place();
-      p.play().then(() => { if (Math.abs(p.currentTime - seekTo) > 3) place(); rampTo(p, 1, fade, false); res(); }, rej);
+      p.play().then(async () => {
+        if (Math.abs(p.currentTime - seekTo) > 3) place();
+        // Silence while the audio engine spins up: its first moments after a cold start can crackle on phones.
+        if (actx) { try { await actx.resume(); } catch (e) {} }
+        await new Promise(r => setTimeout(r, 350));
+        rampTo(p, 1, fade, false); res();
+      }, rej);
     };
     if (p.readyState >= 1) go(); else { p.addEventListener('loadedmetadata', go, { once: true }); p.preload = 'metadata'; p.load(); }   // the players don't preload on their own
   });
