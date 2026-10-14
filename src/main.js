@@ -201,6 +201,40 @@ function go(i) {
 const toast = el('toast');
 let toastTimer;
 function caption(text) { toast.textContent = text; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1600); }
+/* Scenes that don't listen to the music themselves breathe a little with it: a touch of brightness on the bass and the
+   level, smoothed. The scenes that react in their own way are left alone. */
+const REACTS = new Set(['spectrumBars', 'feedback', 'superscope', 'beatstars', 'dancingscope', 'scope', 'spectrum', 'ferrofluid', 'tunnel', 'synthwave', 'neonhighway', 'vector', 'lasers', 'memphis',
+  'supercell', 'storm', 'lava', 'kaleido', 'marble', 'plasma', 'nebula', 'voronoi', 'blackhole', 'deepfield', 'hearth', 'aurora', 'ink', 'inkBeat', 'reaction', 'flow', 'murmuration',
+  'canopy', 'tide', 'lighthouse', 'clouds', 'train', 'cleanPower', 'offshore', 'blueprint', 'paperValley', 'solarNoon', 'rain', 'snow', 'cafe', 'windscreen', 'greenhouse', 'library', 'lanterns', 'volcano', 'saturn', 'orrery', 'ocean', 'jellyfish', 'mandel', 'mandala', 'holmestrand']);
+let pulse = 1;
+function tickPulse(dt) {
+  const want = musicPlaying && !REACTS.has(SCENES[cur].key) ? 1 + bands.bass * .05 + musicLevel * .03 : 1;
+  pulse += (want - pulse) * Math.min(1, dt * 12);
+  const on = Math.abs(pulse - 1) > .003;
+  document.body.classList.toggle('pulse', on);
+  if (on) document.body.style.setProperty('--pulse', pulse.toFixed(3));
+}
+/* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
+   snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
+const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk'].includes(s.key)).map(s => s.key));
+const wxCv = el('wx'), wxG = wxCv.getContext('2d');
+let wxDrops = null;
+function drawWx(dt) {
+  const amount = WX.has(SCENES[cur].key) ? Math.max(0, (weather - .5) / .5) : 0;
+  if (amount <= 0) { if (!wxCv.hidden) { wxCv.hidden = true; wxDrops = null; } return; }
+  if (wxCv.hidden) { wxCv.hidden = false; wxCv.width = Math.round(W * DPR); wxCv.height = Math.round(H * DPR); }
+  const m = new Date().getMonth(), snow = m >= 10 || m <= 1, n = Math.round((snow ? 140 : 220) * amount * (lowPower ? .5 : 1));
+  if (!wxDrops || wxDrops.length !== n) wxDrops = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, v: snow ? 30 + Math.random() * 40 : 500 + Math.random() * 400, l: snow ? 1.5 + Math.random() * 2 : 10 + Math.random() * 18, w: Math.random() * 6.28 }));
+  wxG.setTransform(DPR, 0, 0, DPR, 0, 0); wxG.clearRect(0, 0, W, H);
+  wxG.strokeStyle = `rgba(214, 226, 240, ${.35 * amount})`; wxG.fillStyle = `rgba(255, 255, 255, ${.8 * amount})`; wxG.lineWidth = 1;
+  wxG.beginPath();
+  for (const d of wxDrops) {
+    d.y += d.v * dt; if (snow) d.x += Math.sin(t * .8 + d.w) * 12 * dt; else d.x -= 60 * dt;
+    if (d.y > H + 20) { d.y = -20; d.x = Math.random() * W; } if (d.x < -20) d.x = W + 20;
+    if (snow) { wxG.moveTo(d.x + d.l, d.y); wxG.arc(d.x, d.y, d.l, 0, 6.283); } else { wxG.moveTo(d.x, d.y); wxG.lineTo(d.x - 2, d.y + d.l); }
+  }
+  if (snow) wxG.fill(); else wxG.stroke();
+}
 function render(dt) {
   const inst = instances[cur];
   if (broken[cur]) {
@@ -275,9 +309,9 @@ function drawDiag() {
 function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
-  tickDrift(now); tickSleep(now);
+  tickDrift(now); tickSleep(now); tickPulse(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
-  if (picker.hidden) render(dt);   // nothing to draw behind the full-screen scene grid
+  if (picker.hidden) { render(dt); drawWx(dt); }   // nothing to draw behind the full-screen scene grid
   requestAnimationFrame(frame);
 }
 if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); }, 100);

@@ -5,7 +5,7 @@ import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { weather, setWeatherOverride } from './weather.js';
 import { setDaylightOverride } from './daylight.js';
-import { TRACKS } from './music.js';
+import { TRACKS, keepStreams, setKeepStreams, cachedStreams } from './music.js';
 import { localOn, enableLocal, disableLocal } from './local.js';
 import { diagOn, toggleDiag } from './diag.js';
 import { finishOn, setFinish } from './finish.js';
@@ -66,6 +66,10 @@ el('offlineBtn').addEventListener('click', async () => {
   } catch (e) { setStatus("Couldn't save the music. Check the connection and try again."); }
 });
 
+const ksBtn = el('keepStreamsBtn');
+const drawKs = async () => { ksBtn.setAttribute('aria-pressed', String(keepStreams)); const n = await cachedStreams(); ksBtn.textContent = `Keep streams I've heard${n ? ` (${n} kept)` : ''}`; };
+ksBtn.addEventListener('click', () => { setKeepStreams(!keepStreams); drawKs(); });
+drawKs(); whenSheetOpens(drawKs);
 const finishBtn = el('finishBtn');
 function drawFinish() { finishBtn.setAttribute('aria-pressed', String(finishOn)); }
 finishBtn.addEventListener('click', () => { setFinish(!finishOn); drawFinish(); });

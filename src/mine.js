@@ -160,6 +160,23 @@ export async function ownURL(e) {
   const h = await (await folder()).getFileHandle(e.id);
   return URL.createObjectURL(await h.getFile());
 }
+// Read the tags again for every track already here (covers, genre and length), for tracks added before those were kept.
+export async function rereadTags(progress = () => {}) {
+  if (!opfs) return 0;
+  let n = 0; const dir = await folder();
+  for (let i = 0; i < index.length; i++) {
+    const e = index[i]; progress(i + 1, index.length, e.t);
+    try {
+      const f = await (await dir.getFileHandle(e.id)).getFile();
+      const tg = await tags(f);
+      if (tg.TPE1) e.a = tg.TPE1; if (tg.TIT2) e.t = tg.TIT2; if (tg.TCON) e.genre = tg.TCON.replace(/^\(\d+\)/, '');
+      if (!e.dur) e.dur = Math.round(await duration(f));
+      if (tg.APIC) { const art = await smallCover(tg.APIC); if (art) e.art = art; }
+      n++;
+    } catch (err) {}
+  }
+  await save(); return n;
+}
 export async function removeOwn(id) {
   index = index.filter(e => e.id !== id); session.delete(id);
   if (opfs) { try { await (await folder()).removeEntry(id); } catch (e) {} await save(); }

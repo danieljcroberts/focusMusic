@@ -1,6 +1,7 @@
 // Opens the built app in headless Chromium, steps through every scene
 // and fails on any page error or console error. Run `npm run build` first; `npm test` does both.
-// Set SMOKE_SHOTS=<dir> to also save a screenshot of each scene, SMOKE_CHROMIUM=<path> to use a particular Chromium.
+// Set SMOKE_SHOTS=<dir> to also save a screenshot of each scene, SMOKE_CHROMIUM=<path> to use a particular Chromium,
+// SMOKE_SCENES=<name,name> to open only those scenes (a quick pass after a change; the full run is the nightly check).
 /* global document, window */ // inside page.evaluate callbacks, which run in the browser
 import { preview } from 'vite';
 import { chromium } from 'playwright';
@@ -41,8 +42,12 @@ page.on('console', m => { if (m.type() === 'error' && !/three|jsdelivr|archive\.
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForTimeout(600);
 const total = await page.evaluate(() => document.querySelectorAll('#nav button').length);
+const only = process.env.SMOKE_SCENES ? new Set(process.env.SMOKE_SCENES.split(',').map(x => x.trim().toLowerCase())) : null;
+const labels = await page.evaluate(() => [...document.querySelectorAll('#nav button .lbl')].map(l => l.textContent));
+const wanted = i => !only || only.has(labels[i].toLowerCase());
 const names = [];
 for (let i = 0; i < total; i++) {
+  if (!wanted(i)) continue;
   await page.evaluate(i => document.getElementById('scene-' + i).click(), i);
   await page.waitForTimeout(900);
   const broken = await page.evaluate(() => window.slowWindows.broken());
@@ -77,6 +82,7 @@ await page2.goto(url, { waitUntil: 'load' });
 await page2.waitForTimeout(800);
 const noThumb = [];
 for (let i = 0; i < total; i++) {
+  if (!wanted(i)) continue;
   await page2.evaluate(i => document.getElementById('scene-' + i).click(), i);
   await page2.waitForTimeout(1500);
   const got = await page2.evaluate(() => window.slowWindows.captureThumb());

@@ -12,7 +12,8 @@
     "check": "node scripts/check.mjs",
     "fetch-music": "node scripts/fetch-music.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "test": "npm run lint && npm run check && npm run build && npm run smoke"
+    "test": "npm run lint && npm run check && npm run build && npm run smoke",
+    "smoke:quick": "SMOKE_SCENES='Rain on Glass,Lava Lamp,Supercell,Holmestrand,Offshore Wind,Pixel Woods,Deep Field,Spectrum Bars,Cat on the Windowsill,Open Water' node scripts/smoke.mjs"
   },
   "devDependencies": {
     "eslint": "^10.12.0",

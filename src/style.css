@@ -16,7 +16,10 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   overflow: hidden;
 }
-#scene, #gl, #still, #fade { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#scene, #gl, #still, #fade, #wx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#wx { pointer-events: none; }
+/* Scenes that don't listen to the music themselves breathe a little with it */
+body.pulse #scene, body.pulse #still, body.pulse .stage { filter: brightness(var(--pulse, 1)); }
 [hidden] { display: none !important; }
 .stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 video.stage { object-fit: cover; }
@@ -147,6 +150,7 @@ nav button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--ch
 .lib .pl { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; font-size: 12px; }
 .lib .pl:disabled { opacity: .3; cursor: default; }
 .lib li.on .t { color: var(--accent); }
+.lib li.never .t { color: var(--muted); text-decoration: line-through; }
 .sources { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .sources .lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .lib .own .note { font-size: 11px; line-height: 1.6; color: var(--muted); margin: 0 0 8px; }

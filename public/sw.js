@@ -1,18 +1,18 @@
 // Slow Windows service worker: the page and code come network-first (so a new build is picked up on the next load,
 // with the cache as the offline fallback); scene art, video and music are cache-first once seen.
 // Audio is requested in byte ranges, which the cache cannot answer directly, so ranges are cut from a cached whole file.
-const CACHE = 'slow-windows-v2';
+const CACHE = 'slow-windows-v2', STREAMS = 'slow-windows-streams';
 const SHELL = ['./', './index.html', './app.js', './index.css', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== STREAMS).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
-async function rangeFromCache(req) {
-  const c = await caches.open(CACHE);
+async function rangeFromCache(req, cacheName = CACHE) {
+  const c = await caches.open(cacheName);
   const full = await c.match(req.url, { ignoreVary: true });
   if (!full) return fetch(req);
   const buf = await full.arrayBuffer();
@@ -50,6 +50,10 @@ async function networkFirst(req) {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  if (e.request.method === 'GET' && url.hostname === 'archive.org' && url.pathname.startsWith('/download/')) {   // streams kept for offline
+    e.respondWith(e.request.headers.has('range') ? rangeFromCache(e.request, STREAMS) : caches.open(STREAMS).then(c => c.match(e.request.url, { ignoreVary: true })).then(hit => hit || fetch(e.request)));
+    return;
+  }
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   if (e.request.headers.has('range')) { e.respondWith(rangeFromCache(e.request)); return; }
   if (url.pathname.includes('/assets/')) e.respondWith(cacheFirst(e.request));

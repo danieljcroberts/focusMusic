@@ -51,7 +51,9 @@ export function holmestrandScene() {
     const port = H > W, s = Math.min(W, H) / 800, tw = 1 - Math.abs(d * 2 - 1), gold = tw * (1 - weather * .5);
     const hy = H * (port ? .4 : .45), sunX = W * (port ? .64 : .7), wy1 = H * (port ? .55 : .6);
     const lit = .35 + .65 * d;
-    G = { hy, sunX, s, gold, port, wy1, lit };
+    // The season, from the month: winter is bare and snowy, spring fresh and light, summer deep green, autumn gold.
+    const month = new Date().getMonth(), season = month <= 1 || month === 11 ? 'winter' : month <= 4 ? 'spring' : month <= 7 ? 'summer' : 'autumn';
+    G = { hy, sunX, s, gold, port, wy1, lit, season };
     let g;
 
     /* Sky: the deck. A base gradient, then noise-shaded cloud: dark bellies, lighter tops, and a warm underlight that
@@ -94,7 +96,7 @@ export function holmestrandScene() {
     };
     ridge(hy - H * .006, H * .05, skyMix([16, 20, 34], [86, 92, 110], [128, 140, 158], d), .45, 1);
     ridge(hy + 1, H * .028, skyMix([12, 16, 28], [70, 76, 92], [108, 120, 140], d), .25, 3, -10, W * .62);
-    const isle = skyMix([8, 12, 16], [52, 54, 40], [66, 82, 54], d);
+    const isle = season === 'winter' ? skyMix([14, 16, 22], [80, 84, 92], [120, 126, 136], d) : skyMix([8, 12, 16], [52, 54, 40], [66, 82, 54], d);
     ridge(hy + H * .01, H * .012, isle, 0, 5, W * .05, W * .18, u => Math.sin(u * Math.PI));
     ridge(hy + H * .01, H * .008, isle, 0, 6, W * .2, W * .28, u => Math.sin(u * Math.PI));
     const ix0 = W * (port ? .5 : .55), isleTop = x => { const u = (x - ix0) / (W + 20 - ix0), n = hz[Math.floor((x + 10) / (W + 20) * 511) + 7 * 512]; return hy + H * .014 - H * .042 * (.4 + .6 * n) * Math.sin(Math.min(1, u * 1.5) * Math.PI * .5); };
@@ -133,12 +135,13 @@ export function holmestrandScene() {
     const hg = g.createLinearGradient(0, wy1 - H * .05, 0, H);
     hg.addColorStop(0, mix([12, 18, 16], [78, 86, 56], [108, 122, 76], d)); hg.addColorStop(.5, mix([8, 12, 10], [54, 64, 40], [80, 96, 56], d)); hg.addColorStop(1, mix([4, 6, 6], [30, 38, 24], [48, 60, 34], d));
     g.fillStyle = hg; g.fillRect(0, wy1 - H * .05, W, H);
+    if (season === 'winter') { g.fillStyle = mix([150, 160, 180], [226, 222, 220], [244, 246, 250], d); g.fillRect(0, wy1 - H * .05, W, H); }
     g.fillStyle = rgb([255, 190, 110], .12 * gold); g.fillRect(0, wy1 - H * .05, W, H * .25);
     { const gw2 = 160, gh2 = 64, gb = fbmBuffer(gw2, gh2, 41, 4, 4), gim = new ImageData(gw2, gh2);
       const dk = skyMix([6, 10, 8], [34, 46, 26], [52, 72, 38], d), lt = skyMix([14, 22, 16], [96, 112, 60], [128, 150, 84], d);
       for (let i = 0; i < gw2 * gh2; i++) { const n = gb[i], c = n < .5 ? dk : lt; gim.data[i * 4] = c[0]; gim.data[i * 4 + 1] = c[1]; gim.data[i * 4 + 2] = c[2]; gim.data[i * 4 + 3] = 255 * Math.abs(n - .5) * 2.2; }
       const [gbuf, gg] = layer(gw2, gh2); gg.putImageData(gim, 0, 0); g.imageSmoothingEnabled = true; g.drawImage(gbuf, 0, wy1 - H * .05, W, H * .5); }
-    const treeC = skyMix([10, 18, 12], [38, 66, 32], [58, 100, 46], d);
+    const treeC = season === 'winter' ? skyMix([24, 26, 30], [70, 66, 64], [96, 92, 90], d) : season === 'spring' ? skyMix([14, 26, 14], [70, 120, 50], [110, 170, 70], d) : skyMix([10, 18, 12], [38, 66, 32], [58, 100, 46], d);
     for (let i = 0; i < 140; i++) { const x = r() * W, y = wy1 + H * .02 + Math.pow(r(), .8) * H * .32, k = (y - wy1) / (H * .34), rr3 = (5 + 14 * k + 8 * r()) * s; g.fillStyle = rgb(treeC.map(v => v * (.8 + .4 * r())), .9); g.beginPath(); g.ellipse(x, y, rr3 * 1.2, rr3, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = rgb(treeC.map(v => v * 1.5 + 36 * gold), .5); g.beginPath(); g.ellipse(x + rr3 * .3, y - rr3 * .35, rr3 * .7, rr3 * .5, 0, 0, Math.PI * 2); g.fill(); }
     g.strokeStyle = rgb(skyMix([20, 22, 26], [92, 90, 86], [130, 128, 124], d), .8); g.lineWidth = 3 * s;
     for (const [x0, y0, x1, y1] of [[W * .05, wy1, W * .32, H * .9], [W * .45, wy1 - H * .02, W * .3, H * .88], [W * .95, wy1, W * .6, H * .9], [0, wy1 + H * .12, W, wy1 + H * .16]]) { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
@@ -158,7 +161,7 @@ export function holmestrandScene() {
     houses.sort((a, b) => a.yb - b.yb);
     for (const hs of houses) {
       const { x, yb, w, h, base, red, hip, dormer, chimney, tree, treeK, two } = hs, sc = h / (14 * s);
-      const roofC = (red ? [148, 64, 48] : [44, 46, 50]).map(v => v * (.35 + .65 * lit)), roofLit = roofC.map(v => Math.min(255, v * 1.25 + 24 * gold));
+      const roofC = (season === 'winter' ? [228, 230, 236] : red ? [148, 64, 48] : [44, 46, 50]).map(v => v * (.35 + .65 * lit)), roofLit = roofC.map(v => Math.min(255, v * 1.25 + 24 * gold));
       g.fillStyle = rgb([0, 0, 0], .22 * lit); g.beginPath(); g.ellipse(x + w * .35, yb + 2 * s, w * .7, 4 * s * sc, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = wallC(base, 0); g.fillRect(x, yb - h, w * .6, h);
       g.fillStyle = wallC(base, 1); g.fillRect(x + w * .6, yb - h, w * .4, h);
@@ -178,8 +181,8 @@ export function holmestrandScene() {
         windows.push({ x: wx, y: wy, w: ww, h: wh, on: r() < .5, ph: r() * 9 });
       }
       g.fillStyle = rgb([70, 50, 40].map(v => v * (.4 + .6 * lit))); g.fillRect(x + w * .08, yb - h * .3, 3.5 * s * sc, h * .3);
-      g.fillStyle = rgb(skyMix([10, 18, 12], [40, 64, 32], [60, 96, 44], d)); g.fillRect(x - w * .05, yb + 1, w * 1.1, 3 * s * sc);
-      if (tree < .45) { const tc = skyMix([12, 22, 14], [40, 68, 34], [62, 104, 48], d); g.fillStyle = rgb(tc); g.beginPath(); if (tree < .2) g.ellipse(x + w * 1.1, yb - h * .4, 5 * s * sc, 13 * s * sc, 0, 0, Math.PI * 2); else g.ellipse(x - w * .14, yb - h * .5, 10 * s * sc, 9 * s * sc, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = rgb(season === 'winter' ? skyMix([30, 32, 36], [120, 118, 116], [150, 148, 146], d) : skyMix([10, 18, 12], [40, 64, 32], [60, 96, 44], d)); g.fillRect(x - w * .05, yb + 1, w * 1.1, 3 * s * sc);
+      if (tree < .45) { const tc = season === 'winter' ? skyMix([14, 16, 22], [52, 54, 60], [76, 78, 84], d) : skyMix([12, 22, 14], [40, 68, 34], [62, 104, 48], d); g.fillStyle = rgb(tc); g.beginPath(); if (tree < .2) g.ellipse(x + w * 1.1, yb - h * .4, 5 * s * sc, 13 * s * sc, 0, 0, Math.PI * 2); else g.ellipse(x - w * .14, yb - h * .5, 10 * s * sc, 9 * s * sc, 0, 0, Math.PI * 2); g.fill();
         g.fillStyle = rgb(tc.map(v => v * 1.4 + 30 * gold), .6); g.beginPath(); if (tree < .2) g.ellipse(x + w * 1.1 + 2 * s * sc, yb - h * .5, 2.5 * s * sc, 9 * s * sc, 0, 0, Math.PI * 2); else g.ellipse(x - w * .12, yb - h * .6, 6 * s * sc, 5 * s * sc, 0, 0, Math.PI * 2); g.fill(); }
     }
     const lampX = W * (port ? .72 : .74), lampY = wy1 + H * .22;
@@ -189,7 +192,11 @@ export function holmestrandScene() {
 
     /* Foliage: three depths of autumn scrub, maple leaves drawn as leaves on thin stems, rimmed by the low sun, with
        the tall birch on the middle depth. Each on a wider layer so it can stir. */
-    const leafCols = [[228, 194, 56], [236, 168, 44], [206, 140, 38], [120, 140, 50], [92, 118, 46], [64, 86, 42], [240, 212, 92], [186, 96, 40]];
+    const leafCols = season === 'autumn' ? [[228, 194, 56], [236, 168, 44], [206, 140, 38], [120, 140, 50], [92, 118, 46], [64, 86, 42], [240, 212, 92], [186, 96, 40]]
+      : season === 'summer' ? [[70, 120, 46], [52, 100, 40], [96, 140, 56], [40, 84, 36], [110, 150, 60]]
+      : season === 'spring' ? [[150, 196, 80], [170, 210, 96], [120, 176, 70], [190, 214, 110]]
+      : [[120, 100, 70], [100, 84, 60]];   // winter: the few leaves left are brown
+    const leafK = season === 'winter' ? .12 : season === 'spring' ? .7 : 1;
     fol = [0, 1, 2].map(k => {
       const [c, lg] = layer(W + 80, H);
       const rr2 = seeded(100 + k), top = H * (port ? .6 : .62) + H * .09 * k, dark = .45 + .55 * lit, shade = 1 - k * .15;
@@ -197,7 +204,7 @@ export function holmestrandScene() {
       for (let i = 0; i < stems; i++) {
         const sx = rr2() * (W + 80), sy2 = top + (H - top) * (.3 + .7 * rr2()), sh = (40 + 90 * rr2()) * s * (1 + k * .4), lean = (rr2() - .5) * .5;
         lg.strokeStyle = rgb([80, 60, 44].map(v => v * dark * shade)); lg.lineWidth = Math.max(.8, (.8 + k * .5) * s); lg.beginPath(); lg.moveTo(sx, sy2 + sh * .3); lg.quadraticCurveTo(sx + lean * sh * .4, sy2 - sh * .4, sx + lean * sh, sy2 - sh); lg.stroke();
-        const base = leafCols[Math.floor(rr2() * leafCols.length)], nl = 14 + Math.floor(rr2() * 16);
+        const base = leafCols[Math.floor(rr2() * leafCols.length)], nl = Math.round((14 + Math.floor(rr2() * 16)) * leafK);
         for (let j = 0; j < nl; j++) {
           const u = rr2(), px = sx + lean * sh * u + (rr2() - .5) * sh * .35, py = sy2 + sh * .3 - sh * 1.3 * u + (rr2() - .5) * sh * .2, lr = (2.2 + 3.5 * rr2()) * s * (1 + k * .6);
           const upper = u > .6, tone = base.map(v => Math.round(v * dark * shade * (.8 + .4 * rr2()) + (upper ? 40 * gold : 0)));
@@ -210,7 +217,7 @@ export function holmestrandScene() {
         lg.strokeStyle = rgb([40, 36, 34]); lg.lineWidth = 2 * s; for (let j = 0; j < 14; j++) { const yy = H * .98 - j * H * .035; lg.beginPath(); lg.moveTo(bx - 2 * s + j * .3, yy); lg.lineTo(bx + 2 * s + j * .3, yy - 2 * s); lg.stroke(); }
         lg.strokeStyle = rgb([170, 166, 158].map(v => v * dark)); lg.lineWidth = 1.5 * s;
         for (let j = 0; j < 12; j++) { const yy = hy - H * .14 + j * H * .045, dir = j % 2 ? 1 : -1, len = W * (.025 + .045 * (j / 12)); lg.beginPath(); lg.moveTo(bx + 5 * s, yy); lg.quadraticCurveTo(bx + dir * len * .6, yy - H * .03, bx + dir * len, yy + H * .01); lg.stroke(); }
-        for (let j = 0; j < 2200; j++) { const a = rr2() * 6.28, rad = Math.pow(rr2(), .7), px = bx + 5 * s + Math.cos(a) * rad * W * .075 * (1 + .3 * Math.sin(a * 3)), py = hy + H * .07 + Math.sin(a) * rad * H * .26; const c2 = [[128, 140, 58], [180, 168, 60], [96, 112, 54], [214, 190, 70]][j % 4]; lg.fillStyle = rgb(c2.map(v => v * dark + 20 * gold), .85); lg.beginPath(); lg.ellipse(px, py, (1.2 + 1.6 * rr2()) * s, (1 + 1.2 * rr2()) * s, a, 0, Math.PI * 2); lg.fill(); }
+        for (let j = 0; j < Math.round(2200 * leafK); j++) { const a = rr2() * 6.28, rad = Math.pow(rr2(), .7), px = bx + 5 * s + Math.cos(a) * rad * W * .075 * (1 + .3 * Math.sin(a * 3)), py = hy + H * .07 + Math.sin(a) * rad * H * .26; const c2 = (season === 'autumn' ? [[128, 140, 58], [180, 168, 60], [96, 112, 54], [214, 190, 70]] : season === 'summer' ? [[70, 120, 50], [90, 136, 58], [56, 104, 44], [100, 146, 64]] : season === 'spring' ? [[150, 196, 84], [170, 206, 96], [130, 180, 72], [180, 214, 108]] : [[120, 100, 70], [110, 92, 64], [130, 106, 74], [100, 84, 60]])[j % 4]; lg.fillStyle = rgb(c2.map(v => v * dark + 20 * gold), .85); lg.beginPath(); lg.ellipse(px, py, (1.2 + 1.6 * rr2()) * s, (1 + 1.2 * rr2()) * s, a, 0, Math.PI * 2); lg.fill(); }
       }
       return c;
     });

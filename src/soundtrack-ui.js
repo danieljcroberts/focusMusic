@@ -2,7 +2,7 @@
 // The wizard asks one thing per screen: how the music is organised, where each folder goes, whether to keep the free
 // tracks, then copies, sorts what it couldn't place, and shows a summary. Everything stays on this device.
 import * as ST from './soundtracks.js';
-import { addOwn, ownTracks, isAudio, durations, fmtDur } from './mine.js';
+import { addOwn, ownTracks, isAudio, durations, fmtDur, rereadTags } from './mine.js';
 import { measure } from './measure.js';
 import { musicPlaying, nextTrack, previewOwn, togglePlay, follow } from './music.js';
 import { kvGet, kvSet } from './store.js';
@@ -276,7 +276,8 @@ export function openEditor(opts = {}) {
     h('div', { className: 'actions' }, h('span'), btn('Create and add music', () => { if (!newName.value.trim()) { newName.focus(); return; } const id = ST.create(newName.value, newLike.value || null); openWizard(id); }, 'pbtn primary')));
   const tools = h('div', { className: 'stcard' }, h('b', { textContent: 'Your tracks' }),
     h('p', { className: 'muted', textContent: 'Go through your tracks one at a time and move any that are in the wrong soundtrack.' }),
-    h('div', { className: 'actions' }, h('span', {}, btn('Re-sort recent tracks', () => openSorter(true)), ' ', btn('Re-sort all', () => openSorter(false))), rescanBtn()));
+    h('div', { className: 'actions' }, h('span', {}, btn('Re-sort recent tracks', () => openSorter(true)), ' ', btn('Re-sort all', () => openSorter(false))), rescanBtn()),
+    h('div', { className: 'actions' }, h('span', { className: 'muted', textContent: 'Tracks added before covers were kept can have their covers, genre and length read again.' }), btn('Re-read tags', async ev => { ev.target.disabled = true; const n = await rereadTags((i, of, t) => { ev.target.textContent = `${i} of ${of}: ${t}`; }); window.dispatchEvent(new CustomEvent('sw-own-changed')); setStatus(`Read the tags of ${plural(n, 'track')} again.`); openEditor(); })));
   show('Soundtracks', ...(opts.create ? [create, ...cards, tools] : [...cards, create, tools]));
   if (opts.create) newName.focus();
 }

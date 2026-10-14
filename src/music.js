@@ -3,6 +3,7 @@
 import TRACKS from './data/tracks.json';
 import { M } from './assets.js';
 import { state, saveState } from './state.js';
+import { note } from './diag.js';
 import { setStatus } from './status.js';
 import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps } from './mine.js';
 import * as ST from './soundtracks.js';
@@ -137,22 +138,46 @@ function setMeta(parts, href, label) {
 }
 // What plays is the current soundtrack: its free tracks (when on), the viewer's own tracks sorted into it, and random
 // finds from the Internet Archive when it asks for them. See soundtracks.js.
-const allowed = t => playable(t) && ST.freeAllows(t);
+// Free tracks you never want: kept by key in the state; skipped by the picker, the scene's pick and the cycle.
+export const never = new Set(state.never || []);
+export function setNever(t, on) { const k = key(t); if (on) never.add(k); else never.delete(k); saveState({ never: [...never] }); renderLib(); }
+const allowed = t => playable(t) && ST.freeAllows(t) && !never.has(key(t));
+// The cycle: within a soundtrack, nothing comes round again until everything else has played once.
+let cycle = { id: null, done: new Set() };
+function cycleOk(id, k) { if (cycle.id !== id) cycle = { id, done: new Set() }; return !cycle.done.has(k); }
+function cycleMark(k) { cycle.done.add(k); }
 
 // Lock screen and hardware keys show the track and control playback.
 const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
 let artwork = () => null;   // main.js supplies the current scene's thumbnail
+// A cover for a free track: a small square in its genre's colour with the artist's initials, drawn once and kept.
+const covers = new Map();
+export function coverFor(t) {
+  if (t.own) return t.art || null;
+  const k = key(t); if (covers.has(k)) return covers.get(k);
+  let url = null;
+  try {
+    const g = (ST.BUILT_IN.find(b => b.id === t.genre) || {}).color || '#6f8fd8', s = 128, c = document.createElement('canvas'); c.width = c.height = s;
+    const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, s, s); gr.addColorStop(0, g); gr.addColorStop(1, '#0b0c10');
+    x.fillStyle = gr; x.fillRect(0, 0, s, s);
+    x.fillStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < 5; i++) { x.beginPath(); x.arc(s * .7, s * .3, s * (.15 + i * .12), 0, Math.PI * 2); x.fill(); }
+    const ini = t.a.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+    x.fillStyle = 'rgba(255,255,255,.92)'; x.font = `500 ${s * .34}px "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ini, s / 2, s * .54);
+    url = c.toDataURL('image/jpeg', .8);
+  } catch (e) {}
+  covers.set(k, url); return url;
+}
 export function setArtworkSource(fn) { artwork = fn; }
 // The focus timer's state, shown on the lock screen in place of the album line while a block runs.
 let lockLine = '';
 export function setLockLine(text) { if (text === lockLine) return; lockLine = text; announce(); }
 // The cover of the playing track, when it carries one (your own MP3s with embedded art).
-export const currentArt = () => (curTrack && curTrack.art) || null;
+export const currentArt = () => curTrack && !curTrack.live ? coverFor(curTrack) : null;
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
-    const cover = t.art || null, art = artwork();
-    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: cover ? [{ src: cover, sizes: '96x96', type: 'image/jpeg' }] : art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
+    const cover = t.live ? null : coverFor(t), art = artwork();
+    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: cover ? [{ src: cover, sizes: '128x128', type: 'image/jpeg' }] : art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
   } catch (e) {}
 }
 if (ms) {
@@ -163,6 +188,27 @@ if (ms) {
 
 // One small request tells us whether outside APIs and audio are reachable.
 let probeDone;
+// Streams you have heard are kept in a cache the service worker serves ranges from, up to a cap, oldest out first.
+const STREAMS = 'slow-windows-streams', STREAM_CAP = 300e6;
+export let keepStreams = !!state.keepStreams;
+export function setKeepStreams(v) { keepStreams = v; saveState({ keepStreams: v }); }
+async function keepStream(t) {
+  if (!keepStreams || !t.stream || !('caches' in window)) return;
+  try {
+    const c = await caches.open(STREAMS);
+    if (await c.match(t.stream)) return;
+    const r = await fetch(t.stream, { mode: 'cors' }); if (!r.ok) return;
+    const buf = await r.arrayBuffer();
+    await c.put(t.stream, new Response(buf, { headers: { 'Content-Type': r.headers.get('Content-Type') || 'audio/mpeg', 'Content-Length': String(buf.byteLength), 'x-kept': String(Date.now()) } }));
+    note(`kept ${t.t} for offline (${(buf.byteLength / 1e6).toFixed(0)} MB)`);
+    // Trim to the cap, oldest first.
+    const keys = await c.keys(); const entries = [];
+    for (const k of keys) { const r2 = await c.match(k); entries.push({ k, at: Number(r2.headers.get('x-kept')) || 0, size: Number(r2.headers.get('Content-Length')) || 0 }); }
+    entries.sort((a, b) => a.at - b.at); let total = entries.reduce((a, e) => a + e.size, 0);
+    for (const e of entries) { if (total <= STREAM_CAP) break; await c.delete(e.k); total -= e.size; }
+  } catch (e) {}
+}
+export async function cachedStreams() { try { const c = await caches.open(STREAMS); return (await c.keys()).length; } catch (e) { return 0; } }
 export async function probe() {
   let done; probeDone = new Promise(r => { done = r; });
   try {
@@ -196,15 +242,16 @@ function begin(p, seekTo, fade) {
   });
   pendingPlay.catch(() => {});
 }
-function start(url) {
+function start(url, tight = false) {
   hasSrc = true; queued = false;
   const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
+  const fadeIn = tight ? .08 : seekTo == null ? FADE : 1.2, fadeOut = tight ? .08 : FADE;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
   if (next === prev) { setGain(prev, 0); prev.src = url; begin(prev, seekTo, seekTo == null ? .4 : 1.2); return; }
-  if (!prev.paused) rampTo(prev, 0, FADE, true); else prev.pause();
-  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo, seekTo == null ? FADE : 1.2);
+  if (!prev.paused) rampTo(prev, 0, fadeOut, true); else prev.pause();
+  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo, fadeIn);
 }
 export function playTrack(t) {
   if (!t) return;
@@ -213,13 +260,14 @@ export function playTrack(t) {
     return;
   }
   source = 'mix'; setStatus(''); curTrack = t;
-  remember({ kind: 'mix', t });
+  cycleMark(key(t)); remember({ kind: 'mix', t });
   recent.push(key(t)); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${t.t} — ${t.a}`;
   setMeta([t.lic, eps(t), t.file ? 'bundled' : 'streaming'], t.src, 'Source ↗');
   announce(t);
   start(t.file ? M + t.file : t.stream);
   markLib();
+  if (!t.file) setTimeout(() => { if (curTrack === t) keepStream(t); }, 20000);   // a track you stayed with
 }
 
 const LIVE_Q = 'collection:netlabels AND (subject:ambient OR subject:drone OR subject:downtempo OR subject:idm) AND licenseurl:*creativecommons* AND mediatype:audio';
@@ -274,16 +322,17 @@ async function nextLive() {
 // Your music: shuffled, each track once before any repeats.
 let ownBlob = null;
 async function playOwn(e) {
+  const prevOwn = curTrack && curTrack.own;
   source = 'own'; setStatus('');
   curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music', art: e.art || null };
-  remember({ kind: 'own', e });
+  cycleMark('own:' + e.id); remember({ kind: 'own', e });
   recent.push('own:' + e.id); if (recent.length > 4) recent.shift();
   ui.title.textContent = `${e.t} — ${e.a}`;
   setMeta(['your music', (e.size / 1e6).toFixed(1) + ' MB']);
   announce(curTrack);
   try {
     const url = await ownURL(e), old = ownBlob; ownBlob = url;
-    start(url);
+    start(url, queued && !!(prevOwn));
     if (old) setTimeout(() => URL.revokeObjectURL(old), 4000);   // after the crossfade
   } catch (err) { setStatus("That file couldn't be opened. It may have been removed; add it again from the Library."); }
   markLib();
@@ -292,9 +341,9 @@ async function playOwn(e) {
 // half a share, so it adds variety without taking over), then a track from it that wasn't one of the last few.
 function pickNext(relaxed = false) {
   const isCur = k => curTrack && (curTrack.own ? 'own:' + curTrack.id : key(curTrack)) === k;
-  const ok = k => !isCur(k) && (relaxed || !recent.includes(k));
-  const pools = [];
   const st = ST.current(), mine = new Set(st.own);
+  const ok = k => !isCur(k) && (relaxed || (!recent.includes(k) && cycleOk(st.id, k)));
+  const pools = [];
   const free = TRACKS.filter(t => allowed(t) && ok(key(t)));
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
   // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
@@ -302,7 +351,7 @@ function pickNext(relaxed = false) {
   if (free.length) pools.push([1, () => playTrack(free[Math.floor(Math.random() * free.length)])]);
   if (st.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
   if (!pools.length) {
-    if (!relaxed) return pickNext(true);                       // everything was played recently: allow it again
+    if (!relaxed) { cycle = { id: st.id, done: new Set() }; return pickNext(true); }   // the cycle is complete: start a new one
     if (curTrack && !curTrack.live) { if (curTrack.own) { const e = ownTracks().find(x => x.id === curTrack.id); if (e) return playOwn(e); } else if (allowed(curTrack)) return playTrack(curTrack); }
     setStatus(`"${st.name}" has nothing to play yet. Add music to it, or turn on its free tracks, from the soundtrack menu.`);
     return;
@@ -345,11 +394,15 @@ export function prevTrack() {
 export const volume = () => master;
 export function setVolume(v) { ui.vol.value = Math.max(0, Math.min(1, v)); ui.vol.dispatchEvent(new Event('input')); }
 // Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
-let queued = false;
+let queued = false, stopAtEnd = false;
+export function setStopAtEnd(v) { stopAtEnd = v; }
+export const stoppingAtEnd = () => stopAtEnd;
 setInterval(() => {
-  if (!hasSrc || audio.paused || queued || source === 'live' || !isFinite(audio.duration) || !audio.duration) return;
-  if (audio.duration - audio.currentTime < 8) { queued = true; nextTrack(); }
-}, 500);
+  if (!hasSrc || audio.paused || queued || source === 'live' || !isFinite(audio.duration) || !audio.duration || stopAtEnd) return;
+  // Your own tracks join tightly, as an album's do; the free tracks crossfade eight seconds early.
+  const lead = curTrack && curTrack.own ? .35 : 8;
+  if (audio.duration - audio.currentTime < lead) { queued = true; nextTrack(); }
+}, curTrack && curTrack.own ? 100 : 500);
 // The sleep timer fades everything out over `seconds` and stops it.
 export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }
 // Where you left off: the current mix track and position are saved every few seconds; the first Play after a reload
@@ -383,10 +436,10 @@ async function carryOn() {
     // The browser says no with a rejected play(); otherwise it is on its way, however long the track takes to load.
     await pendingPlay;
     if (actx && actx.state === 'suspended') { await actx.resume().catch(() => {}); if (actx.state === 'suspended') throw new Error('blocked'); }
-    setStatus(`Carrying on: ${r.t} — ${r.a}.`);
+    setStatus(`Carrying on: ${r.t} — ${r.a}.`); note(`resumed ${r.t} at ${at || 0}s on its own`);
   } catch (e) {
     // The browser wants a gesture first: hold the place, and go on at the first one.
-    audio.pause(); resume = r; resumeAt = null; ui.meta.textContent = 'tap anywhere to carry on'; setStatus(`Tap anywhere to carry on with ${r.t}.`);   // the place is set, or will be when the metadata is in
+    audio.pause(); resume = r; resumeAt = null; ui.meta.textContent = 'tap anywhere to carry on'; setStatus(`Tap anywhere to carry on with ${r.t}.`); note(`resume of ${r.t} at ${at || 0}s waits for a tap (${e && e.name || e})`);   // the place is set, or will be when the metadata is in
     const go = () => { if (resume === r) togglePlay(); };
     for (const ev of ['pointerdown', 'keydown', 'touchend']) window.addEventListener(ev, go, { once: true, passive: true });
   }
@@ -420,7 +473,7 @@ for (const p of players) {
   p.addEventListener('play', () => { if (p === audio) { ui.play.textContent = 'Pause'; if (ms) ms.playbackState = 'playing'; } });
   p.addEventListener('pause', () => { if (p === audio) { ui.play.textContent = 'Play'; if (ms) ms.playbackState = 'paused'; } });
   p.addEventListener('playing', () => { if (p === audio) errors = 0; });
-  p.addEventListener('ended', () => { if (p === audio) nextTrack(); });
+  p.addEventListener('ended', () => { if (p !== audio) return; if (stopAtEnd) { stopAtEnd = false; window.dispatchEvent(new CustomEvent('sw-track-ended-stop')); return; } nextTrack(); });
   p.addEventListener('error', () => {
     if (p !== audio || !hasSrc) return;
     if (++errors > 3) { setStatus("Tracks aren't loading. Check the connection and press Next to retry."); errors = 0; return; }
@@ -502,6 +555,9 @@ export function renderLib() {
       if (t.src) mm.append(' · ', link(t.src, 'Source ↗'));
       if (t.stream && !t.file && iaOnline === false) { const e = document.createElement('em'); e.textContent = 'streams when run with a connection'; mm.append(' · ', e); }
       if (t.note) mm.append(document.createElement('br'), t.note);
+      const nv = document.createElement('button'); nv.type = 'button'; nv.className = 'rm'; nv.textContent = never.has(key(t)) ? 'play again' : 'never play'; nv.title = 'Leave this track out of every soundtrack';
+      nv.addEventListener('click', () => setNever(t, !never.has(key(t)))); mm.append(' · ', nv);
+      if (never.has(key(t))) li.classList.add('never');
       body.append(tt, mm); li.append(b, body); ol.append(li);
     }
     sec.append(h, ol); ui.list.append(sec);
