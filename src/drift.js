@@ -28,8 +28,10 @@ driftButtons.forEach(b => b.addEventListener('click', () => applyDriftMin(+b.dat
 
 function pickDrift() {
   const cur = current(), all = SCENES.map((s, i) => i).filter(i => i !== cur);
+  const set = (state.sets || []).find(s => s.name === state.activeSet);
+  const setPool = set ? all.filter(i => set.scenes.includes(SCENES[i].name)) : [];
   const favPool = all.filter(i => favs.has(SCENES[i].name));
-  const base = favPool.length ? favPool : all;
+  const base = setPool.length ? setPool : favPool.length ? favPool : all;
   const want = daylight() > .5 ? 'day' : 'night';
   const suited = base.filter(i => (SCENES[i].mood || 'any') === 'any' || SCENES[i].mood === want);
   const list = suited.length ? suited : base;

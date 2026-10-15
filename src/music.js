@@ -19,6 +19,12 @@ let audio = players[0], master = .8;
 const corsOk = url => url.startsWith(M) || url.startsWith('blob:') || /^https:\/\/archive\.org\//.test(url);
 let actx = null, analyser = null, fdata = null;
 export function audioCtx() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return actx; }
+// Sound presets for where you are listening: a phone's speaker can't play deep bass, so it is cut and the low middle,
+// which it can play, lifted; headphones get a little more weight and air; Night is softer at both ends.
+export const EQ = { flat: [0, 0, 0], speaker: [-5, 4, 1], headphones: [3, 0, 1.5], night: [-3, 0, -3] };
+let eq = null; export let eqName = EQ[state.eq] ? state.eq : 'flat';
+function applyEq() { if (!eq) return; const [l, m, h] = EQ[eqName]; eq.low.gain.setTargetAtTime(l, actx.currentTime, .1); eq.mid.gain.setTargetAtTime(m, actx.currentTime, .1); eq.high.gain.setTargetAtTime(h, actx.currentTime, .1); }
+export function setEq(name) { if (!EQ[name]) return; eqName = name; saveState({ eq: name }); applyEq(); }
 function wireAnalyser() {
   if (analyser || !audioCtx()) return;
   try {
@@ -28,7 +34,10 @@ function wireAnalyser() {
     // Each player's level is a gain node, not the element's volume: a gain node ramps smoothly, where stepping the
     // element's volume crackles on some phones. The element stays at full volume once wired.
     for (const p of players.slice(0, 2)) { const g = actx.createGain(); g.gain.value = p.volume; p._gain = g; p.volume = 1; actx.createMediaElementSource(p).connect(g); g.connect(analyser); }
-    analyser.connect(actx.destination);
+    eq = { low: actx.createBiquadFilter(), mid: actx.createBiquadFilter(), high: actx.createBiquadFilter() };
+    eq.low.type = 'lowshelf'; eq.low.frequency.value = 120; eq.mid.type = 'peaking'; eq.mid.frequency.value = 400; eq.mid.Q.value = .9; eq.high.type = 'highshelf'; eq.high.frequency.value = 6000;
+    analyser.connect(eq.low); eq.low.connect(eq.mid); eq.mid.connect(eq.high); eq.high.connect(actx.destination);
+    applyEq();
   } catch (e) { analyser = null; }
 }
 

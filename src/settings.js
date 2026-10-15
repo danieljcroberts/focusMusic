@@ -9,7 +9,7 @@ import { TRACKS, keepStreams, setKeepStreams, cachedStreams } from './music.js';
 import { localOn, enableLocal, disableLocal } from './local.js';
 import { diagOn, toggleDiag } from './diag.js';
 import { finishOn, setFinish } from './finish.js';
-import { weekLine, weekBars } from './timer.js';
+import { weekLine, weekBars, weekIntents } from './timer.js';
 import { closeMenus } from './menus.js';
 import { whenSheetOpens } from './sheet.js';
 import { openAbout } from './about.js';
@@ -70,6 +70,25 @@ const ksBtn = el('keepStreamsBtn');
 const drawKs = async () => { ksBtn.setAttribute('aria-pressed', String(keepStreams)); const n = await cachedStreams(); ksBtn.textContent = `Keep streams I've heard${n ? ` (${n} kept)` : ''}`; };
 ksBtn.addEventListener('click', () => { setKeepStreams(!keepStreams); drawKs(); });
 drawKs(); whenSheetOpens(drawKs);
+// Backup: everything you have set up, as one file. Your own music and photos stay where they are (they are large and
+// on this device); the soundtracks remember them by file, so re-adding the same files puts them back in place.
+el('exportBtn').addEventListener('click', () => {
+  const { np, ...keep } = state; void np;
+  const blob = new Blob([JSON.stringify({ app: 'slow-windows', version: 1, at: new Date().toISOString(), state: keep }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `slow-windows-settings-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); setStatus('Settings saved as a file. Restore it on another device under App.');
+});
+el('importBtn').addEventListener('click', () => {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.addEventListener('change', async () => {
+    try {
+      const d = JSON.parse(await inp.files[0].text());
+      if (d.app !== 'slow-windows' || !d.state) throw new Error('not a Slow Windows backup');
+      saveState(d.state); setStatus('Settings restored. Reloading…'); setTimeout(() => location.reload(), 900);
+    } catch (e) { setStatus("That file isn't a Slow Windows backup."); }
+  });
+  inp.click();
+});
 const finishBtn = el('finishBtn');
 function drawFinish() { finishBtn.setAttribute('aria-pressed', String(finishOn)); }
 finishBtn.addEventListener('click', () => { setFinish(!finishOn); drawFinish(); });
@@ -96,6 +115,8 @@ function drawWeek() {
     const lab = document.createElement('small'); lab.textContent = b.label;
     col.append(bar, lab); box.append(col);
   }
+  const ul = el('weekIntents'); ul.textContent = '';
+  const ints = weekIntents(); if (ints.length > 1 || (ints[0] && ints[0][0] !== 'Unlabelled')) for (const [k, m] of ints.slice(0, 5)) { const li = document.createElement('li'); li.textContent = `${k} · ${m} min`; ul.append(li); }
 }
 whenSheetOpens(() => {
   if (wxAuto.getAttribute('aria-pressed') === 'true') wx.value = weather;

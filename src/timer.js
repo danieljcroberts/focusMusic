@@ -9,14 +9,15 @@ const el = id => document.getElementById(id);
 const timer = { f: 25, b: 5, lb: 15, every: 4, count: 0, mode: 'focus', left: 25 * 60, running: false, last: 0 };
 if (state.timer && state.timer.f) {
   const s = state.timer;
-  Object.assign(timer, { f: s.f, b: s.b, lb: s.lb || 15, every: s.every || 4, count: s.count || 0, mode: s.mode || 'focus', left: s.left ?? s.f * 60 });
+  Object.assign(timer, { f: s.f, b: s.b, lb: s.lb || 15, every: s.every || 4, count: s.count || 0, mode: s.mode || 'focus', left: s.left ?? s.f * 60, intent: s.intent || '', away: s.away || 0 });
   if (s.running && s.at) { timer.running = true; timer.left -= (Date.now() - s.at) / 1000; }
 }
 let sceneName = () => '';
 const tBtn = el('tStart'), tMenu = el('tMenu');
 const fmt = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-function save() { saveState({ timer: { f: timer.f, b: timer.b, lb: timer.lb, every: timer.every, count: timer.count, mode: timer.mode, left: timer.left, running: timer.running, at: Date.now() } }); }
+function save() { saveState({ timer: { f: timer.f, b: timer.b, lb: timer.lb, every: timer.every, count: timer.count, mode: timer.mode, left: timer.left, running: timer.running, at: Date.now(), intent: timer.intent || '', away: timer.away || 0 } }); }
 function draw() {
+  const il = el('intentLine'); if (il) { il.textContent = timer.mode === 'focus' && timer.intent ? timer.intent : ''; il.hidden = !il.textContent; }
   const label = timer.mode === 'focus' ? 'Focus' : timer.mode === 'long' ? 'Long break' : 'Break';
   tBtn.textContent = `${label} ${fmt(Math.max(0, timer.left))}`;
   tBtn.setAttribute('aria-pressed', String(timer.running));
@@ -51,8 +52,14 @@ async function notify(title, body) {
     else new Notification(title, { body, icon: './icon-512.png', tag: 'timer' });
   } catch (e) {}
 }
+// What this block is for (optional), and how often the app was left while it ran.
+export function setIntention(text) { timer.intent = String(text || '').trim().slice(0, 60); if (timer.intent) saveState({ lastIntent: timer.intent }); draw(); save(); }
+export const intention = () => timer.intent || '';
+document.addEventListener('visibilitychange', () => { if (document.hidden && timer.running && timer.mode === 'focus') { timer.away = (timer.away || 0) + 1; save(); } });
 export function toggleTimer() {
+  const fresh = !timer.running && timer.mode === 'focus' && timer.left >= timer.f * 60 - 1;
   timer.running = !timer.running; timer.last = performance.now();
+  if (fresh) { timer.away = 0; timer.intent = ''; window.dispatchEvent(new CustomEvent('sw-focus-start')); }
   if (timer.running) { askNotify(); window.dispatchEvent(new CustomEvent('sw-timer', { detail: timer.mode === 'focus' ? 'focus' : 'break' })); }
   const c = audioCtx(); if (timer.running && c && c.state === 'suspended') c.resume().catch(() => {});
   draw(); save();
@@ -63,8 +70,15 @@ export function weekLine() {
   const log = state.sessions || [], week = Date.now() - 7 * 86400000, recent = log.filter(s => s.at > week);
   if (!recent.length) return 'No focus blocks this week yet.';
   const day = ts => new Date(ts).toDateString(), days = new Set(log.map(s => day(s.at)));
-  let streak = 0; for (let d = new Date(); days.has(d.toDateString()); d.setDate(d.getDate() - 1)) streak++;
-  if (!streak && days.has(day(Date.now() - 86400000))) { streak = 1; for (let d = new Date(Date.now() - 86400000); days.has(d.toDateString()); d.setDate(d.getDate() - 1)) streak++; }
+  // The streak forgives one rest day in any seven, and today doesn't count against it until it's over.
+  let streak = 0, rest = -99;
+  for (let i = 0; i < 400; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (days.has(d.toDateString())) streak++;
+    else if (i === 0) continue;
+    else if (i - rest >= 7) rest = i;
+    else break;
+  }
   return `${recent.length} block${recent.length === 1 ? '' : 's'} · ${recent.reduce((a, s) => a + s.min, 0)} min · ${streak} day streak`;
 }
 let lastSave = 0;
@@ -74,12 +88,12 @@ setInterval(() => {
   const now = performance.now(); timer.left -= (now - timer.last) / 1000; timer.last = now;
   if (timer.left <= 0) {
     if (timer.mode === 'focus') {
-      const log = (state.sessions || []).slice(-499); log.push({ at: Date.now(), min: timer.f, scene: sceneName() }); saveState({ sessions: log });
+      const log = (state.sessions || []).slice(-499); log.push({ at: Date.now(), min: timer.f, scene: sceneName(), intent: timer.intent || undefined }); saveState({ sessions: log });
       timer.count++;
       const long = timer.every > 0 && timer.count % timer.every === 0;
       timer.mode = long ? 'long' : 'break'; timer.left = (long ? timer.lb : timer.b) * 60;
       window.dispatchEvent(new CustomEvent('sw-timer', { detail: 'break' }));
-      window.dispatchEvent(new CustomEvent('sw-block-done', { detail: { min: timer.f, scene: sceneName(), count: timer.count, break: long ? timer.lb : timer.b } }));
+      window.dispatchEvent(new CustomEvent('sw-block-done', { detail: { min: timer.f, scene: sceneName(), count: timer.count, break: long ? timer.lb : timer.b, away: timer.away || 0, intent: timer.intent || '' } }));
       chime(long ? [660, 880, 1100] : [660, 880]); setStatus(long ? `Focus block done. Long break: ${timer.lb} minutes.` : 'Focus block done. Break started.');
       notify('Focus block done', `${long ? 'Long break' : 'Break'} for ${long ? timer.lb : timer.b} minutes.`); setDuck(true);
     } else {
@@ -108,6 +122,12 @@ el('tReset').addEventListener('click', () => reset());
 window.addEventListener('pagehide', save);
 export const timerRunning = () => timer.running;
 export const focusRunning = () => timer.running && timer.mode === 'focus';
+// What the week's focus went to: minutes per intention, largest first.
+export function weekIntents() {
+  const week = Date.now() - 7 * 86400000, by = {};
+  for (const s of state.sessions || []) if (s.at > week) { const k = s.intent || 'Unlabelled'; by[k] = (by[k] || 0) + s.min; }
+  return Object.entries(by).sort((a, b) => b[1] - a[1]);
+}
 // The last seven days as minutes per day, oldest first, for the chart in the sheet.
 export function weekBars() {
   const log = state.sessions || [], out = [];

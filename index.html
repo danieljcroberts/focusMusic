@@ -25,6 +25,7 @@
     <div class="brand"><b>Slow Windows</b> · focus scenes</div>
     <div class="top-right">
       <span class="clock" id="clock">--:--</span>
+      <span class="intentline" id="intentLine" hidden></span>
       <button type="button" class="icon-btn tog" id="tStart" aria-pressed="false" aria-label="Start or pause the focus timer">Focus 25:00</button>
     </div>
   </div>
@@ -52,6 +53,8 @@
         <p class="note upnext" id="upNext" hidden></p>
         <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button></div>
         <label class="slider"><span>Music</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume"></label>
+        <span class="lbl">Sound</span>
+        <div class="seg" id="eqSeg" role="group" aria-label="Sound preset"><button type="button" data-eq="flat">Flat</button><button type="button" data-eq="speaker">Phone speaker</button><button type="button" data-eq="headphones">Headphones</button><button type="button" data-eq="night">Night</button></div>
         <label class="slider"><span>Ambience</span><input type="range" id="amb" min="0" max="1" step="0.01" value="0.35" aria-label="Ambient sound level" title="Ambient sound: rain, wind, sea, fire, matched to the scene"></label>
       </div>
     </details>
@@ -90,7 +93,11 @@
         </div>
         <div class="row wrap"><span class="note" id="tCount"></span><span class="note" id="weekLine">No focus blocks yet.</span><button type="button" id="tReset">Reset the count</button></div>
         <div class="week" id="weekBars" aria-label="Focus minutes, last seven days"></div>
+        <ul class="intents" id="weekIntents"></ul>
         <div class="row wrap"><button type="button" class="tog" id="quietBtn" aria-pressed="true" title="While a focus block runs, a tap on the scene leaves the controls hidden; swipe up or use the keyboard to bring them back">Quiet focus</button><button type="button" class="tog" id="breakSceneBtn" aria-pressed="false" title="A break moves to a light, calm scene, and the focus block brings your scene back">Breaks change the scene</button></div>
+        <span class="lbl">Sunrise alarm</span>
+        <div class="row wrap"><input type="time" id="alarmTime" value="07:00" aria-label="Alarm time"><button type="button" class="tog" id="alarmBtn" aria-pressed="false">Wake me</button><button type="button" id="bedBtn" title="Calm music, a dark scene, the sleep timer at 30 minutes and the screen dimmed">Bedtime</button></div>
+        <span class="note">Leave the app open on the charger. Ten minutes before the time, a dawn scene brightens and soft music fades up.</span>
         <span class="lbl">Sleep timer</span>
         <div class="seg" id="sleepSeg" role="group" aria-label="Sleep timer">
           <button type="button" data-sleep="0" aria-pressed="true">Off</button><button type="button" data-sleep="track" aria-pressed="false">End of track</button><button type="button" data-sleep="30" aria-pressed="false">30 min</button><button type="button" data-sleep="60" aria-pressed="false">60 min</button><button type="button" data-sleep="90" aria-pressed="false">90 min</button>
@@ -110,6 +117,7 @@
         <div class="row wrap">
           <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
           <button type="button" class="tog" id="liveBtn" aria-pressed="false" title="Faster, more music-reactive motion">Lively</button>
+          <button type="button" class="tog" id="hapticBtn" aria-pressed="false" title="A light buzz on strong beats in the visualiser scenes">Feel the beat</button>
         </div>
         <span class="lbl">Weather</span>
         <div class="row"><input type="range" id="wx" min="0" max="1" step="0.01" value="0.6" aria-label="Weather intensity"><button type="button" class="tog" id="wxAuto" aria-pressed="true">Auto</button></div>
@@ -118,6 +126,13 @@
           <button type="button" data-tod="auto" aria-pressed="true">Auto</button><button type="button" data-tod="night" aria-pressed="false">Night</button><button type="button" data-tod="dusk" aria-pressed="false">Dusk</button><button type="button" data-tod="day" aria-pressed="false">Day</button>
         </div>
         <div class="row"><button type="button" class="tog" id="localBtn" aria-pressed="false">Use my location</button><span class="note" id="localNote">Rain outside means rain on the glass; sunrise and sunset follow your sky.</span></div>
+        <span class="lbl">Scene sets</span>
+        <div class="row wrap" id="setList"></div>
+        <div class="row"><input type="text" id="setName" maxlength="24" placeholder="Name, e.g. Mornings" aria-label="Set name"><button type="button" id="setSave">Save favourites as a set</button></div>
+        <span class="note">Choose a set and Drift moves only between its scenes.</span>
+        <span class="lbl">Your photos</span>
+        <div class="row wrap"><button type="button" id="photoAdd">Add photos…</button><button type="button" id="photoGo">Show them</button><span class="note" id="photoNote"></span></div>
+        <div class="photos" id="photoList"></div>
       </div>
     </details>
     <details class="sec" id="secApp">
@@ -129,7 +144,7 @@
           <button type="button" class="tog" id="lowBtn" aria-pressed="false">Low power</button>
           <button type="button" id="shareBtn" title="Copy a link that opens on this scene">Share this scene</button>
         </div>
-        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
+        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
         <span class="note">Free forever. Your own music never leaves this device.</span>
       </div>
     </details>
@@ -146,6 +161,7 @@
 </div>
 <div class="wiz" id="wiz" hidden role="dialog" aria-modal="true" aria-labelledby="wizTitle"><div class="box"><header><h2 id="wizTitle">Your music</h2><button type="button" class="pbtn" id="wizClose">Close</button></header><div class="body" id="wizBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
+<div class="intent" id="intent" hidden><label for="intentIn">What are you working on?</label><div class="row"><input type="text" id="intentIn" maxlength="60" placeholder="Optional" autocomplete="off"><button type="button" class="pbtn primary" id="intentOk">Go</button></div></div>
 <div class="summary" id="summary" hidden role="status"><b id="sumHead"></b><span id="sumBody"></span><ol id="sumTracks"></ol><button type="button" class="pbtn" id="sumClose">Close</button></div>
 <div class="level" id="level" hidden aria-hidden="true"><span class="track"><span class="bar" id="levelBar"></span></span><span class="lbl" id="levelLbl"></span></div>
 <svg class="ring" id="ring" viewBox="0 0 40 40" hidden aria-hidden="true"><circle cx="20" cy="20" r="16" class="track"/><circle cx="20" cy="20" r="16" class="fill" id="ringFill" pathLength="100"/></svg>

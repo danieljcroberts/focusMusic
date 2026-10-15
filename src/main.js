@@ -8,7 +8,7 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince, eqName, setEq } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -16,7 +16,12 @@ import { report, gpuName, diagOn, setDiag, diagText } from './diag.js';
 import { kvAll, kvSet } from './store.js';
 import './finish.js';
 import { closeMenus } from './menus.js';
-import { initTimer, toggleTimer, focusRunning } from './timer.js';
+import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
+import { initWake } from './wake.js';
+import './scenesets.js';
+import * as ST from './soundtracks.js';
+import { addPhotos, removePhoto, photos, loadPhotos, onPhotosChange } from './scenes/photos.js';
+import { EXTRA_KINDS, extraList, addExtra, removeExtra, setExtraLevel } from './ambience.js';
 import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
@@ -40,6 +45,7 @@ function parseHash() {
   for (const p of parts.slice(1)) {
     if (p.startsWith('m-')) out.track = TRACKS.find(t => trackSlug(t) === p.slice(2)) || null;
     else if (/^a\d+$/.test(p)) out.ambience = Number(p.slice(1)) / 100;
+    else if (p.startsWith('s-')) out.soundtrack = p.slice(2);
   }
   return out;
 }
@@ -47,6 +53,7 @@ const link = parseHash();
 let cur = Math.max(0, link.scene >= 0 ? link.scene : SCENES.findIndex(s => s.name === state.scene)), fade = 0, fadeAt = 0, t = 8, last = performance.now();
 if (link.track) queueResume(link.track, 0);
 if (link.ambience !== undefined) setAmbienceLevel(link.ambience);
+if (link.soundtrack && ST.byId(link.soundtrack)) ST.setCurrent(link.soundtrack);
 
 /* Scene navigation: a strip of cards, each with a thumbnail once the scene has been seen */
 const thumbs = {};
@@ -216,7 +223,7 @@ function tickPulse(dt) {
 }
 /* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
    snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
-const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk'].includes(s.key)).map(s => s.key));
+const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk', 'photos'].includes(s.key)).map(s => s.key));
 const wxCv = el('wx'), wxG = wxCv.getContext('2d');
 let wxDrops = null;
 function drawWx(dt) {
@@ -256,6 +263,7 @@ function setLink() {
   const parts = [slug(SCENES[cur])], ct = currentTrack();
   if (ct && !ct.live && !ct.own) parts.push('m-' + trackSlug(ct));   // your own music stays on your device
   if (Math.round(ambienceLevel * 100) !== 35) parts.push('a' + Math.round(ambienceLevel * 100));
+  if (ST.current().builtIn) parts.push('s-' + ST.current().id);   // your own soundtracks stay on your device
   return location.origin + location.pathname + '#' + parts.join('.');
 }
 el('shareBtn').addEventListener('click', async () => {
@@ -284,7 +292,12 @@ liveBtn.addEventListener('click', () => setLively(!lively));
 // On a draining battery below 40%, switch to low power once (the viewer can switch back).
 let batteryNoted = false;
 if (navigator.getBattery) navigator.getBattery().then(b => {
-  const check = () => { if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off in the top bar.'); } };
+  let lowNoted = false;
+  const check = () => {
+    if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off under App.'); }
+    const heavy = ['webgl', 'video'].includes(instances[cur].kind) || instances[cur].kind === 'three';
+    if (!b.charging && b.level < .2 && heavy && !lowNoted) { lowNoted = true; const i = SCENES.findIndex(s => s.key === 'nightSky'); if (i >= 0) { go(i); setStatus('Battery below 20%: moved to a still scene, which costs almost nothing to show.'); } }
+  };
   check(); b.addEventListener('levelchange', check); b.addEventListener('chargingchange', check);
 }).catch(() => {});
 let fpsAcc = 0, fpsN = 0, slowFor = 0, autoLow = false, lastFps = 0, diagAt = 0;
@@ -317,7 +330,7 @@ function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
   if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + dt; if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
-  tickDrift(now); tickSleep(now); tickPulse(dt);
+  tickDrift(now); tickSleep(now); tickPulse(dt); tickHaptic(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
   if (picker.hidden) { render(dt); drawWx(dt); }   // nothing to draw behind the full-screen scene grid
   requestAnimationFrame(frame);
@@ -327,6 +340,7 @@ setInvalidate(() => { if (still) render(0); });
 
 initTimer({ sceneName: () => SCENES[cur].name });
 initDrift({ go, current: () => cur, cards });
+initWake({ go, find: key => SCENES.findIndex(s => s.key === key) });
 initSettings({ drawDiag });
 
 const clock = el('clock');
@@ -346,7 +360,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -515,13 +529,80 @@ window.addEventListener('sw-timer', e => {
 const summary = el('summary'); let summaryTimer;
 window.addEventListener('sw-block-done', e => {
   const { min, scene, count, break: br } = e.detail, tracks = playedSince(Date.now() - min * 60000);
-  el('sumHead').textContent = `${min} minutes of focus`;
+  el('sumHead').textContent = e.detail.intent ? `${min} minutes on ${e.detail.intent}` : `${min} minutes of focus`;
   el('sumBody').textContent = `Block ${count} today · ${scene}${tracks.length ? ` · ${tracks.length} track${tracks.length === 1 ? '' : 's'}` : ''} · ${br} minute break`;
+  el('sumBody').textContent += e.detail.away ? ` · left the app ${e.detail.away} time${e.detail.away === 1 ? '' : 's'}` : ' · stayed with it';
   const ol = el('sumTracks'); ol.textContent = '';
   for (const t of tracks.slice(-5)) { const li = document.createElement('li'); li.textContent = `${t.t} — ${t.a}`; ol.append(li); }
   summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 20000);
 });
 el('sumClose').addEventListener('click', () => { summary.hidden = true; });
+
+// Feel the beat: a light buzz on strong beats in the visualiser scenes, off unless turned on.
+let hapticBeat = !!state.hapticBeat, beatCool = 0, lastBass = 0;
+const hapticBtn = el('hapticBtn'); hapticBtn.setAttribute('aria-pressed', String(hapticBeat));
+hapticBtn.addEventListener('click', () => { hapticBeat = !hapticBeat; hapticBtn.setAttribute('aria-pressed', String(hapticBeat)); saveState({ hapticBeat }); });
+const BEAT_GROUPS = new Set(['Classic visualisers', '80s', 'Trip']);
+function tickHaptic(dt) {
+  beatCool -= dt;
+  if (hapticBeat && musicPlaying && beatCool <= 0 && BEAT_GROUPS.has(SCENES[cur].group) && bands.bass > .75 && lastBass <= .75) { beatCool = .3; try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }
+  lastBass = bands.bass;
+}
+
+// What a focus block is for: asked as it starts, in a small card that goes away by itself.
+const intentBox = el('intent'), intentIn = el('intentIn'); let intentTimer;
+function closeIntent(save) { if (intentBox.hidden) return; if (save) setIntention(intentIn.value); intentBox.hidden = true; clearTimeout(intentTimer); }
+window.addEventListener('sw-focus-start', () => {
+  intentIn.value = state.lastIntent || ''; intentBox.hidden = false; intentIn.select();
+  clearTimeout(intentTimer); intentTimer = setTimeout(() => closeIntent(true), 15000);
+});
+el('intentOk').addEventListener('click', () => closeIntent(true));
+intentIn.addEventListener('keydown', e => { if (e.key === 'Enter') closeIntent(true); else if (e.key === 'Escape') { intentIn.value = ''; closeIntent(true); } else { clearTimeout(intentTimer); intentTimer = setTimeout(() => closeIntent(true), 20000); } });
+
+// The sound preset, and the extra sounds you mix in under Now playing.
+const eqButtons = [...el('eqSeg').querySelectorAll('button')];
+const drawEq = () => eqButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.eq === eqName)));
+eqButtons.forEach(b => b.addEventListener('click', () => { setEq(b.dataset.eq); drawEq(); })); drawEq();
+const mixBox = document.createElement('div'); mixBox.className = 'mixer';
+el('amb').closest('label').after(mixBox);
+function drawMixer() {
+  mixBox.textContent = '';
+  for (const x of extraList()) {
+    const row = document.createElement('label'); row.className = 'slider';
+    const name = document.createElement('span'); name.textContent = EXTRA_KINDS[x.k];
+    const r = document.createElement('input'); r.type = 'range'; r.min = 0; r.max = 1; r.step = .01; r.value = x.v; r.setAttribute('aria-label', EXTRA_KINDS[x.k] + ' level');
+    r.addEventListener('input', () => setExtraLevel(x.k, Number(r.value)));
+    const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'x'; rm.textContent = '×'; rm.setAttribute('aria-label', 'Remove ' + EXTRA_KINDS[x.k]);
+    rm.addEventListener('click', e => { e.preventDefault(); removeExtra(x.k); drawMixer(); });
+    row.append(name, r, rm); mixBox.append(row);
+  }
+  const sel = document.createElement('select'); sel.setAttribute('aria-label', 'Add a sound');
+  sel.append(new Option('+ Add a sound…', ''), ...Object.entries(EXTRA_KINDS).filter(([k]) => !extraList().some(x => x.k === k)).map(([k, n]) => new Option(n, k)));
+  sel.addEventListener('change', () => { if (sel.value) { startAmbience(); addExtra(sel.value); drawMixer(); } });
+  mixBox.append(sel);
+}
+drawMixer();
+
+// Your photos: add, list with a remove button each, and a way to go to the scene.
+const photoScene = SCENES.findIndex(s => s.key === 'photos');
+function drawPhotos() {
+  const box = el('photoList'); box.textContent = '';
+  el('photoNote').textContent = photos().length ? `${photos().length} photo${photos().length === 1 ? '' : 's'}, kept on this device` : 'None yet';
+  for (const p of photos()) {
+    const t = document.createElement('span'); t.className = 'ph';
+    const im = document.createElement('img'); im.src = p.url; im.alt = p.name;
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Remove ' + p.name);
+    x.addEventListener('click', () => removePhoto(p.id));
+    t.append(im, x); box.append(t);
+  }
+}
+onPhotosChange(drawPhotos); loadPhotos();
+el('photoAdd').addEventListener('click', () => {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+  inp.addEventListener('change', async () => { const n = await addPhotos([...inp.files]); setStatus(`Added ${n} photo${n === 1 ? '' : 's'}.`); if (photoScene >= 0) go(photoScene); });
+  inp.click();
+});
+el('photoGo').addEventListener('click', () => { if (photoScene >= 0) go(photoScene); });
 
 /* Mini player: the track and previous / play / next, over the bottom of the scene while the controls stay hidden.
    It follows the main player and tucks itself away after a few quiet seconds. Tapping the title opens the full controls. */

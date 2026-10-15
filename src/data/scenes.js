@@ -238,4 +238,6 @@ export const SCENES = [
     desc: 'A typewriter on a lamplit desk slowly types out an old poem, one letter at a time, while a cup steams beside it. When the poem is done, the page comes out and a fresh one goes in.' },
   { group: 'Cozy', key: 'jellyfish', name: 'Jellyfish', sw: '#0a2236', sound: 'aquarium', mood: 'any', tone: 'cold', art: ORIGINAL, music: 'Pulse Emitter|Longing Thresholds',
     desc: 'Glowing jellyfish drift up through a dark tank, pulsing slowly as marine snow falls past. Their glow swells a little with the music.' },
+  { group: 'Yours', key: 'photos', name: 'Your Photos', sw: '#c0a070', sound: 'wind', mood: 'any', tone: 'calm', art: { who: 'Your own photographs', lic: 'Yours', url: '' }, music: 'Zen Savauge|Quiet View',
+    desc: 'Your own pictures, drifting slowly and taking on the time of day, one after another every few minutes, with rain or snow over them in wet weather. Add them under Scene in the sheet; they stay on this device.' },
 ];

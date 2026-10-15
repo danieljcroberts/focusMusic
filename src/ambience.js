@@ -6,7 +6,10 @@ import { state, saveState } from './state.js';
 
 export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space'];
 
-let ctx = null, master = null, buffers = {}, live = [], timers = [], kind = 'none';
+let ctx = null, master = null, bus = null, buffers = {}, live = [], timers = [], kind = 'none';
+// Sounds you add on top of the scene's own, each at its own level. Brown noise and binaural tones are only here.
+export const EXTRA_KINDS = { rain: 'Rain', wind: 'Wind', sea: 'Sea', fire: 'Fire', cafe: 'Café', train: 'Train', storm: 'Storm', pond: 'Pond', road: 'Road', hum: 'Hum', space: 'Space', brown: 'Brown noise', binaural: 'Binaural (headphones)' };
+const extras = new Map();   // kind -> { gain, layers, timers, v }
 export let level = typeof state.ambience === 'number' ? state.ambience : .35;
 
 function buffer(type) {
@@ -78,6 +81,12 @@ const RECIPES = {
   aquarium: () => { every(.15, 1, () => blip(300 + Math.random() * 200, 800 + Math.random() * 500, .05, .09)); return [noise('brown', 'lowpass', 180, .8, .28, t => [.85 + .15 * lfo(t, .5), 180])]; },
   road: () => [noise('brown', 'lowpass', 200, .8, .4, t => [.8 + .2 * lfo(t, .05), 160 + 120 * lfo(t, .08)])],
   hum: () => [noise('brown', 'lowpass', 150, .8, .3, t => [.9 + .1 * lfo(t, .04), 150]), tone(55, .05), tone(82.5, .025)],
+  brown: () => [noise('brown', 'lowpass', 900, .5, .6, null)],
+  // Two steady tones, one in each ear, ten hertz apart: the beat between them is an alpha rhythm. Needs headphones.
+  binaural: () => {
+    const mk = (f, pan) => { const o = ctx.createOscillator(); o.frequency.value = f; const p = ctx.createStereoPanner(); p.pan.value = pan; const g = ctx.createGain(); g.gain.value = 0; o.connect(p); p.connect(g); g.connect(master); o.start(); return { g, base: .12, stop() { o.stop(); } }; };
+    return [mk(200, -1), mk(210, 1), noise('brown', 'lowpass', 400, .5, .08, null)];
+  },
   space: () => [noise('brown', 'lowpass', 110, .8, .25, t => [.7 + .3 * lfo(t, .03), 90 + 60 * lfo(t, .021)]), tone(55, .07), tone(55.7, .05), tone(110.3, .02)],
   none: () => [],
 };
@@ -85,10 +94,11 @@ const RECIPES = {
 function ensure() {
   if (ctx) return true;
   ctx = audioCtx(); if (!ctx) return false;
-  master = ctx.createGain(); master.gain.value = level; master.connect(ctx.destination);
+  bus = ctx.createGain(); bus.connect(ctx.destination);
+  master = ctx.createGain(); master.gain.value = level; master.connect(bus);
   setInterval(() => {
     const t = performance.now() / 1000, w = weather;
-    for (const L of live) if (L.mod && !L.fading) { const [g, f] = L.mod(t, w); L.g.gain.setTargetAtTime(L.base * g, ctx.currentTime, .15); if (L.f && f) L.f.frequency.setTargetAtTime(f, ctx.currentTime, .3); }
+    for (const L of [...live, ...[...extras.values()].flatMap(x => x.layers)]) if (L.mod && !L.fading) { const [g, f] = L.mod(t, w); L.g.gain.setTargetAtTime(L.base * g, ctx.currentTime, .15); if (L.f && f) L.f.frequency.setTargetAtTime(f, ctx.currentTime, .3); }
   }, 100);
   return true;
 }
@@ -115,7 +125,30 @@ export function setAmbienceLevel(v) {
   if (level > 0 && !live.length) build(); else if (level <= 0 && live.length) { fadeOut(live); live = []; timers.forEach(clearTimeout); timers = []; }
 }
 // The sleep timer mutes the layers over a long ramp without forgetting the level.
-export function setAmbienceMute(on, seconds = 1) { if (master) master.gain.setTargetAtTime(on ? 0 : level, ctx.currentTime, Math.max(.05, seconds / 3)); }
+export function setAmbienceMute(on, seconds = 1) { if (bus) bus.gain.setTargetAtTime(on ? 0 : 1, ctx.currentTime, Math.max(.05, seconds / 3)); }
+function startExtra(k, v) {
+  if (!ensure() || extras.has(k) || !RECIPES[k]) return;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const gain = ctx.createGain(); gain.gain.value = 0; gain.connect(bus);
+  const saveM = master, saveT = timers; master = gain; timers = [];
+  const layers = RECIPES[k](); const t = timers; master = saveM; timers = saveT;
+  for (const L of layers) { const g = L.mod ? L.mod(performance.now() / 1000, weather)[0] : 1; L.g.gain.setTargetAtTime(L.base * g, ctx.currentTime, 1.2); }
+  gain.gain.setTargetAtTime(v, ctx.currentTime, .8);
+  extras.set(k, { gain, layers, timers: t, v });
+}
+function stopExtra(k) {
+  const x = extras.get(k); if (!x) return;
+  x.timers.forEach(clearTimeout); x.gain.gain.setTargetAtTime(0, ctx.currentTime, .4);
+  setTimeout(() => x.layers.forEach(L => { try { L.stop(); } catch (e) {} }), 2500); extras.delete(k);
+}
+const savedExtras = () => (state.extras || []).filter(x => EXTRA_KINDS[x.k]);
+export const extraList = () => savedExtras();
+export function addExtra(k) { const list = savedExtras().filter(x => x.k !== k); list.push({ k, v: .4 }); saveState({ extras: list }); if (armed) startExtra(k, .4); }
+export function removeExtra(k) { saveState({ extras: savedExtras().filter(x => x.k !== k) }); stopExtra(k); }
+export function setExtraLevel(k, v) {
+  saveState({ extras: savedExtras().map(x => x.k === k ? { k, v } : x) });
+  const x = extras.get(k); if (x) { x.v = v; x.gain.gain.setTargetAtTime(v, ctx.currentTime, .15); }
+}
 export const ambienceState = () => ({ kind, level, layers: live.length });
 // Called from the first pointer or key event: browsers only let sound start after a gesture.
-export function startAmbience() { if (armed) return; armed = true; build(); }
+export function startAmbience() { if (armed) return; armed = true; build(); for (const x of savedExtras()) startExtra(x.k, x.v); }
