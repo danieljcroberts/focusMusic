@@ -4,11 +4,11 @@ import { audioCtx } from './music.js';
 import { weather } from './weather.js';
 import { state, saveState } from './state.js';
 
-export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space'];
+export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space', 'tent', 'underwater', 'shore'];
 
 let ctx = null, master = null, bus = null, buffers = {}, live = [], timers = [], kind = 'none';
 // Sounds you add on top of the scene's own, each at its own level. Brown noise and binaural tones are only here.
-export const EXTRA_KINDS = { rain: 'Rain', wind: 'Wind', sea: 'Sea', fire: 'Fire', cafe: 'Café', train: 'Train', storm: 'Storm', pond: 'Pond', road: 'Road', hum: 'Hum', space: 'Space', brown: 'Brown noise', binaural: 'Binaural (headphones)' };
+export const EXTRA_KINDS = { rain: 'Rain', wind: 'Wind', sea: 'Sea', fire: 'Fire', cafe: 'Café', train: 'Train', storm: 'Storm', pond: 'Pond', road: 'Road', hum: 'Hum', space: 'Space', tent: 'Rain on a tent', underwater: 'Underwater', shore: 'Shore and gulls', brown: 'Brown noise', binaural: 'Binaural (headphones)' };
 const extras = new Map();   // kind -> { gain, layers, timers, v }
 export let level = typeof state.ambience === 'number' ? state.ambience : .35;
 
@@ -58,6 +58,14 @@ function every(min, max, fn) {
 }
 
 const lfo = (t, rate, ph = 0) => .5 + .5 * Math.sin(t * rate * 6.283 + ph);
+// A gull's call: a quick rise then a long falling cry, through a band filter so it sounds far off.
+function gull(delay = 0) {
+  const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(), t = ctx.currentTime + delay, f0 = 1300 + Math.random() * 400;
+  o.type = 'triangle'; f.type = 'bandpass'; f.frequency.value = 1600; f.Q.value = 1.4;
+  o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.45, t + .07); o.frequency.exponentialRampToValueAtTime(f0 * .65, t + .42);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.035, t + .05); g.gain.exponentialRampToValueAtTime(.0001, t + .45);
+  o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t + .5);
+}
 const RECIPES = {
   rain: () => [
     noise('white', 'lowpass', 1800, .5, .45, (t, w) => [(.25 + .75 * w) * (.9 + .1 * lfo(t, .13)), 1200 + 1800 * w]),
@@ -88,6 +96,21 @@ const RECIPES = {
     return [mk(200, -1), mk(210, 1), noise('brown', 'lowpass', 400, .5, .08, null)];
   },
   space: () => [noise('brown', 'lowpass', 110, .8, .25, t => [.7 + .3 * lfo(t, .03), 90 + 60 * lfo(t, .021)]), tone(55, .07), tone(55.7, .05), tone(110.3, .02)],
+  // Rain on the fly sheet, heard from inside: close, dull taps on taut fabric over a soft hiss, heavier with the weather.
+  tent: () => {
+    every(.03, .09, () => { if (Math.random() < .35 + .6 * weather) burst('white', 'bandpass', 900 + Math.random() * 1400, 2.2, .1 + Math.random() * .14, .002, .05 + Math.random() * .05); });
+    return [noise('white', 'lowpass', 1100, .5, .22, (t, w) => [(.3 + .7 * w) * (.9 + .1 * lfo(t, .11)), 800 + 700 * w]), noise('brown', 'lowpass', 160, .7, .25, t => [.7 + .3 * lfo(t, .07), 160])];
+  },
+  // Under the sea: a deep muffled swell that comes and goes, and the odd low bubble.
+  underwater: () => {
+    every(1.5, 6, () => blip(160 + Math.random() * 120, 420 + Math.random() * 200, .04, .12));
+    return [noise('brown', 'lowpass', 140, .9, .5, t => [.35 + .65 * Math.pow(lfo(t, .07), 1.5), 90 + 90 * lfo(t, .07)]), noise('white', 'lowpass', 420, .6, .05, t => [lfo(t, .07, .5), 420])];
+  },
+  // A sheltered shore: small waves lapping close and quick, with gulls now and then.
+  shore: () => {
+    every(9, 28, () => { const n = 1 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) gull(i * (.5 + Math.random() * .3)); });
+    return [noise('brown', 'lowpass', 600, .6, .45, t => [.3 + .7 * Math.pow(lfo(t, .16), 2), 350 + 400 * lfo(t, .16)]), noise('white', 'bandpass', 3000, .7, .06, t => [Math.pow(lfo(t, .16, .7), 3), 3000])];
+  },
   none: () => [],
 };
 

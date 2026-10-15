@@ -6,6 +6,7 @@ import { rand, rgb, layer, glow, stars } from '../util.js';
 import { weather } from '../weather.js';
 import { daylight, skyMix } from '../daylight.js';
 import { musicLevel, bands } from '../music.js';
+import { season } from '../season.js';
 
 const NAVY = [11, 31, 58], BLUE = [0, 160, 222], SKY = [168, 216, 240], PALE = [232, 244, 250], GREEN = [122, 193, 67];
 
@@ -48,7 +49,8 @@ export function cleanPowerScene() {
       return pts;
     };
     ridge(hy - H * .02, H * .2, skyMix([20, 40, 70], [60, 100, 150], [130, 175, 210], d), 1.7, true);
-    const mid = ridge(hy + H * .01, H * .12, skyMix([12, 28, 52], [30, 64, 104], [70, 120, 165], d), 4.2, false);
+    const sn = season();   // the slope greens in spring, goes gold in autumn and lies under snow in winter, with snow on the near ridge too
+    const mid = ridge(hy + H * .01, H * .12, skyMix([12, 28, 52], [30, 64, 104], [70, 120, 165], d), 4.2, sn === 3);
 
     // Reservoir behind the dam (left) and the fjord (right)
     const water = skyMix([8, 22, 44], [20, 70, 120], [60, 150, 205], d);
@@ -86,8 +88,8 @@ export function cleanPowerScene() {
     // Solar field on the near slope: rows of navy panels with an energy-blue frame
     const fy = H * (W > H ? .72 : .7);
     const slope = g.createLinearGradient(0, fy - H * .06, 0, H);
-    slope.addColorStop(0, rgb(skyMix([10, 24, 22], [40, 70, 50], GREEN, d)));
-    slope.addColorStop(1, rgb(skyMix([6, 14, 14], [20, 40, 30], [70, 130, 50], d)));
+    const top = skyMix(...[[[10, 24, 22], [40, 70, 50], [140, 205, 80]], [[10, 24, 22], [40, 70, 50], GREEN], [[24, 20, 12], [90, 64, 40], [196, 150, 70]], [[40, 48, 66], [170, 180, 200], [236, 242, 248]]][sn], d);
+    slope.addColorStop(0, rgb(top)); slope.addColorStop(1, rgb(top.map(v => Math.round(v * (sn === 3 ? .78 : .55)))));
     g.fillStyle = slope; g.beginPath(); g.moveTo(-10, H); g.lineTo(-10, fy - H * .02);
     g.quadraticCurveTo(W * .5, fy - H * .09, W + 10, fy - H * .03); g.lineTo(W + 10, H); g.fill();
     panels = [];

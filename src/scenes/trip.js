@@ -34,6 +34,9 @@ export function shaderScene(fs, o = {}) {
   return {
     kind: 'webgl',
     get canvas() { return stage; },
+    // What the governor settled on, so the app can remember it per scene on this device and start there next time.
+    get cost() { return { scale, skip }; },
+    set cost(c) { scale = Math.max(.4, Math.min(1, +c.scale || 1)); skip = !!c.skip; if (stage && !failed) size(); },
     init() {
       if (!stage) {
         stage = addStage(document.createElement('canvas'));

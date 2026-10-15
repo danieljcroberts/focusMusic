@@ -2,6 +2,7 @@
 // tide, light shafts in a wood and a lighthouse beam turning through sea fog. All follow the viewer's clock (uA is the
 // daylight, 0 night to 1 day) and some the weather (uB). The music moves them gently: nothing here flashes.
 import { shaderScene } from './trip.js';
+import { season } from '../season.js';
 import { daylight } from '../daylight.js';
 import { weather } from '../weather.js';
 import { lowPower } from '../view.js';
@@ -183,15 +184,17 @@ vec3 sunL; vec3 sunC; float tw;
 vec3 skyAt(vec3 rd, float day, float t){
   vec3 zen = dmix(vec3(.01, .02, .07), vec3(.1, .13, .36), vec3(.25, .5, .9), day);
   vec3 hor = dmix(vec3(.05, .07, .14), vec3(.98, .6, .38), vec3(.78, .87, .95), day);
+  hor = mix(hor, hor * vec3(.86, .94, 1.08) + .02, WINTER); zen = mix(zen, zen * vec3(.85, .92, 1.), WINTER);
+  hor = mix(hor, hor * vec3(1.06, 1., .9), SUMMER);
   vec3 sky = mix(hor, zen, smoothstep(-.02, .45, rd.y));
-  sky += vec3(1., .45, .2) * tw * exp(-abs(rd.y) * 10.) * .6;
+  sky += vec3(1., .45, .2) * tw * exp(-abs(rd.y) * 10.) * (.6 + .2 * SUMMER - .25 * WINTER);
   float sd = max(dot(rd, sunL), 0.);
   sky += sunC * (pow(sd, 1200.) * 1.5 + pow(sd, 24.) * .35 + pow(sd, 2.) * .12);
   // Clouds: a plane above, shaded toward the sun and pink underneath at dusk.
   if (rd.y > .005) {
     float cd = 2.8 / rd.y; vec2 q = rd.xz * cd * .06 + vec2(t * .007, 0.);
     float n = fbm3o(q), nl = fbm3o(q + sunL.xz * .06);
-    float cov = smoothstep(.46, .66, n) * (1. - smoothstep(20., 60., cd)) * smoothstep(.005, .08, rd.y);
+    float cov = smoothstep(.46 - .08 * WINTER + .05 * SUMMER, .66, n) * (1. - smoothstep(20., 60., cd)) * smoothstep(.005, .08, rd.y);
     vec3 lit = mix(vec3(1.), sunC, .5) * (.4 + .6 * day + .4 * tw), dark = mix(zen, hor, .4);
     vec3 cc = mix(dark, lit, smoothstep(-.1, .2, nl - n) * .6 + .3);
     cc = mix(cc, vec3(1., .55, .45) * (.3 + .7 * day), tw * .4);
@@ -248,8 +251,8 @@ void main(){
   gl_FragColor = vec4(col, 1.);
 }`;
 // In winter there is snow on the dry sand and the sea runs colder.
-const winterNow = () => { const m = new Date().getMonth(); return m <= 1 || m === 11 ? 1 : 0; };
-export const tideScene = () => build(`const float WINTER = ${winterNow()}.;\n` + TIDE, byClock({ res: .8 }));
+// The sky follows the season too: paler and colder in winter with more cloud, warmer and clearer in summer.
+export const tideScene = () => build(`const float WINTER = ${season() === 3 ? 1 : 0}.;\nconst float SUMMER = ${season() === 1 ? 1 : 0}.;\n` + TIDE, byClock({ res: .8 }));
 
 /* Canopy: light through an old wood. Four depths of trunks and foliage, the far ones lost in haze, with shafts of sun
    worked out by looking toward the sun from each point, and dust drifting through the bright ones. */
@@ -403,6 +406,9 @@ void main(){
     float h = headland(uv.x) - .08, depthK = smoothstep(-.04, .5, uv.x);
     vec3 rock = dmix(vec3(.012, .014, .02), vec3(.09, .07, .09), vec3(.22, .22, .2), day);
     vec3 grass = dmix(vec3(.02, .03, .02), vec3(.14, .16, .09), vec3(.3, .4, .2), day);
+    if (SEASON == 0.) grass = dmix(vec3(.02, .03, .02), vec3(.14, .18, .09), vec3(.32, .48, .2), day);
+    if (SEASON == 2.) grass = dmix(vec3(.03, .025, .015), vec3(.2, .14, .08), vec3(.42, .36, .18), day);
+    if (SEASON == 3.) grass = dmix(vec3(.05, .06, .09), vec3(.42, .38, .46), vec3(.82, .85, .9), day);   // snow on the headland
     float strata = .6 + .4 * fbm3o(uv * vec2(9., 28.)) + .15 * sin(uv.y * 90. + fbm3o(uv * 6.) * 6.) + .2 * noise(uv * 120.);
     col = mix(rock * strata * (.6 + .4 * smoothstep(-.5, .2, uv.y)), grass * (.8 + .2 * noise(uv * 60.)), smoothstep(h - .04, h - .005, uv.y));
     col = mix(col, hor, (1. - depthK) * .35 * (.5 + fog));
@@ -454,5 +460,5 @@ void main(){
   gl_FragColor = vec4(col, 1.);
 }`;
 export function lighthouseScene() {
-  return build(LIGHTHOUSE.replace('${STEPS}', String(lowPower ? 18 : 30)), byClock({ res: .75, heavy: true }));
+  return build(`const float SEASON = ${season()}.;\n` + LIGHTHOUSE.replace('${STEPS}', String(lowPower ? 18 : 30)), byClock({ res: .75, heavy: true }));
 }

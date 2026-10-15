@@ -198,14 +198,17 @@ export function makeScene(s) {
 }
 // A stand-in that loads the scene's module on first init, then hands everything to the real scene.
 function lazyScene(s, { mod, make }) {
-  let real = null, loading = null, failed = null;
+  let real = null, loading = null, failed = null, pendingCost = null;
   const w = {
     kind: s.kind || 'canvas',
     get canvas() { return real ? real.canvas : undefined; },
     get bg() { return real ? real.bg : undefined; },
+    get loaded() { return !!real || !!failed; },
+    get cost() { return real ? real.cost : undefined; },
+    set cost(c) { if (real) { if ('cost' in real) real.cost = c; } else pendingCost = c; },   // the app holds the crossfade until the real scene can draw
     init() {
       if (real) return real.init();
-      if (!loading) loading = MODS[mod]().then(m => { real = make(m); real.kind = real.kind || s.kind || 'canvas'; w.kind = real.kind; })
+      if (!loading) loading = MODS[mod]().then(m => { real = make(m); real.kind = real.kind || s.kind || 'canvas'; w.kind = real.kind; if (pendingCost && 'cost' in real) real.cost = pendingCost; })
         .catch(e => { failed = new Error(`${s.name} couldn't be loaded (it needs a connection the first time)`); report(e); })
         .then(() => window.dispatchEvent(new CustomEvent('sw-scene-loaded', { detail: s.key })));
     },

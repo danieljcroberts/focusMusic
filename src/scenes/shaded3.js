@@ -5,6 +5,7 @@ import { shaderScene } from './trip.js';
 import { daylight } from '../daylight.js';
 import { weather } from '../weather.js';
 import { lowPower } from '../view.js';
+import { moonPhase, MOON_GLSL } from '../moon.js';
 
 const H = `
 float h31(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -23,6 +24,19 @@ float stars(vec2 p, float t, float day){
 }
 float hh;
 float seg(vec2 p, vec2 a, vec2 b){ vec2 pa = p - a, ba = b - a; hh = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.); return length(pa - ba * hh); }
+// Weather overlays. wetness(): 0 in fair weather, rising to 1 as uB nears its wettest.
+float wetness(){ return clamp((uB - .45) / .55, 0., 1.); }
+// Falling snow: one layer of flakes at scale s, falling at sp; returns coverage.
+float flakes(vec2 uv, float t, float s, float sp, float dens){
+  vec2 g = uv * s + vec2(sin(t * .3 + uv.y * 3.) * .25, t * sp), c = floor(g), f = fract(g) - .5;
+  vec2 o = (vec2(h21(c + 1.3), h21(c + 2.9)) - .5) * .6;
+  return smoothstep(.1, .03, length(f - o)) * step(1. - dens, h21(c));
+}
+// Rain streaks: thin slanted lines falling, at scale s.
+float streaks(vec2 uv, float t, float s, float dens){
+  vec2 g = vec2((uv.x + uv.y * .12) * s, uv.y * s * .07 + t * 1.6), c = floor(g), f = fract(g);
+  return step(1. - dens, h21(c)) * smoothstep(.06, .0, abs(f.x - .5) - .015) * smoothstep(0., .25, f.y) * smoothstep(1., .55, f.y);
+}
 float dither(float t){ return (h21(gl_FragCoord.xy + fract(t)) - .5) / 160.; }
 float px(){ return 1.5 / uRes.y; }
 // Portrait framing: on a tall screen, zoom out until at least w of the scene's width shows, so its subject stays in view.
@@ -49,6 +63,7 @@ vec4 fish(vec2 p, vec2 c, float s, float dir, float t, float ph, vec3 top, vec3 
 }
 `;
 const build = (fs, o) => shaderScene(H + fs, { res: .8, ...o });
+const withMoon = fs => MOON_GLSL(moonPhase()) + fs;   // tonight's phase
 const byClock = (extra = {}) => ({ before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather); }, ...extra });
 const season = () => { const m = new Date().getMonth(); return m <= 1 || m === 11 ? 3 : m <= 4 ? 0 : m <= 7 ? 1 : 2; };   // spring 0, summer 1, autumn 2, winter 3
 const withSeason = fs => `const float SEASON = ${season()}.;\n` + fs;
@@ -112,7 +127,7 @@ void main(){
 export const aquariumScene = () => build(AQUARIUM, { res: .85 });
 
 /* Forest at Dusk: a painted wood at the last of the light. Five depths of firs, mist lying between them and drifting,
-   a crescent moon, the first stars, and fireflies in the near grass. Brighter or darker with the clock. */
+   tonight's moon, the first stars, and fireflies in the near grass. Brighter or darker with the clock. */
 const FOREST = `
 float firs(float x, float k){
   float cell = floor(x), f = fract(x) - .5, h = h21(vec2(cell, k));
@@ -125,8 +140,9 @@ void main(){
   col = mix(col * .45, col, (d - .15) / .55);
   col += vec3(1., .6, .4) * exp(-abs(uv.y + .05) * 6.) * .3 * d;
   col += stars(uv * 150., t, d * .5) * vec3(.9, .9, 1.);
-  vec2 mp = vec2(.42, .32); float moon = smoothstep(.04, .038, length(uv - mp)) * smoothstep(.034, .036, length(uv - mp - vec2(.015, .008)));
-  col += vec3(1., .95, .85) * moon + vec3(.6, .6, .8) * exp(-length(uv - mp) * 8.) * .2;
+  vec2 mp = vec2(.42, .32); float disc = smoothstep(.04, .038, length(uv - mp)), moon = disc * moonLit((uv - mp) / .04);
+  col = mix(col, col * .7 + vec3(.05, .05, .08), disc * (1. - moon));      // the dark side, faintly
+  col += vec3(1., .95, .85) * moon + vec3(.6, .6, .8) * exp(-length(uv - mp) * 8.) * .2 * (1. - abs(MOONP * 2. - 1.));
   for (int i = 0; i < 5; i++) {
     float k = float(i), z = 4. - k * .7, drift = t * .002 * (k + 1.);
     float top = -.05 - k * .08 + firs(uv.x * (2. + k * 1.3) + k * 7. + drift, k) * (.12 + k * .05);
@@ -147,7 +163,7 @@ void main(){
   col = 1. - exp(-col * 1.5);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const forestDuskScene = () => build(FOREST, byClock({ res: .8 }));
+export const forestDuskScene = () => build(withMoon(FOREST), byClock({ res: .8 }));
 
 /* Desert Night: dunes under a huge moon. Five ranks of dunes with sharp crests, lit on one face and shadowed on the
    other, sand smoking off the crests in the wind, and a caravan's lanterns crossing a far ridge. Day turns it gold. */
@@ -159,8 +175,10 @@ void main(){
   vec3 sky = mix(dmix(vec3(.06, .07, .18), vec3(.8, .5, .45), vec3(.85, .75, .6), day), dmix(vec3(.01, .015, .05), vec3(.2, .15, .35), vec3(.35, .55, .85), day), smoothstep(-.1, .55, uv.y));
   vec3 col = sky + stars(uv * 150., t, day) * vec3(.9, .9, 1.);
   vec2 mp = vec2(-.35, .28); float md = length(uv - mp);
-  col += vec3(1., .97, .9) * smoothstep(.09, .088, md) * (1. - .75 * day) + vec3(.6, .65, .9) * exp(-md * 5.) * .3 * (1. - day);
-  vec3 sandL = dmix(vec3(.32, .34, .5), vec3(.95, .6, .4), vec3(1., .78, .5), day), sandD = dmix(vec3(.06, .06, .14), vec3(.4, .2, .2), vec3(.62, .4, .25), day);
+  float full = 1. - abs(MOONP * 2. - 1.), disc = smoothstep(.09, .088, md), lit = disc * moonLit((uv - mp) / .09);
+  col = mix(col, col * .9 + vec3(.015, .015, .03), disc * (1. - lit) * (1. - day));   // the dark side, faintly
+  col += vec3(1., .97, .9) * lit * (1. - .75 * day) + vec3(.6, .65, .9) * exp(-md * 5.) * .3 * (1. - day) * (.3 + .7 * full);
+  vec3 sandL = dmix(vec3(.32, .34, .5) * (.55 + .45 * full), vec3(.95, .6, .4), vec3(1., .78, .5), day), sandD = dmix(vec3(.06, .06, .14), vec3(.4, .2, .2), vec3(.62, .4, .25), day);
   for (int i = 0; i < 5; i++) {
     float k = float(i), sc = 1.5 + k * .9, base = -.02 - k * .1, amp = .1 + k * .04;
     float x = uv.x * sc + t * .0015 * (k + 1.);
@@ -186,7 +204,7 @@ void main(){
   col = 1. - exp(-col * 1.4);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const desertScene = () => build(DESERT, byClock({ res: .85 }));
+export const desertScene = () => build(withMoon(DESERT), byClock({ res: .85 }));
 
 /* Volcano Island: an island across dark water, glowing at the summit. Lava ribbons pulse down one flank, a plume rises
    and leans with the wind, lit orange from beneath, sparks lift, and the glow lies on the sea. */
@@ -461,6 +479,12 @@ void main(){
     col += vec3(1., .75, .4) * exp(-length(uv - p) * 500.) * 1.4;
     col += vec3(1., .7, .35) * exp(-abs(uv.x - x) * 300.) * smoothstep(shore, shore - .12, uv.y) * step(uv.y, shore) * (.3 + .3 * noise(vec2(uv.x * 100., uv.y * 200. - t)));
   }
+  // Snow in wet weather: three depths of flakes drifting down, and the aurora fading behind the cloud.
+  float wet = wetness();
+  if (wet > 0.) {
+    col = mix(col, vec3(.04, .05, .08), wet * .35 * smoothstep(-.1, .3, uv.y));
+    col += vec3(.75, .8, .9) * (flakes(uv, t, 9., .5, .5) * .5 + flakes(uv + 3., t, 16., .7, .45) * .35 + flakes(uv + 7., t, 28., .9, .4) * .2) * wet;
+  }
   col = 1. - exp(-col * 1.6);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
@@ -512,10 +536,16 @@ void main(){
     col = mix(col, vec3(.6, .5, .35), step(abs(q.y - .045), .012) * step(.025, q.x) * step(q.x, .155) * step(.5, fract(q.x * 70.)) * .8);
   }
   col = mix(col, vec3(.12, .1, .08) * (.8 + .3 * noise(uv * 40.)), smoothstep(shore + .002, shore - .002, uv.y));
+  // Drizzle in wet weather: a grey veil over the sun and fine streaks of rain.
+  float wet = wetness();
+  if (wet > 0.) {
+    col = mix(col, vec3(.45, .45, .5) * (.6 + .4 * smoothstep(-.3, .4, uv.y)), wet * .45);
+    col += vec3(.7, .7, .75) * (streaks(uv, t, 70., .25) * .22 + streaks(uv + 1.7, t * 1.3, 120., .2) * .14) * wet;
+  }
   col = 1. - exp(-col * 1.4);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const midnightSunScene = () => build(MIDNIGHT, { res: .85 });
+export const midnightSunScene = () => build(MIDNIGHT, byClock({ res: .85 }));
 
 /* Train by Day: the carriage window on a bright morning. Low hills, a lake, birch woods and fields slide past at their
    own speeds, the poles flick by, and summer clouds drift overhead. Follows the season. */
@@ -548,6 +578,21 @@ void main(){
   float pf = fract((v.x + t * .9) * 1.6);
   col = mix(col, vec3(.2, .16, .12), step(abs(pf - .5), .01) * step(-.25, v.y) * step(v.y, .2));
   col = mix(col, vec3(.15), smoothstep(.0025, .001, abs(v.y - (.17 - .03 * (1. - cos(pf * 6.283)) * .5))) * .6);
+  // Wet weather: an overcast sky, and drops on the glass blown back along it by the train's speed.
+  float wet = wetness();
+  if (wet > 0.) {
+    col = mix(col, vec3(.55, .58, .62) * (.7 + .3 * smoothstep(-.3, .4, v.y)), wet * .4);
+    for (int i = 0; i < 2; i++) {
+      float sc = 14. + float(i) * 11.;
+      vec2 g = vec2(uv.x * sc * .35 + t * (1.2 + float(i) * .5), uv.y * sc), c = floor(g), f = fract(g) - .5;
+      float h = h21(c + float(i) * 7.), on = step(1. - (.18 + .22 * wet), h), r = .08 + .1 * h21(c + 3.3);
+      f -= (vec2(h21(c + 1.1), h21(c + 5.7)) - .5) * .5;                               // each drop somewhere in its cell
+      float trail = smoothstep(r * .5, 0., abs(f.y + .04 * f.x)) * smoothstep(-.5, 0., f.x) * step(f.x, 0.);   // a streak behind it
+      float bead = smoothstep(r, r * .6, length(f * vec2(.8, 1.)));
+      col = mix(col, col * .7 + vec3(.12, .13, .15), (bead * .8 + trail * .3) * on * wet);
+      col += vec3(.9) * smoothstep(r * .45, 0., length(f - vec2(r * .3, r * .3))) * on * wet * .4;
+    }
+  }
   // The frame.
   float x01 = uv.x * uRes.y / uRes.x + .5;
   float frame = step(.38, uv.y) + step(uv.y, -.33) + step(.95, x01) + step(x01, .03);
@@ -555,7 +600,7 @@ void main(){
   col = mix(col, vec3(.6, .55, .5), smoothstep(.004, 0., abs(uv.y + .33)) * .8);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const dayTrainScene = () => build(withSeason(DAYTRAIN), { res: .85 });
+export const dayTrainScene = () => build(withSeason(DAYTRAIN), byClock({ res: .85 }));
 
 /* Rain on a Tent: inside a small tent at night, a lantern glowing. Rain beads on the fly and runs down the sloping
    panels, the fabric breathes with the wind, and the light flickers softly. Heavier with the weather. */

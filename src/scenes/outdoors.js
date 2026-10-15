@@ -4,6 +4,8 @@ import { rand, mix, rgb, layer, glow, stars } from '../util.js';
 import { weather } from '../weather.js';
 import { daylight, skyMix } from '../daylight.js';
 import { bands, musicLevel } from '../music.js';
+import { moonPhase, drawMoon } from '../moon.js';
+import { isWinter } from '../season.js';
 
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -184,6 +186,10 @@ export function lanternsScene() {
       for (const [hh, col, rc, f] of [[.09, '#161631', 'rgba(22,22,46,.75)', 1.6], [.055, '#0b0b1c', 'rgba(10,10,24,.85)', 2.6]]) {
         const ph = rand(0, TAU), ys = []; for (let x = 0; x <= W + 8; x += 8) ys.push(hy - H * hh * (.45 + .3 * Math.sin(x / W * f * TAU * .5 + ph) + .25 * Math.sin(x / W * f * TAU * 1.3 + ph * 2)) * (W > H ? 1 : .8));
         g.fillStyle = col; g.beginPath(); g.moveTo(0, hy + 1); ys.forEach((y, i) => g.lineTo(i * 8, y)); g.lineTo(W + 8, hy + 1); g.fill();
+        if (isWinter() && hh > .06) {   // in winter, snow on the far hills catches the lantern light
+          g.fillStyle = 'rgba(190,180,215,.32)'; g.beginPath(); ys.forEach((y, i) => i ? g.lineTo(i * 8, y) : g.moveTo(0, y));
+          for (let i = ys.length - 1; i >= 0; i--) g.lineTo(i * 8, ys[i] + H * .012 * (.6 + .4 * Math.sin(i * 1.7))); g.fill();
+        }
         g.fillStyle = rc; g.beginPath(); g.moveTo(0, hy); ys.forEach((y, i) => g.lineTo(i * 8, hy + (hy - y) * .8)); g.lineTo(W + 8, hy); g.fill();
       }
       g.fillStyle = 'rgba(255,190,150,.18)'; g.fillRect(0, hy, W, 1);
@@ -443,7 +449,7 @@ export function harbourScene() {
       if (d < .5) { g.globalAlpha = 1 - d * 2; stars(g, Math.round(W * H / 3000), hy * .8); g.globalAlpha = 1; }
       const sunX = W * .62, sunA = 1 - Math.abs(d - .5) * 2;
       if (d > .15) { glow(g, sunX, hy, W * .6, skyMix([0, 0, 0], [255, 170, 110], [255, 240, 210], d), .45 * Math.max(sunA, .3)); glow(g, sunX, hy - H * .02, s * .05, skyMix([0, 0, 0], [255, 220, 170], [255, 250, 235], d), .9 * sunA); }
-      else { glow(g, W * .25, H * .18, s * .25, [180, 190, 230], .2); g.fillStyle = '#e8e6d8'; g.beginPath(); g.arc(W * .25, H * .18, s * .025, 0, TAU); g.fill(); }
+      else { glow(g, W * .25, H * .18, s * .25, [180, 190, 230], .2 * (.3 + .7 * (1 - Math.abs(moonPhase() * 2 - 1)))); drawMoon(g, W * .25, H * .18, s * .025, '#e8e6d8'); }   // tonight's moon
       // Far hills behind the harbour.
       g.fillStyle = rgb(skyMix([10, 12, 24], [90, 70, 96], [120, 140, 160], d));
       g.beginPath(); g.moveTo(0, hy); for (let x = 0; x <= W * .55; x += 6) g.lineTo(x, hy - H * .06 * Math.pow(1 - x / (W * .55), .7) * (.8 + .2 * Math.sin(x * .02))); g.lineTo(W * .55, hy); g.fill();

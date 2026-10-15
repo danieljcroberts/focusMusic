@@ -18,13 +18,14 @@ import './finish.js';
 import { closeMenus } from './menus.js';
 import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
-import { initMoods } from './moods.js';
+import { initMoods, applyMood } from './moods.js';
+import { lookback } from './lookback.js';
 import './tour.js';
 import './scenesets.js';
 import * as ST from './soundtracks.js';
 import { addPhotos, removePhoto, photos, loadPhotos, onPhotosChange } from './scenes/photos.js';
 import { EXTRA_KINDS, extraList, addExtra, removeExtra, setExtraLevel } from './ambience.js';
-import { tickSleep, wakeFromSleep } from './sleep.js';
+import { tickSleep, wakeFromSleep, sleepPace } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
@@ -149,7 +150,19 @@ window.addEventListener('sw-scene-loaded', e => {
   ready[i] = false;
   if (i === cur) { ensure(cur); show(cur); updateText(); if (still) render(0); }
 });
-function ensure(i) { if (!ready[i]) { try { instances[i].init(); } catch (e) { fail(i, e); } ready[i] = true; } }
+function ensure(i) {
+  if (!ready[i]) { const c = costs[SCENES[i].key]; if (c && !costApplied.has(i)) { costApplied.add(i); instances[i].cost = c; } try { instances[i].init(); } catch (e) { fail(i, e); } ready[i] = true; }
+}
+/* Per-scene cost on this device: the render scale each shader scene's governor settled on, kept so a scene that is heavy
+   here starts at the scale it needs instead of stuttering for a few seconds first. Not kept while low power is on. */
+const costs = state.costs || {}, costApplied = new Set();
+function keepCost(i) {
+  const c = instances[i] && instances[i].cost; if (!c || lowPower) return;
+  const k = SCENES[i].key, was = costs[k];
+  if (c.scale < 1 || c.skip) costs[k] = { scale: +c.scale.toFixed(2), skip: c.skip }; else delete costs[k];
+  if (JSON.stringify(was) !== JSON.stringify(costs[k])) saveState({ costs });
+}
+window.addEventListener('pagehide', () => keepCost(cur));
 function stageOf(inst) { return inst.kind === 'canvas' ? cv : inst.kind === 'image' ? stillImg : (inst.canvas || glc); }
 function show(i) {
   const inst = instances[i], target = broken[i] ? cv : stageOf(inst);
@@ -204,7 +217,7 @@ function snapshot() {
 function go(i) {
   i = (i + SCENES.length) % SCENES.length;
   if (i === cur) return;
-  snapshot();
+  keepCost(cur); snapshot();
   fade = still ? 0 : 1; fadeAt = performance.now(); fadeCv.style.opacity = fade;
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); onSceneChange();
@@ -282,7 +295,8 @@ function render(dt) {
   try { inst.draw(t, dt); }
   catch (e) { fail(cur, e); show(cur); setStatus(`${SCENES[cur].name} stopped with an error; the diagnostics overlay (\`) has the details.`); }
   drawMs += (performance.now() - d0 - drawMs) * .05;
-  if (fade > 0) { fade = Math.max(0, 1 - (performance.now() - fadeAt) / 1400); fadeCv.style.opacity = fade; }
+  // The old scene dissolves into the new one; while the new one's code is still loading, the old picture holds.
+  if (fade > 0) { if (inst.loaded === false) fadeAt = performance.now(); fade = Math.max(0, 1 - (performance.now() - fadeAt) / 2200); fadeCv.style.opacity = fade; }
 }
 let drawMs = 0;
 
@@ -357,8 +371,8 @@ el('copyDiagBtn').addEventListener('click', async () => {
 // Seconds spent on each scene, for the picker's Most watched order; saved now and then.
 const watch = state.watch || {}; let watchSaved = 0;
 function frame(now) {
-  const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
-  if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + dt; if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
+  const real = (now - last) / 1000, dt = Math.min(.05, real) * sleepPace(now); last = now; t += dt;   // the sleep timer slows the scene toward the end
+  if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + Math.min(.05, real); if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
   tickDrift(now); tickSleep(now); tickPulse(dt); tickGrade(now); tickHaptic(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
@@ -572,6 +586,15 @@ window.addEventListener('sw-block-done', e => {
   summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 20000);
 });
 el('sumClose').addEventListener('click', () => { summary.hidden = true; });
+// The first open in a new week: last week's look-back on the same card, staying up a little longer.
+setTimeout(() => {
+  if (!el('hint1').hidden || !summary.hidden) return;
+  const w = lookback(); if (!w) return;
+  el('sumHead').textContent = w.head; el('sumBody').textContent = w.body;
+  const ol = el('sumTracks'); ol.textContent = '';
+  for (const x of w.items) { const li = document.createElement('li'); li.textContent = x; ol.append(li); }
+  summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 45000);
+}, 5000);
 
 // Feel the beat: a light buzz on strong beats in the visualiser scenes, off unless turned on.
 let hapticBeat = !!state.hapticBeat, beatCool = 0, lastBass = 0;
@@ -758,6 +781,8 @@ if (state.hidden && el('hint1').hidden) hide(); else wake();   // start as you l
 // App-icon shortcuts: ?start=focus starts a focus block.
 const q = new URLSearchParams(location.search);
 if (q.get('start') === 'focus' && !timerRunning()) { toggleTimer(); caption('Focus block started'); }
+// ?mood=study|relax|sleep: the long-press shortcuts on the app icon. Music may wait for a first tap where the browser insists.
+if (['study', 'relax', 'sleep'].includes(q.get('mood'))) { if (!el('hint1').hidden) el('hint1Ok').click(); applyMood(q.get('mood')); }
 if (location.search) history.replaceState(null, '', location.pathname + location.hash);
 scheduleThumb();
 // Once the app has settled, fetch the rest of the scenes' code quietly, so they open at once and work offline.

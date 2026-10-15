@@ -62,10 +62,25 @@ el('offlineBtn').addEventListener('click', async () => {
       const r = await fetch(files[i]); if (!r.ok) throw new Error(r.status);
       await c.put(files[i], r);
     }
-    setStatus('Music saved. The scenes and the bundled tracks now work without a connection.');
+    setStatus('Music saved. The bundled tracks now work without a connection.');
   } catch (e) { setStatus("Couldn't save the music. Check the connection and try again."); }
 });
 
+// Every scene's code, art, video and thumbnail, so all of them open without a connection (not just the ones seen so far).
+el('offlineScenesBtn').addEventListener('click', async () => {
+  if (!('caches' in window)) { setStatus("This browser can't store files for offline use."); return; }
+  try {
+    const { files } = await (await fetch('offline.json', { cache: 'no-store' })).json();
+    const c = await caches.open('slow-windows-v2');
+    for (let i = 0; i < files.length; i++) {
+      setStatus(`Saving scenes for offline use: ${i + 1} of ${files.length}`);
+      if (await c.match(files[i])) continue;
+      const r = await fetch(files[i]); if (!r.ok) throw new Error(r.status);
+      await c.put(files[i], r);
+    }
+    setStatus('Every scene is saved on this device and opens without a connection.');
+  } catch (e) { setStatus("Couldn't save the scenes. Check the connection and try again."); }
+});
 const ksBtn = el('keepStreamsBtn');
 const drawKs = async () => { ksBtn.setAttribute('aria-pressed', String(keepStreams)); const n = await cachedStreams(); ksBtn.textContent = `Keep streams I've heard${n ? ` (${n} kept)` : ''}`; };
 ksBtn.addEventListener('click', () => { setKeepStreams(!keepStreams); drawKs(); });
