@@ -79,6 +79,7 @@ setInterval(() => {
       const long = timer.every > 0 && timer.count % timer.every === 0;
       timer.mode = long ? 'long' : 'break'; timer.left = (long ? timer.lb : timer.b) * 60;
       window.dispatchEvent(new CustomEvent('sw-timer', { detail: 'break' }));
+      window.dispatchEvent(new CustomEvent('sw-block-done', { detail: { min: timer.f, scene: sceneName(), count: timer.count, break: long ? timer.lb : timer.b } }));
       chime(long ? [660, 880, 1100] : [660, 880]); setStatus(long ? `Focus block done. Long break: ${timer.lb} minutes.` : 'Focus block done. Break started.');
       notify('Focus block done', `${long ? 'Long break' : 'Break'} for ${long ? timer.lb : timer.b} minutes.`); setDuck(true);
     } else {
@@ -106,4 +107,11 @@ el('tApply').addEventListener('click', () => {
 el('tReset').addEventListener('click', () => reset());
 window.addEventListener('pagehide', save);
 export const timerRunning = () => timer.running;
+export const focusRunning = () => timer.running && timer.mode === 'focus';
+// The last seven days as minutes per day, oldest first, for the chart in the sheet.
+export function weekBars() {
+  const log = state.sessions || [], out = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const day = d.toDateString(); out.push({ label: d.toLocaleDateString([], { weekday: 'narrow' }), min: log.filter(s => new Date(s.at).toDateString() === day).reduce((a, s) => a + s.min, 0) }); }
+  return out;
+}
 export function initTimer(opts) { sceneName = opts.sceneName; setDuck(timer.mode !== 'focus'); draw(); }

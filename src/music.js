@@ -288,7 +288,8 @@ function begin(p, seekTo, fade) {
 function start(url, tight = false) {
   hasSrc = true; queued = false; startedAt = performance.now();
   const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
-  const fadeIn = tight ? .08 : seekTo == null ? FADE : 1.2, fadeOut = tight ? .08 : FADE;
+  const slow = slowNext; slowNext = false;
+  const fadeIn = tight ? .08 : seekTo == null ? (slow ? 8 : FADE) : 1.2, fadeOut = tight ? .08 : slow ? 8 : FADE;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
@@ -406,7 +407,11 @@ function pickNext(relaxed = false) {
 // History: the last 30 tracks that started, so Previous can step back and Next can step forward again before picking anew.
 const hist = [];
 let histIdx = -1, replaying = false;
+// What started when, for the end-of-block summary.
+const played = [];
+export const playedSince = ts => played.filter(p => p.at >= ts);
 function remember(entry) {
+  { const t = entry.kind === 'own' ? entry.e : entry.t; if (t && !replaying) { played.push({ at: Date.now(), t: t.t, a: t.a }); if (played.length > 60) played.shift(); } }
   if (replaying) return;
   hist.splice(histIdx + 1); hist.push(entry);
   if (hist.length > 30) hist.shift();
@@ -422,9 +427,23 @@ function replay(en) {
 }
 // For the soundtrack screens: play one of the viewer's tracks to hear it while sorting.
 export async function previewOwn(id) { const e = ownTracks().find(x => x.id === id); if (e) await playOwn(e); }
+// Up next: tracks you asked for, played in order before the shuffle resumes.
+const upNext = [];
+export const queue = () => upNext;
+export function playNext(item) { upNext.push(item); drawUpNext(); setStatus(`Up next: ${item.t} — ${item.a}.`); }
+export function clearQueue() { upNext.length = 0; drawUpNext(); }
+function drawUpNext() {
+  const box = el('upNext'); if (!box) return;
+  box.hidden = !upNext.length;
+  box.textContent = upNext.length ? `Up next: ${upNext.map(x => x.t).slice(0, 3).join(', ')}${upNext.length > 3 ? ` and ${upNext.length - 3} more` : ''}` : '';
+}
+// One switch can ask for a longer, slower crossfade (a break starting, say).
+let slowNext = false;
+export function nextTrackSlowly() { slowNext = true; nextTrack(); }
 export function nextTrack() {
   // A Next within ten seconds of a track starting counts as a skip; the automatic ones (the track ending) as a play.
   if (curTrack && !curTrack.live) { if (queued || audio.ended) tally(keyOf(curTrack), 'p'); else if (performance.now() - startedAt < 10000) tally(keyOf(curTrack), 's'); }
+  if (upNext.length) { const q = upNext.shift(); drawUpNext(); if (q.own) { const e = ownTracks().find(x => x.id === q.id); if (e) return playOwn(e); } else return playTrack(q); }
   if (histIdx < hist.length - 1) { histIdx++; replay(hist[histIdx]); return; }
   pickNext();
 }
@@ -560,6 +579,7 @@ function ownSection() {
     const li = document.createElement('li'); li.dataset.k = 'own:' + e.id;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'pl'; b.textContent = '▶'; b.setAttribute('aria-label', `Play ${e.t}`);
     b.addEventListener('click', () => playOwn(e));
+    const qn = document.createElement('button'); qn.type = 'button'; qn.className = 'rm'; qn.textContent = 'play next'; qn.addEventListener('click', () => playNext({ own: true, id: e.id, t: e.t, a: e.a }));
     const body = document.createElement('div');
     const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${e.t} — ${e.a}`;
     const mm = document.createElement('div'); mm.className = 'm';
@@ -567,7 +587,7 @@ function ownSection() {
     mm.textContent = `${inSt.length ? inSt.join(', ') : 'in no soundtrack yet'} · ${(e.size / 1e6).toFixed(1)} MB`;
     const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove ${e.t}`);
     x.addEventListener('click', async () => { await removeOwn(e.id); ST.prune(ownTracks().map(x => x.id)); renderLib(); });
-    mm.append(' · ', x);
+    mm.append(' · ', qn, ' · ', x);
     body.append(tt, mm); li.append(b, body); ol.append(li);
   }
   sec.append(h, note, row, ol);
@@ -600,6 +620,8 @@ export function renderLib() {
       if (t.src) mm.append(' · ', link(t.src, 'Source ↗'));
       if (t.stream && !t.file && iaOnline === false) { const e = document.createElement('em'); e.textContent = 'streams when run with a connection'; mm.append(' · ', e); }
       if (t.note) mm.append(document.createElement('br'), t.note);
+      const qn = document.createElement('button'); qn.type = 'button'; qn.className = 'rm'; qn.textContent = 'play next'; qn.disabled = !playable(t);
+      qn.addEventListener('click', () => playNext(t)); mm.append(' · ', qn);
       const nv = document.createElement('button'); nv.type = 'button'; nv.className = 'rm'; nv.textContent = never.has(key(t)) ? 'play again' : 'never play'; nv.title = 'Leave this track out of every soundtrack';
       nv.addEventListener('click', () => setNever(t, !never.has(key(t)))); mm.append(' · ', nv);
       if (never.has(key(t))) li.classList.add('never');

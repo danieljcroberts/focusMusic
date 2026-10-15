@@ -4,7 +4,7 @@
 import * as ST from './soundtracks.js';
 import { addOwn, ownTracks, isAudio, durations, fmtDur, rereadTags } from './mine.js';
 import { measure } from './measure.js';
-import { musicPlaying, nextTrack, previewOwn, togglePlay, follow } from './music.js';
+import { musicPlaying, nextTrack, nextTrackSlowly, previewOwn, togglePlay, follow } from './music.js';
 import { kvGet, kvSet } from './store.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
@@ -319,7 +319,7 @@ window.addEventListener('sw-scene', e => {
 window.addEventListener('sw-timer', e => {
   if (!state.stTimer) return;
   const id = ST.forTimer(e.detail);
-  if (ST.current().id !== id) { ST.setCurrent(id); if (musicPlaying) nextTrack(); }
+  if (ST.current().id !== id) { ST.setCurrent(id); if (musicPlaying) nextTrackSlowly(); }   // an eight-second crossfade
 });
 window.addEventListener('sw-own-loaded', () => {
   if (state.stMigrated) return;

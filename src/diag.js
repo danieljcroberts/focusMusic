@@ -24,6 +24,8 @@ export function gpuName() {
 }
 export const diagOn = () => !box.hidden;
 export function toggleDiag(on = box.hidden) { box.hidden = !on; }
+// The same text as the overlay, whether it is showing or not, for copying into a message.
+export const diagText = lines => [...lines, ...(notes.length ? ['', 'notes:', ...notes] : []), ...(errors.length ? ['', 'last errors:', ...errors] : [])].join('\n');
 export function setDiag(lines) {
   if (box.hidden) return;
   box.textContent = [...lines, ...(notes.length ? ['', 'notes:', ...notes] : []), ...(errors.length ? ['', 'last errors:', ...errors] : [])].join('\n');

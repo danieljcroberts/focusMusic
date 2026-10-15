@@ -9,7 +9,7 @@ import { TRACKS, keepStreams, setKeepStreams, cachedStreams } from './music.js';
 import { localOn, enableLocal, disableLocal } from './local.js';
 import { diagOn, toggleDiag } from './diag.js';
 import { finishOn, setFinish } from './finish.js';
-import { weekLine } from './timer.js';
+import { weekLine, weekBars } from './timer.js';
 import { closeMenus } from './menus.js';
 import { whenSheetOpens } from './sheet.js';
 import { openAbout } from './about.js';
@@ -87,8 +87,18 @@ let drawDiag = () => {};
 export function setDiagOn(on) { toggleDiag(on); diagBtn.setAttribute('aria-pressed', String(on)); if (on) drawDiag(); }
 diagBtn.addEventListener('click', () => setDiagOn(!diagOn()));
 
+function drawWeek() {
+  const bars = weekBars(), max = Math.max(25, ...bars.map(b => b.min)), box = el('weekBars');
+  box.textContent = '';
+  for (const b of bars) {
+    const col = document.createElement('span'); col.className = 'wk';
+    const bar = document.createElement('i'); bar.style.height = `${Math.round(b.min / max * 100)}%`; bar.title = `${b.min} min`;
+    const lab = document.createElement('small'); lab.textContent = b.label;
+    col.append(bar, lab); box.append(col);
+  }
+}
 whenSheetOpens(() => {
   if (wxAuto.getAttribute('aria-pressed') === 'true') wx.value = weather;
-  el('weekLine').textContent = weekLine();
+  el('weekLine').textContent = weekLine(); drawWeek();
 });
 export function initSettings(opts) { drawDiag = opts.drawDiag; }

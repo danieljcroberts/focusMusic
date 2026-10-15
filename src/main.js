@@ -8,15 +8,15 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
-import { report, gpuName, diagOn, setDiag } from './diag.js';
+import { report, gpuName, diagOn, setDiag, diagText } from './diag.js';
 import { kvAll, kvSet } from './store.js';
 import './finish.js';
 import { closeMenus } from './menus.js';
-import { initTimer, toggleTimer } from './timer.js';
+import { initTimer, toggleTimer, focusRunning } from './timer.js';
 import { tickSleep, wakeFromSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
@@ -296,18 +296,26 @@ function watchFps(real) {
     if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off in the top bar.'); }
   } else slowFor = 0;
 }
-function drawDiag() {
+function drawDiag() { setDiag(diagLines()); }
+function diagLines() {
   const s = SCENES[cur], inst = instances[cur], st = stageOf(inst), amb = ambienceState();
-  setDiag([
+  return [
     `${s.name} · ${inst.kind} ${st.width || st.videoWidth || '?'}×${st.height || st.videoHeight || '?'} · DPR ${DPR}${lowPower ? ' · low power' : ''}${lively ? ' · lively' : ''}${broken[cur] ? ' · BROKEN' : ''}`,
     `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}${inst.kind === 'webgl' && (governor.scale < 1 || governor.skip) ? ` · governor ${Math.round(governor.scale * 100)}%${governor.skip ? ', half rate' : ''}` : ''}`,
     `weather ${weather.toFixed(2)} · daylight ${daylight().toFixed(2)}${localOn ? ' (local)' : ''}`,
     `music ${musicPlaying ? 'playing' : 'off'} · level ${musicLevel.toFixed(2)} · bass ${bands.bass.toFixed(2)} mid ${bands.mid.toFixed(2)} treble ${bands.treble.toFixed(2)}`,
     `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
-  ]);
+  ];
 }
+el('copyDiagBtn').addEventListener('click', async () => {
+  const text = [`Slow Windows · ${new Date().toISOString()} · ${navigator.userAgent}`, `installed ${window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches} · track ${el('npTitle').textContent}`, '', diagText(diagLines())].join('\n');
+  try { await navigator.clipboard.writeText(text); setStatus('Diagnostics copied. Paste them into a message.'); } catch (e) { setStatus("Couldn't copy: the browser refused. Turn on Diagnostics and take a screenshot instead."); }
+});
+// Seconds spent on each scene, for the picker's Most watched order; saved now and then.
+const watch = state.watch || {}; let watchSaved = 0;
 function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
+  if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + dt; if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
   tickDrift(now); tickSleep(now); tickPulse(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
@@ -338,7 +346,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -475,12 +483,45 @@ window.addEventListener('touchend', e => {
     const low = p.clientY > H * .8;
     tapTimer = setTimeout(() => {
       tapTimer = null;
+      if (quiet && focusRunning() && document.body.classList.contains('idle') && mini.hidden) { if (!quietTold) { quietTold = true; caption('Focusing · swipe up for the controls'); } return; }
       if (!mini.hidden) hideMini();                                          // any tap on the scene puts the mini player away
       else if (document.body.classList.contains('idle')) { if (low) showMini(); else showByHand(); }   // near the bottom: the mini player
       else hideByHand();
     }, 260);
   }
 }, { passive: true });
+
+// Quiet focus: the setting, on unless turned off.
+let quiet = state.quiet ?? true, quietTold = false;
+const quietBtn = el('quietBtn'); quietBtn.setAttribute('aria-pressed', String(quiet));
+quietBtn.addEventListener('click', () => { quiet = !quiet; quietBtn.setAttribute('aria-pressed', String(quiet)); saveState({ quiet }); });
+window.addEventListener('sw-timer', e => { if (e.detail === 'focus') quietTold = false; });
+
+// Breaks change the scene: a light, calm scene for the break (a favourite if there is one), and the focus block brings
+// yours back.
+let breakScene = !!state.breakScene, beforeBreak = -1;
+const breakBtn = el('breakSceneBtn'); breakBtn.setAttribute('aria-pressed', String(breakScene));
+breakBtn.addEventListener('click', () => { breakScene = !breakScene; breakBtn.setAttribute('aria-pressed', String(breakScene)); saveState({ breakScene }); });
+window.addEventListener('sw-timer', e => {
+  if (!breakScene) return;
+  if (e.detail === 'break') {
+    const light = SCENES.map((s, i) => i).filter(i => i !== cur && ['bright', 'warm', 'calm'].includes(SCENES[i].tone) && SCENES[i].mood !== 'night' && SCENES[i].group !== 'Trip' && SCENES[i].group !== 'Classic visualisers');
+    const favs = light.filter(i => (state.favs || []).includes(SCENES[i].name)), pool = favs.length ? favs : light;
+    if (pool.length) { beforeBreak = cur; go(pool[Math.floor(Math.random() * pool.length)]); }
+  } else if (beforeBreak >= 0) { go(beforeBreak); beforeBreak = -1; }
+});
+
+// The end of a focus block: a small card with the minutes, the scene and what played, gone after a while.
+const summary = el('summary'); let summaryTimer;
+window.addEventListener('sw-block-done', e => {
+  const { min, scene, count, break: br } = e.detail, tracks = playedSince(Date.now() - min * 60000);
+  el('sumHead').textContent = `${min} minutes of focus`;
+  el('sumBody').textContent = `Block ${count} today · ${scene}${tracks.length ? ` · ${tracks.length} track${tracks.length === 1 ? '' : 's'}` : ''} · ${br} minute break`;
+  const ol = el('sumTracks'); ol.textContent = '';
+  for (const t of tracks.slice(-5)) { const li = document.createElement('li'); li.textContent = `${t.t} — ${t.a}`; ol.append(li); }
+  summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 20000);
+});
+el('sumClose').addEventListener('click', () => { summary.hidden = true; });
 
 /* Mini player: the track and previous / play / next, over the bottom of the scene while the controls stay hidden.
    It follows the main player and tucks itself away after a few quiet seconds. Tapping the title opens the full controls. */
@@ -518,11 +559,12 @@ el('miniTitle').addEventListener('click', () => { hideMini(); showByHand(); });
 const picker = el('picker'), pickerGrid = el('pickerGrid');
 // holding: the finger that opened the grid is still down; liftAt: when it came up. Taps are ignored until just after the lift.
 let pickerTiles = null, holding = false, liftAt = 0;
+let pickMode = state.pickMode || 'all', pickHeads = [];
 function buildPicker() {
-  pickerTiles = [];
+  pickerTiles = []; pickHeads = [];
   let g = '';
   SCENES.forEach((s, i) => {
-    if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; pickerGrid.append(h); }
+    if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; h.dataset.g = g; pickerGrid.append(h); pickHeads.push(h); }
     const b = document.createElement('button'); b.type = 'button';
     const t = document.createElement('span'); t.className = 'pt'; t.style.background = s.sw;
     const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.src = `assets/thumbs/${slug(s)}.jpg`; t.append(im);
@@ -540,9 +582,19 @@ function openPicker() {
     const url = thumbs[SCENES[i].name];
     if (url && im.getAttribute('src') !== url) { im.src = url; im.hidden = false; }
   });
+  applyPickMode();
   picker.hidden = false;
-  pickerTiles[cur].b.scrollIntoView({ block: 'center' });
+  if (!pickerTiles[cur].b.hidden) pickerTiles[cur].b.scrollIntoView({ block: 'center' }); else pickerGrid.scrollTop = 0;
 }
+// All, by group; Favourites only; or Most watched, one list ordered by the time spent on each.
+function applyPickMode() {
+  const favs = new Set(state.favs || []), rank = SCENES.map((s, i) => i).sort((a, b) => (watch[SCENES[b].name] || 0) - (watch[SCENES[a].name] || 0));
+  pickerTiles.forEach(({ b }, i) => { b.hidden = pickMode === 'fav' && !favs.has(SCENES[i].name); b.style.order = pickMode === 'most' ? String(rank.indexOf(i)) : ''; });
+  pickHeads.forEach(h => { h.hidden = pickMode === 'most' || (pickMode === 'fav' && !SCENES.some(s => s.group === h.dataset.g && favs.has(s.name))); });
+  if (pickMode === 'fav' && !favs.size) pickerGrid.dataset.empty = 'Star scenes with Favourite to see them here.'; else delete pickerGrid.dataset.empty;
+  el('pickMode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === pickMode)));
+}
+el('pickMode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { pickMode = b.dataset.m; saveState({ pickMode }); if (pickerTiles) applyPickMode(); pickerGrid.scrollTop = 0; }));
 function closePicker() { picker.hidden = true; }
 el('pickerClose').addEventListener('click', closePicker);
 el('sceneBtn').addEventListener('click', () => openPicker());

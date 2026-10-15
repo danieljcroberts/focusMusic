@@ -213,6 +213,18 @@ body.idle .ring { opacity: .75; }
 .picker .grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; align-content: start; }
 .picker .grid h3 { grid-column: 1 / -1; margin: 10px 0 0; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 .picker .grid { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.picker .grid[data-empty]::before { content: attr(data-empty); grid-column: 1 / -1; color: var(--muted); font-size: 13px; padding: 20px 0; }
+.pickmode { width: fit-content; }
+.week { display: flex; align-items: flex-end; gap: 8px; height: 64px; padding: 4px 0; }
+.week .wk { flex: 1; display: grid; grid-template-rows: 1fr auto; justify-items: center; gap: 3px; height: 100%; }
+.week .wk i { align-self: end; width: 100%; max-width: 22px; min-height: 2px; border-radius: 4px 4px 1px 1px; background: var(--accent); opacity: .85; }
+.week .wk small { font-size: 10px; color: var(--muted); }
+.upnext { margin: 0; }
+.summary { position: fixed; z-index: 7; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); transform: translateX(-50%); width: min(380px, calc(100% - 32px)); display: grid; gap: 6px; justify-items: start;
+  padding: 16px 18px; background: rgba(9, 10, 14, .9); border: 1px solid var(--line); border-radius: 16px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.summary b { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 400; font-size: 22px; }
+.summary span { font-size: 12px; color: var(--muted); }
+.summary ol { margin: 4px 0; padding-left: 18px; font-size: 12px; display: grid; gap: 2px; }
 .picker .grid button { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(236, 230, 218, .05); display: grid; gap: 6px; padding: 6px; border-radius: 12px; text-align: left; font-size: 12px; }
 .picker .grid button[aria-pressed="true"] { border-color: var(--accent); }
 .picker .grid .pt { aspect-ratio: 16 / 9; width: 100%; border-radius: 8px; overflow: hidden; display: block; }
