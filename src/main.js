@@ -4,7 +4,7 @@ import { A, ok } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { weather, tickWeather } from './weather.js';
-import { daylight } from './daylight.js';
+import { daylight, skyMix } from './daylight.js';
 import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
@@ -220,7 +220,7 @@ function caption(text) { toast.textContent = text; toast.classList.add('on'); cl
    level, smoothed. The scenes that react in their own way are left alone. */
 const REACTS = new Set(['spectrumBars', 'feedback', 'superscope', 'beatstars', 'dancingscope', 'scope', 'spectrum', 'ferrofluid', 'tunnel', 'synthwave', 'neonhighway', 'vector', 'lasers', 'memphis',
   'supercell', 'storm', 'lava', 'kaleido', 'marble', 'plasma', 'nebula', 'voronoi', 'blackhole', 'deepfield', 'hearth', 'aurora', 'ink', 'inkBeat', 'reaction', 'flow', 'murmuration',
-  'canopy', 'tide', 'lighthouse', 'clouds', 'train', 'cleanPower', 'offshore', 'blueprint', 'paperValley', 'solarNoon', 'rain', 'snow', 'cafe', 'windscreen', 'greenhouse', 'library', 'lanterns', 'volcano', 'saturn', 'orrery', 'ocean', 'jellyfish', 'mandel', 'mandala', 'holmestrand']);
+  'canopy', 'tide', 'lighthouse', 'clouds', 'train', 'cleanPower', 'offshore', 'blueprint', 'paperValley', 'solarNoon', 'rain', 'snow', 'cafe', 'windscreen', 'greenhouse', 'library', 'lanterns', 'volcano', 'saturn', 'orrery', 'ocean', 'jellyfish', 'mandel', 'mandala', 'holmestrand', 'polarNight', 'kelp']);
 let pulse = 1;
 function tickPulse(dt) {
   const want = musicPlaying && !REACTS.has(SCENES[cur].key) ? 1 + bands.bass * .05 + musicLevel * .03 : 1;
@@ -228,6 +228,24 @@ function tickPulse(dt) {
   const on = Math.abs(pulse - 1) > .003;
   document.body.classList.toggle('pulse', on);
   if (on) document.body.style.setProperty('--pulse', pulse.toFixed(3));
+}
+/* Time of day and season for the pixel-art landscapes (and Bamboo and Canopy), which were drawn for one hour and one time of year: a multiplied
+   tint follows the clock (cool and dark at night, warm at dusk, clear by day), and a light colour grade follows the
+   month (fresher in spring, richer in summer, turning gold in autumn, paler in winter). Recomputed once a second. */
+const CLOCKED = new Set(['woods', 'ridge', 'peaks', 'seaview', 'summits', 'pier', 'bamboo', 'canopy']);
+const SEASONED = new Set(['woods', 'ridge', 'peaks', 'seaview', 'pier', 'campfire', 'pixeltrain']);
+const SEASON_GRADE = ['saturate(1.05) hue-rotate(-4deg)', 'saturate(1.15)', 'sepia(.22) saturate(1.2) hue-rotate(-14deg)', 'saturate(.68) brightness(1.04)'];
+const todEl = el('tod');
+let gradeAt = -1, gradeKey = '';
+function tickGrade(now) {
+  if (now - gradeAt < 1000 && gradeKey === SCENES[cur].key) return;
+  gradeAt = now; gradeKey = SCENES[cur].key;
+  const m = new Date().getMonth(), season = m <= 1 || m === 11 ? 3 : m <= 4 ? 0 : m <= 7 ? 1 : 2;
+  const sg = SEASONED.has(gradeKey) && !(season === 3 && gradeKey === 'summits') ? SEASON_GRADE[season] : '';
+  document.body.classList.toggle('season', !!sg);
+  if (sg) document.body.style.setProperty('--season', sg); else document.body.style.removeProperty('--season');
+  todEl.hidden = !CLOCKED.has(gradeKey);
+  if (!todEl.hidden) { const [r, g, b] = skyMix([62, 78, 132], [255, 186, 150], [255, 255, 255]); todEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`; }
 }
 /* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
    snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
@@ -342,7 +360,7 @@ function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real); last = now; t += dt;
   if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + dt; if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
-  tickDrift(now); tickSleep(now); tickPulse(dt); tickHaptic(dt);
+  tickDrift(now); tickSleep(now); tickPulse(dt); tickGrade(now); tickHaptic(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
   if (picker.hidden) { render(dt); drawWx(dt); }   // nothing to draw behind the full-screen scene grid
   requestAnimationFrame(frame);

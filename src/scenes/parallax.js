@@ -38,7 +38,8 @@ export function driftScene(o) {
         const z = 1.08 + .04 * Math.sin(t * .021);
         const s = Math.max(W / im.naturalWidth, H / im.naturalHeight) * z;
         const w = im.naturalWidth * s, h = im.naturalHeight * s;
-        const px = (W - w) / 2 + Math.sin(t * .013) * (w - W) * .4, py = (H - h) / 2 + Math.cos(t * .011) * (h - H) * .4;
+        // On a tall screen the pan would wander over the whole width; a focus (o.fx, 0 to 1 across the picture) keeps it near the subject.
+        const px = o.fx !== undefined && W < H ? Math.min(0, Math.max(W - w, W / 2 - o.fx * w + Math.sin(t * .013) * w * .04)) : (W - w) / 2 + Math.sin(t * .013) * (w - W) * .4, py = (H - h) / 2 + Math.cos(t * .011) * (h - H) * .4;
         ctx.drawImage(im, px, py, w, h);
       }
       if (o.extra) o.extra(t, dt);

@@ -68,9 +68,10 @@ export function photosScene() {
       ctx.fillStyle = '#06070b'; ctx.fillRect(0, 0, W, H);
       if (!list.length) {
         ctx.fillStyle = '#ece6da'; ctx.font = '15px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
-        ctx.fillText('Add your own photos under Scene in the ⋯ sheet.', W / 2, H * .45);
+        const lines = W < 520 ? ['Add your own photos under', 'Scene in the ⋯ sheet.'] : ['Add your own photos under Scene in the ⋯ sheet.'];
+        lines.forEach((l, i) => ctx.fillText(l, W / 2, H * .45 + i * 22));
         ctx.fillStyle = '#b3ab9b'; ctx.font = '12px "IBM Plex Mono", monospace';
-        ctx.fillText('They stay on this device.', W / 2, H * .45 + 26); ctx.textAlign = 'start';
+        ctx.fillText('They stay on this device.', W / 2, H * .45 + lines.length * 22 + 6); ctx.textAlign = 'start';
         return;
       }
       const now = performance.now() / 1000;

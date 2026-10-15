@@ -1,8 +1,7 @@
-// Space: Saturn's rings, a brass orrery, a black hole, a comet, a deep field and a Martian dust storm.
+// Space: Saturn's rings, a brass orrery, a black hole and a deep field. Comet Pass and Mars Dust Storm are in shaded3.js.
 import { W, H, DPR, ctx, lowPower, lively } from '../view.js';
 import { rand, hash, mix, rgb, layer, plain, glow } from '../util.js';
 import { img, ok } from '../assets.js';
-import { weather } from '../weather.js';
 import { bands } from '../music.js';
 import { shaderScene } from './trip.js';
 import { threeScene, dotTexture } from './three-scenes.js';
@@ -109,7 +108,7 @@ export const saturnScene = () => threeScene(THREE => {
       disc.material.uniforms.glow.value = 1 + .08 * bands.bass;
       // Turn toward Saturn just enough to keep its limb in the left part of the frame at any aspect.
       const hf = Math.atan(Math.tan(THREE.MathUtils.degToRad(25)) * camera.aspect);
-      const yaw = THREE.MathUtils.degToRad(62) - hf * .3 + Math.sin(t * .021) * .02;
+      const yaw = THREE.MathUtils.degToRad(62 + Math.max(0, 1 - camera.aspect) * 14) - hf * .3 + Math.sin(t * .021) * .02;   // a narrow frame turns further toward the planet
       camera.position.set(0, 1.4 + Math.sin(t * .05) * .25, 0);
       look.set(-Math.sin(yaw), -.06 + Math.sin(t * .033) * .01, -Math.cos(yaw)).add(camera.position);
       camera.lookAt(look);
@@ -304,92 +303,6 @@ void main(){
   gl_FragColor = vec4(col, 1.);
 }`, { speed: 1, res: .8 });
 
-/* Comet Pass: a comet crossing the stars over twenty minutes, its tails growing as it nears an unseen sun */
-export function cometScene() {
-  const LOOP = 1200;
-  let sky, dust, ion, bright, sun;
-  return {
-    init() {
-      let g; [sky, g] = layer(W + 60, H + 40);
-      const gr = g.createLinearGradient(0, 0, 0, H);
-      gr.addColorStop(0, '#03040a'); gr.addColorStop(1, '#080a14'); g.fillStyle = gr; g.fillRect(0, 0, W + 60, H + 40);
-      // A faint band of the Milky Way across the sky.
-      g.save(); g.translate((W + 60) / 2, (H + 40) / 2); g.rotate(-.5); g.scale(1, .16);
-      glow(g, 0, 0, Math.max(W, H) * .9, [150, 150, 190], .1); g.restore();
-      const n = Math.round((W + 60) * (H + 40) / 900);
-      for (let i = 0; i < n; i++) {
-        g.fillStyle = `rgba(${Math.random() < .2 ? '255,226,200' : Math.random() < .3 ? '200,214,255' : '236,238,255'},${rand(.12, .6)})`;
-        g.beginPath(); g.arc(rand(0, W + 60), rand(0, H + 40), rand(.25, .85), 0, TAU); g.fill();
-      }
-      bright = Array.from({ length: 34 }, () => ({ x: rand(-30, W + 30), y: rand(-20, H + 20), r: rand(.8, 1.7), ph: rand(0, TAU), sp: rand(.25, .6), c: Math.random() < .3 ? [255, 222, 190] : [220, 230, 255] }));
-      // The unseen sun's glow at the bottom edge.
-      [sun, g] = layer(W, H);
-      glow(g, W * .8, H * 1.3, Math.max(W, H) * .8, [255, 214, 160], .2);
-      // Tail sprites along +x, scaled to length each frame.
-      let tg; [dust, tg] = layer(900, 320);
-      tg.globalCompositeOperation = 'lighter';
-      // A fan of synchrones: dust released at different times curves back by different amounts.
-      for (let k = 0; k < 60; k++) {
-        const c = k / 59, ln = tg.createLinearGradient(0, 0, 900, 0), a = .035 + .03 * Math.random();
-        ln.addColorStop(0, `rgba(255,240,214,${a * 2})`); ln.addColorStop(.3, `rgba(255,226,180,${a})`); ln.addColorStop(1, 'rgba(255,210,160,0)');
-        tg.strokeStyle = ln; tg.lineWidth = rand(3, 9);
-        tg.beginPath(); tg.moveTo(0, 30);
-        for (let x = 0; x <= 900; x += 30) tg.lineTo(x, 30 + c * 270 * Math.pow(x / 900, 1.7) + x * .02);
-        tg.stroke();
-      }
-      [ion, tg] = layer(900, 80);
-      tg.globalCompositeOperation = 'lighter';
-      for (let k = 0; k < 9; k++) {
-        const off = rand(-1, 1), ln = tg.createLinearGradient(0, 0, 900, 0);
-        const a = k === 0 ? .55 : rand(.1, .3);
-        ln.addColorStop(0, `rgba(150,196,255,${a})`); ln.addColorStop(.5, `rgba(110,160,255,${a * .5})`); ln.addColorStop(1, 'rgba(90,130,255,0)');
-        tg.strokeStyle = ln; tg.lineWidth = k === 0 ? 3 : rand(.6, 1.6);
-        tg.beginPath(); tg.moveTo(0, 40); tg.quadraticCurveTo(450, 40 + off * 6, 900, 40 + off * 22); tg.stroke();
-      }
-      const blur = tg.createLinearGradient(0, 0, 900, 0);
-      blur.addColorStop(0, 'rgba(120,170,255,.18)'); blur.addColorStop(1, 'rgba(120,170,255,0)');
-      tg.fillStyle = blur; tg.beginPath(); tg.moveTo(0, 36); tg.lineTo(900, 10); tg.lineTo(900, 70); tg.lineTo(0, 44); tg.fill();
-    },
-    draw(t) {
-      const m = Math.min(W, H), M = Math.max(W, H);
-      const p = ((t + LOOP * .42) % LOOP) / LOOP, sw = Math.sin(TAU * (t / LOOP + .42));
-      const ox = -30 + sw * 22, oy = -20 + sw * 8;
-      ctx.drawImage(sky, ox, oy, W + 60, H + 40);
-      ctx.drawImage(sun, 0, 0, W, H);
-      ctx.globalCompositeOperation = 'lighter';
-      for (const s of bright) {
-        const a = .55 + .35 * Math.sin(t * s.sp + s.ph) * Math.sin(t * s.sp * .37 + s.ph * 2);
-        const x = s.x + sw * 50, y = s.y + sw * 16;
-        glow(ctx, x, y, s.r * 5, s.c, a * .25);
-        ctx.fillStyle = rgb(s.c, a); ctx.beginPath(); ctx.arc(x, y, s.r, 0, TAU); ctx.fill();
-      }
-      // The comet's path: a shallow arc, closest to the sun in the middle of the loop.
-      const cx = W * (-.35 + 1.7 * p), cy = H * (.36 + .12 * Math.sin(p * Math.PI)) + 0;
-      const sx = W * .8, sy = H * 1.3;
-      const ang = Math.atan2(cy - sy, cx - sx);
-      const near = 1 - Math.min(1, Math.abs(p - .5) * 2.1);
-      const L = M * (.18 + .5 * Math.pow(near, 1.4)) * (W < H ? 1.1 : 1);
-      // Dust tail: curved, lagging behind the motion (the comet moves +x, so the curve bends back toward -x).
-      const side = Math.sin(ang) >= 0 ? 1 : -1;
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
-      ctx.scale(1, side);
-      ctx.globalAlpha = .6 + .4 * near;
-      ctx.drawImage(dust, 0, -30 * (L / 900), L, 320 * (L / 900));
-      ctx.scale(1, side);
-      ctx.globalAlpha = .3 + .45 * near;
-      const IL = L * 1.15;
-      ctx.drawImage(ion, 0, -40 * (IL / 900) * 1.3, IL, 80 * (IL / 900) * 1.3);
-      ctx.restore(); ctx.globalAlpha = 1;
-      // Coma and nucleus.
-      const cr = m * (.025 + .02 * near);
-      glow(ctx, cx, cy, cr * 2.4, [150, 220, 200], .14);
-      glow(ctx, cx, cy, cr, [220, 255, 240], .55);
-      glow(ctx, cx, cy, cr * .3, [255, 255, 255], .9);
-      ctx.globalCompositeOperation = 'source-over';
-    }
-  };
-}
-
 /* Deep Field: a journey through Webb's first deep field. The photograph is the far layer; two fields of nearer stars
    slide across it with parallax, so the view has depth. The camera travels between the field's landmarks (the bright star,
    the lensing arcs round the cluster, the spirals) and lingers, with a slow roll. The brightest points bloom and twinkle,
@@ -487,145 +400,4 @@ export function deepfieldScene() {
       gl.uniform1f(u.uA, cx); gl.uniform1f(u.uB, 1 - cy); gl.uniform1f(uZoom, z); gl.uniform1f(uRoll, Math.sin(t * .023) * .035);
     }
   });
-}
-
-/* Mars Dust Storm: the view from a rover's mast camera as dust veils sweep across the plain */
-export function marsScene() {
-  let base, deck, veils, g0;
-  return {
-    init() {
-      const m = Math.min(W, H), hy = H * (W > H ? .46 : .5);
-      const sunX = W * .7, sunY = hy * .32;
-      g0 = { hy, sunX, sunY, m };
-      let g; [base, g] = layer(W, H);
-      const sky = g.createLinearGradient(0, 0, 0, hy);
-      sky.addColorStop(0, '#8a5e3c'); sky.addColorStop(.6, '#c39062'); sky.addColorStop(1, '#ddb487');
-      g.fillStyle = sky; g.fillRect(0, 0, W, hy + 2);
-      // Far ridges, hazy with distance.
-      const ridge = (y0, amp, col, seed) => {
-        g.fillStyle = col; g.beginPath(); g.moveTo(0, H);
-        for (let x = 0; x <= W + 8; x += 8) {
-          const u = x / W;
-          g.lineTo(x, y0 - amp * (.5 + .35 * Math.sin(u * 5.1 + seed) + .2 * Math.sin(u * 13.7 + seed * 2) + .08 * Math.sin(u * 41 + seed)) * (u > .55 ? 1.4 - (u - .55) : 1));
-        }
-        g.lineTo(W, H); g.fill();
-      };
-      ridge(hy, m * .07, '#c0946a', 1.3);
-      ridge(hy + m * .01, m * .035, '#a87650', 4.1);
-      // The plain.
-      const gnd = g.createLinearGradient(0, hy, 0, H);
-      gnd.addColorStop(0, '#a8714a'); gnd.addColorStop(.4, '#94603c'); gnd.addColorStop(1, '#6e4228');
-      g.fillStyle = gnd; g.fillRect(0, hy + m * .012, W, H);
-      g.save(); g.beginPath(); g.rect(0, hy, W, H - hy); g.clip();
-      // Soft drifts and pebbles getting larger toward the camera.
-      for (let i = 0; i < 40; i++) {
-        const y = hy + Math.pow(Math.random(), 1.6) * (H - hy), k = (y - hy) / (H - hy);
-        g.fillStyle = `rgba(${Math.random() < .5 ? '200,150,104' : '90,52,30'},${.06 + k * .08})`;
-        g.beginPath(); g.ellipse(rand(0, W), y, (20 + 180 * k) * rand(.5, 1.5), (2 + 14 * k) * rand(.5, 1.5), 0, 0, TAU); g.fill();
-      }
-      const pebbles = Math.round(W * (H - hy) / 220);
-      for (let i = 0; i < pebbles; i++) {
-        const k = Math.pow(Math.random(), 1.5), y = hy + k * (H - hy), r = (.4 + 3 * k) * rand(.5, 1.4) * m / 800;
-        g.fillStyle = `rgba(${Math.round(rand(60, 110))},${Math.round(rand(36, 60))},${Math.round(rand(24, 40))},${.5 + k * .4})`;
-        g.beginPath(); g.ellipse(rand(0, W), y, r * 1.4, r * .8, 0, 0, TAU); g.fill();
-      }
-      // Rocks, lit from the sun's side, with shadows falling away from it.
-      const rocks = Array.from({ length: 34 }, () => Math.pow(Math.random(), 1.8)).sort((a, b) => a - b);
-      for (const k of rocks) {
-        const y = hy + k * (H - hy) * .92 + m * .01, x = rand(-.05, 1.05) * W, r = (2 + 70 * k * k + 10 * k) * rand(.6, 1.3) * m / 800;
-        const lit = x < sunX ? 1 : -1;
-        g.fillStyle = 'rgba(60,30,16,.35)';
-        g.beginPath(); g.ellipse(x - lit * r * .5, y + r * .22, r * 1.15, r * .26, 0, 0, TAU); g.fill();
-        g.beginPath(); g.moveTo(x - r, y + r * .2);
-        const pts = 7;
-        for (let j = 0; j <= pts; j++) { const a = Math.PI + j / pts * Math.PI; g.lineTo(x + Math.cos(a) * r * rand(.85, 1.15), y + Math.sin(a) * r * rand(.55, .9)); }
-        g.closePath();
-        const rg = g.createLinearGradient(x + lit * r * .6, y - r * .7, x - lit * r * .3, y + r * .2);
-        rg.addColorStop(0, '#b47e56'); rg.addColorStop(.3, '#7a4a2e'); rg.addColorStop(1, '#4a2a18');
-        g.fillStyle = rg; g.fill();
-      }
-      g.restore();
-      // The rover: a slice of the deck along the bottom and the top of a wheel in the corner.
-      let dg; [deck, dg] = layer(W, H);
-      const dh = m * .085, wr = m * .2, wx = W * .86, wy = H + wr * .45;
-      dg.fillStyle = '#2a2622';
-      dg.beginPath(); dg.arc(wx, wy, wr, 0, TAU); dg.fill();
-      const wgr = dg.createLinearGradient(wx - wr, 0, wx + wr, 0);
-      wgr.addColorStop(0, '#6a6058'); wgr.addColorStop(.4, '#b4aaa0'); wgr.addColorStop(1, '#4a4038');
-      dg.fillStyle = wgr; dg.beginPath(); dg.arc(wx, wy, wr * .96, 0, TAU); dg.fill();
-      dg.strokeStyle = 'rgba(40,34,30,.7)'; dg.lineWidth = Math.max(1, wr * .04);
-      for (let k = 0; k < 24; k++) {
-        const a = Math.PI + k / 24 * Math.PI;
-        dg.beginPath(); dg.moveTo(wx + Math.cos(a) * wr * .72, wy + Math.sin(a) * wr * .72); dg.lineTo(wx + Math.cos(a + .1) * wr * .96, wy + Math.sin(a + .1) * wr * .96); dg.stroke();
-      }
-      dg.fillStyle = 'rgba(160,110,70,.35)'; dg.beginPath(); dg.arc(wx, wy, wr * .96, Math.PI * 1.1, Math.PI * 1.45); dg.arc(wx, wy, wr * .7, Math.PI * 1.45, Math.PI * 1.1, true); dg.fill();
-      dg.strokeStyle = '#4a4440'; dg.lineWidth = wr * .14; dg.lineCap = 'round';
-      dg.beginPath(); dg.moveTo(wx - wr * 1.5, H - dh * .9); dg.lineTo(wx - wr * .15, wy - wr * .1); dg.stroke();
-      dg.fillStyle = '#5a544e'; dg.beginPath(); dg.arc(wx, wy, wr * .2, 0, TAU); dg.fill();
-      const dk = dg.createLinearGradient(0, H - dh, 0, H);
-      dk.addColorStop(0, '#d8d0c4'); dk.addColorStop(.12, '#a89e92'); dk.addColorStop(1, '#4e4640');
-      dg.fillStyle = dk;
-      dg.beginPath(); dg.moveTo(-10, H - dh * .7); dg.lineTo(W * .58, H - dh); dg.lineTo(W * .66, H + 2); dg.lineTo(-10, H + 2); dg.fill();
-      dg.fillStyle = 'rgba(60,54,50,.8)';
-      for (let k = 0; k < 6; k++) { const x = W * (.04 + k * .09); dg.fillRect(x, H - dh * (.62 + k * .045) + 4, W * .05, 3); }
-      dg.fillStyle = '#c8a24a'; dg.fillRect(W * .44, H - dh * .9 + 3, W * .06, dh * .3);
-      dg.fillStyle = 'rgba(176,120,76,.35)'; dg.fillRect(0, H - dh, W * .66, dh * .25);
-      // Dust veils: soft tileable bands, each with a column-density profile so the sun dims as they pass.
-      veils = [[.05, .5, .55, 14], [.18, .55, .45, 24], [.32, .45, .35, 38], [.5, .35, .5, 60]].map(([top, hh, a, sp], vi) => {
-        const bw = 384, bh = 96;
-        const [c, vg] = plain(bw, bh);
-        for (let k = 0; k < 160; k++) {
-          const x = rand(0, bw), y = bh * (.5 + rand(-.25, .25)), r = rand(10, 40), al = rand(.08, .3);
-          for (const xx of [x - bw, x, x + bw]) {
-            const gr = vg.createRadialGradient(xx, y, 0, xx, y, r);
-            gr.addColorStop(0, `rgba(226,176,124,${al})`); gr.addColorStop(1, 'rgba(226,176,124,0)');
-            vg.fillStyle = gr; vg.fillRect(xx - r, y - r, r * 2, r * 2);
-          }
-        }
-        const d = vg.getImageData(0, 0, bw, bh).data, col = new Float32Array(bw);
-        for (let x = 0; x < bw; x++) { let s = 0; for (let y = 0; y < bh; y++) s += d[(y * bw + x) * 4 + 3]; col[x] = s / (bh * 255); }
-        const mx = Math.max(...col);
-        for (let x = 0; x < bw; x++) col[x] /= mx || 1;
-        return { c, col, top: top * H - (vi === 0 ? H * .1 : 0), h: hh * H, a, sp, w: W * 1.6 };
-      });
-    },
-    draw(t) {
-      const { sunX, sunY, m } = g0;
-      const wx = Math.max(.15, weather), spd = lively ? 1.8 : 1;
-      ctx.drawImage(base, 0, 0, W, H);
-      // Dust over the sun from the veils that cross it.
-      let cover = 0;
-      for (const v of veils) {
-        const off = (t * v.sp * spd) % v.w;
-        if (sunY > v.top && sunY < v.top + v.h) {
-          const u = (((sunX - off) % v.w) + v.w) % v.w / v.w;
-          cover += v.col[Math.floor(u * v.col.length) % v.col.length] * v.a;
-        }
-      }
-      const vis = Math.max(.08, 1 - cover * (.4 + wx * 1.1));
-      ctx.globalCompositeOperation = 'lighter';
-      glow(ctx, sunX, sunY, m * .22, [190, 200, 220], .1 * vis);
-      glow(ctx, sunX, sunY, m * .07, [230, 236, 245], .28 * vis);
-      ctx.fillStyle = `rgba(246,246,240,${.85 * vis})`; ctx.beginPath(); ctx.arc(sunX, sunY, m * .011, 0, TAU); ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-      // A general haze, thicker in a storm.
-      const hz = ctx.createLinearGradient(0, 0, 0, H);
-      hz.addColorStop(0, `rgba(190,138,92,${.08 + wx * .3})`); hz.addColorStop(.5, `rgba(214,164,112,${.12 + wx * .4})`); hz.addColorStop(1, `rgba(190,138,92,${wx * .2})`);
-      ctx.fillStyle = hz; ctx.fillRect(0, 0, W, H);
-      const n = lowPower ? 2 : veils.length;
-      for (let i = 0; i < n; i++) {
-        const v = veils[i], off = (t * v.sp * spd) % v.w;
-        ctx.globalAlpha = Math.min(1, v.a * (.5 + wx * 1.3) * .7);
-        // A repeating pattern wraps cleanly; drawing the tile side by side left a seam at every join.
-        if (!v.pat) v.pat = ctx.createPattern(v.c, 'repeat-x');
-        const k = v.w / v.c.width;
-        ctx.save(); ctx.translate(off, v.top); ctx.scale(k, v.h / v.c.height);
-        ctx.fillStyle = v.pat; ctx.fillRect(-v.c.width, 0, (W - off) / k + v.c.width * 2, v.c.height);
-        ctx.restore();
-      }
-      ctx.globalAlpha = 1;
-      ctx.drawImage(deck, 0, 0, W, H);
-      ctx.fillStyle = `rgba(200,150,104,${wx * .12})`; ctx.fillRect(0, 0, W, H);
-    }
-  };
 }

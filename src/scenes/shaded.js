@@ -226,6 +226,7 @@ void main(){
     vec3 refl = skyAt(rr, day, t);
     float fres = .04 + .96 * pow(1. - max(dot(-rd, n), 0.), 5.);
     vec3 deep = dmix(vec3(.01, .02, .035), vec3(.09, .08, .12), vec3(.08, .22, .3), day);
+    deep = mix(deep, deep * vec3(.8, .95, 1.1) + .015, WINTER);                  // a colder, greyer sea in winter
     vec3 sea = mix(deep, refl, clamp(fres * 1.6, 0., 1.));
     sea += sunC * pow(max(dot(rr, sunL), 0.), 300.) * .8 * (1. - moonK * .6);     // glitter
     // Sand in the foreground, wet where the water last reached; a foam line at the edge.
@@ -235,6 +236,7 @@ void main(){
     float grain = noise(p.xz * 9.) * .12 + noise(p.xz * vec2(.8, 6.)) * .08;
     vec3 sand = sandC * (.85 + grain);
     float wet = smoothstep(shore - 4.5, shore - .5, d);
+    sand = mix(sand, vec3(.86, .89, .94) * (.12 + .88 * day), WINTER * smoothstep(.5, .62, noise(p.xz * .5)) * (1. - wet));   // snow on the dry sand in winter
     sand = mix(sand, skyAt(vec3(rd.x, -rd.y * .7, rd.z), day, t) * .85, wet * .55);
     float foam = smoothstep(.35, 0., abs(d - shore) - .1) * (.5 + .5 * noise(vec2(p.x * 3., t * .7)));
     col = mix(sand, sea, k);
@@ -245,7 +247,9 @@ void main(){
   col += (h21(gl_FragCoord.xy + fract(uT)) - .5) / 160.;        // a little dither keeps the gradients smooth
   gl_FragColor = vec4(col, 1.);
 }`;
-export const tideScene = () => build(TIDE, byClock({ res: .8 }));
+// In winter there is snow on the dry sand and the sea runs colder.
+const winterNow = () => { const m = new Date().getMonth(); return m <= 1 || m === 11 ? 1 : 0; };
+export const tideScene = () => build(`const float WINTER = ${winterNow()}.;\n` + TIDE, byClock({ res: .8 }));
 
 /* Canopy: light through an old wood. Four depths of trunks and foliage, the far ones lost in haze, with shafts of sun
    worked out by looking toward the sun from each point, and dust drifting through the bright ones. */

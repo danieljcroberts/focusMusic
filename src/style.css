@@ -16,10 +16,12 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   overflow: hidden;
 }
-#scene, #gl, #still, #fade, #wxfx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#scene, #gl, #still, #fade, #wxfx, #tod { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 #wxfx { pointer-events: none; }
 /* Scenes that don't listen to the music themselves breathe a little with it */
-body.pulse #scene, body.pulse #still, body.pulse .stage { filter: brightness(var(--pulse, 1)); }
+body.pulse #scene, body.pulse #still, body.pulse .stage, body.season #scene, body.season #still, body.season .stage { filter: var(--season,) brightness(var(--pulse, 1)); }
+/* The time of day laid over pixel-art scenes that can't follow the clock themselves: a multiplied tint, white by day. */
+#tod { position: fixed; inset: 0; pointer-events: none; mix-blend-mode: multiply; transition: background-color 4s linear; }
 [hidden] { display: none !important; }
 .stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 video.stage { object-fit: cover; }
