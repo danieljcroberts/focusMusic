@@ -4,25 +4,32 @@ import { W, H, ctx } from '../view.js';
 import { glow } from '../util.js';
 import { img, ok } from '../assets.js';
 import { parallaxScene, driftScene, skyExtras } from './parallax.js';
-import { oceanScene, snowfallScene, starfieldScene } from './three-scenes.js';
-import { aquariumScene } from './places.js';
-import { stormScene, pondScene, trainScene, hearthScene, driveScene } from './shaded2.js';
-import { auroraScene, cloudsScene, tideScene, canopyScene, lighthouseScene } from './shaded.js';
 import { videoScene } from './video.js';
-import { cleanPowerScene } from './power.js';
-import { supercellScene } from './storm.js';
-import { offshoreScene, blueprintScene, paperValleyScene, solarNoonScene } from './power2.js';
-import { holmestrandScene } from './holmestrand.js';
 import { photosScene } from './photos.js';
-import { synthwaveScene, neonHighwayScene, vectorScene, laserShowScene, memphisScene } from './eighties.js';
-import { spectrumBarsScene, feedbackScene, superscopeScene, beatStarsScene, dancingScopeScene } from './visualisers.js';
-import { tramScene, libraryScene, lamproomScene, portholeScene, greenhouseNightScene, cabinScene } from './interiors.js';
-import { koiScene, zenScene, desertScene, bambooScene, lanternsScene, rooftopsScene, harbourScene, firefliesScene, volcanoScene } from './outdoors.js';
-import { saturnScene, orreryScene, blackholeScene, cometScene, deepfieldScene, marsScene } from './cosmos.js';
-import { inkScene, reactionScene, flowScene, voronoiScene, scopeScene, murmurationScene, ferrofluidScene } from './abstract.js';
-import { pixelTrainScene, pierScene, arcadeScene, crtRainScene, catScene, recordScene, typewriterScene, jellyfishScene } from './cozy.js';
 import { lavaScene, kaleidoScene, marbleScene, mandelScene, tunnelScene, spectrumScene, mandalaScene, plasmaScene, nebulaScene } from './trip.js';
 import { rainImprovedScene, snowScene } from './glass.js';
+
+import { report } from '../diag.js';
+// Scene code is loaded the first time a scene is opened, so the app starts with only the few scenes it needs at once.
+// While a scene's code loads, its stand-in draws nothing; the app is told when it arrives (sw-scene-loaded).
+const MODS = {
+  three_scenes: () => import('./three-scenes.js'),
+  places: () => import('./places.js'),
+  shaded2: () => import('./shaded2.js'),
+  shaded: () => import('./shaded.js'),
+  power: () => import('./power.js'),
+  storm: () => import('./storm.js'),
+  power2: () => import('./power2.js'),
+  holmestrand: () => import('./holmestrand.js'),
+  eighties: () => import('./eighties.js'),
+  visualisers: () => import('./visualisers.js'),
+  interiors: () => import('./interiors.js'),
+  outdoors: () => import('./outdoors.js'),
+  cosmos: () => import('./cosmos.js'),
+  abstract: () => import('./abstract.js'),
+  cozy: () => import('./cozy.js'),
+};
+const L = (mod, make) => ({ mod, make });
 
 const FACTORIES = {
   rain: () => rainImprovedScene({ bg: 'tokyo' }),
@@ -31,72 +38,72 @@ const FACTORIES = {
   windscreen: () => rainImprovedScene({ mode: 'car', bg: 'traffic' }),
   greenhouse: () => rainImprovedScene({ mode: 'greenhouse', bg: 'foliage' }),
 
-  canopy: canopyScene,
-  drive: driveScene,
-  hearth: hearthScene,
-  tide: tideScene,
-  aurora: auroraScene,
-  lighthouse: lighthouseScene,
-  train: trainScene,
-  storm: stormScene,
-  clouds: cloudsScene,
-  pond: pondScene,
-  aquarium: aquariumScene,
-  cleanPower: cleanPowerScene,
-  supercell: supercellScene,
-  offshore: offshoreScene,
-  blueprint: blueprintScene,
-  paperValley: paperValleyScene,
-  solarNoon: solarNoonScene,
-  holmestrand: holmestrandScene,
+  canopy: L('shaded', m => m.canopyScene()),
+  drive: L('shaded2', m => m.driveScene()),
+  hearth: L('shaded2', m => m.hearthScene()),
+  tide: L('shaded', m => m.tideScene()),
+  aurora: L('shaded', m => m.auroraScene()),
+  lighthouse: L('shaded', m => m.lighthouseScene()),
+  train: L('shaded2', m => m.trainScene()),
+  storm: L('shaded2', m => m.stormScene()),
+  clouds: L('shaded', m => m.cloudsScene()),
+  pond: L('shaded2', m => m.pondScene()),
+  aquarium: L('places', m => m.aquariumScene()),
+  cleanPower: L('power', m => m.cleanPowerScene()),
+  supercell: L('storm', m => m.supercellScene()),
+  offshore: L('power2', m => m.offshoreScene()),
+  blueprint: L('power2', m => m.blueprintScene()),
+  paperValley: L('power2', m => m.paperValleyScene()),
+  solarNoon: L('power2', m => m.solarNoonScene()),
+  holmestrand: L('holmestrand', m => m.holmestrandScene()),
   photos: photosScene,
-  synthwave: synthwaveScene,
-  neonhighway: neonHighwayScene,
-  vector: vectorScene,
-  lasers: laserShowScene,
-  memphis: memphisScene,
-  spectrumBars: spectrumBarsScene,
-  feedback: feedbackScene,
-  superscope: superscopeScene,
-  beatstars: beatStarsScene,
-  dancingscope: dancingScopeScene,
-  tram: tramScene,
-  library: libraryScene,
-  lamproom: lamproomScene,
-  porthole: portholeScene,
-  greenhouseNight: greenhouseNightScene,
-  cabin: cabinScene,
-  koi: koiScene,
-  zen: zenScene,
-  desert: desertScene,
-  bamboo: bambooScene,
-  lanterns: lanternsScene,
-  rooftops: rooftopsScene,
-  harbour: harbourScene,
-  fireflies: firefliesScene,
-  volcano: volcanoScene,
-  saturn: saturnScene,
-  orrery: orreryScene,
-  blackhole: blackholeScene,
-  comet: cometScene,
-  deepfield: deepfieldScene,
-  mars: marsScene,
-  ink: inkScene,
-  inkBeat: () => inkScene({ beat: true }),
-  reaction: reactionScene,
-  flow: flowScene,
-  voronoi: voronoiScene,
-  scope: scopeScene,
-  murmuration: murmurationScene,
-  ferrofluid: ferrofluidScene,
-  pixeltrain: pixelTrainScene,
-  pier: pierScene,
-  arcade: arcadeScene,
-  crtrain: crtRainScene,
-  cat: catScene,
-  record: recordScene,
-  typewriter: typewriterScene,
-  jellyfish: jellyfishScene,
+  synthwave: L('eighties', m => m.synthwaveScene()),
+  neonhighway: L('eighties', m => m.neonHighwayScene()),
+  vector: L('eighties', m => m.vectorScene()),
+  lasers: L('eighties', m => m.laserShowScene()),
+  memphis: L('eighties', m => m.memphisScene()),
+  spectrumBars: L('visualisers', m => m.spectrumBarsScene()),
+  feedback: L('visualisers', m => m.feedbackScene()),
+  superscope: L('visualisers', m => m.superscopeScene()),
+  beatstars: L('visualisers', m => m.beatStarsScene()),
+  dancingscope: L('visualisers', m => m.dancingScopeScene()),
+  tram: L('interiors', m => m.tramScene()),
+  library: L('interiors', m => m.libraryScene()),
+  lamproom: L('interiors', m => m.lamproomScene()),
+  porthole: L('interiors', m => m.portholeScene()),
+  greenhouseNight: L('interiors', m => m.greenhouseNightScene()),
+  cabin: L('interiors', m => m.cabinScene()),
+  koi: L('outdoors', m => m.koiScene()),
+  zen: L('outdoors', m => m.zenScene()),
+  desert: L('outdoors', m => m.desertScene()),
+  bamboo: L('outdoors', m => m.bambooScene()),
+  lanterns: L('outdoors', m => m.lanternsScene()),
+  rooftops: L('outdoors', m => m.rooftopsScene()),
+  harbour: L('outdoors', m => m.harbourScene()),
+  fireflies: L('outdoors', m => m.firefliesScene()),
+  volcano: L('outdoors', m => m.volcanoScene()),
+  saturn: L('cosmos', m => m.saturnScene()),
+  orrery: L('cosmos', m => m.orreryScene()),
+  blackhole: L('cosmos', m => m.blackholeScene()),
+  comet: L('cosmos', m => m.cometScene()),
+  deepfield: L('cosmos', m => m.deepfieldScene()),
+  mars: L('cosmos', m => m.marsScene()),
+  ink: L('abstract', m => m.inkScene()),
+  inkBeat: L('abstract', m => m.inkScene({ beat: true })),
+  reaction: L('abstract', m => m.reactionScene()),
+  flow: L('abstract', m => m.flowScene()),
+  voronoi: L('abstract', m => m.voronoiScene()),
+  scope: L('abstract', m => m.scopeScene()),
+  murmuration: L('abstract', m => m.murmurationScene()),
+  ferrofluid: L('abstract', m => m.ferrofluidScene()),
+  pixeltrain: L('cozy', m => m.pixelTrainScene()),
+  pier: L('cozy', m => m.pierScene()),
+  arcade: L('cozy', m => m.arcadeScene()),
+  crtrain: L('cozy', m => m.crtRainScene()),
+  cat: L('cozy', m => m.catScene()),
+  record: L('cozy', m => m.recordScene()),
+  typewriter: L('cozy', m => m.typewriterScene()),
+  jellyfish: L('cozy', m => m.jellyfishScene()),
 
   woods: () => parallaxScene({ bw: 272, bh: 160, bg: '#2a170c', layers: [
     { src: 'woods-back.png', v: 2 }, { src: 'woods-lights.png', v: 4, alpha: t => .65 + .35 * Math.sin(t * 1.3) },
@@ -154,9 +161,9 @@ const FACTORIES = {
       }
     } }),
 
-  ocean: oceanScene,
-  snowfall: snowfallScene,
-  starfield: starfieldScene,
+  ocean: L('three_scenes', m => m.oceanScene()),
+  snowfall: L('three_scenes', m => m.snowfallScene()),
+  starfield: L('three_scenes', m => m.starfieldScene()),
 
   earth: () => videoScene({ src: 'earth-night.mp4' }),
   blackMarble: () => videoScene({ src: 'black-marble.mp4' }),
@@ -180,7 +187,34 @@ const FACTORIES = {
 export const SCENES = META;
 
 export function makeScene(s) {
-  const inst = FACTORIES[s.key]();
-  inst.kind = inst.kind || s.kind || 'canvas';
-  return inst;
+  const f = FACTORIES[s.key];
+  if (typeof f === 'function') { const inst = f(); inst.kind = inst.kind || s.kind || 'canvas'; return inst; }
+  return lazyScene(s, f);
+}
+// A stand-in that loads the scene's module on first init, then hands everything to the real scene.
+function lazyScene(s, { mod, make }) {
+  let real = null, loading = null, failed = null;
+  const w = {
+    kind: s.kind || 'canvas',
+    get canvas() { return real ? real.canvas : undefined; },
+    get bg() { return real ? real.bg : undefined; },
+    init() {
+      if (real) return real.init();
+      if (!loading) loading = MODS[mod]().then(m => { real = make(m); real.kind = real.kind || s.kind || 'canvas'; w.kind = real.kind; })
+        .catch(e => { failed = new Error(`${s.name} couldn't be loaded (it needs a connection the first time)`); report(e); })
+        .then(() => window.dispatchEvent(new CustomEvent('sw-scene-loaded', { detail: s.key })));
+    },
+    draw(t, dt) {
+      if (real) return real.draw(t, dt);
+      if (failed) throw failed;
+      ctx.fillStyle = '#06070b'; ctx.fillRect(0, 0, W, H);
+    },
+  };
+  return w;
+}
+// Fetch every scene's code in the background, a little at a time, so later scenes open at once and work offline.
+export function prefetchScenes() {
+  const list = Object.values(MODS); let i = 0;
+  const next = () => { if (i >= list.length) return; list[i++]().catch(() => {}).finally(() => setTimeout(next, 400)); };
+  next();
 }

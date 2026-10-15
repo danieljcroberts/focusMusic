@@ -5,7 +5,7 @@ import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { weather, tickWeather } from './weather.js';
 import { daylight } from './daylight.js';
-import { SCENES, makeScene } from './scenes/index.js';
+import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince, eqName, setEq } from './music.js';
@@ -18,6 +18,7 @@ import './finish.js';
 import { closeMenus } from './menus.js';
 import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
+import { initMoods } from './moods.js';
 import './scenesets.js';
 import * as ST from './soundtracks.js';
 import { addPhotos, removePhoto, photos, loadPhotos, onPhotosChange } from './scenes/photos.js';
@@ -141,6 +142,12 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
 
 // A scene that throws is marked broken and shown as a card, and the loop goes on; the error reaches the diagnostics overlay.
 function fail(i, e) { if (!broken[i]) { broken[i] = e; report(e); } }
+// A scene's code has arrived: start it properly, and show it if it is the one on screen.
+window.addEventListener('sw-scene-loaded', e => {
+  const i = SCENES.findIndex(s => s.key === e.detail); if (i < 0) return;
+  ready[i] = false;
+  if (i === cur) { ensure(cur); show(cur); updateText(); if (still) render(0); }
+});
 function ensure(i) { if (!ready[i]) { try { instances[i].init(); } catch (e) { fail(i, e); } ready[i] = true; } }
 function stageOf(inst) { return inst.kind === 'canvas' ? cv : inst.kind === 'image' ? stillImg : (inst.canvas || glc); }
 function show(i) {
@@ -341,6 +348,7 @@ setInvalidate(() => { if (still) render(0); });
 initTimer({ sceneName: () => SCENES[cur].name });
 initDrift({ go, current: () => cur, cards });
 initWake({ go, find: key => SCENES.findIndex(s => s.key === key) });
+initMoods({ go, find: key => SCENES.findIndex(s => s.key === key), syncAmb: () => { amb.value = ambienceLevel; amb.dispatchEvent(new Event('input')); } });
 initSettings({ drawDiag });
 
 const clock = el('clock');
@@ -699,3 +707,5 @@ const q = new URLSearchParams(location.search);
 if (q.get('start') === 'focus' && !timerRunning()) { toggleTimer(); caption('Focus block started'); }
 if (location.search) history.replaceState(null, '', location.pathname + location.hash);
 scheduleThumb();
+// Once the app has settled, fetch the rest of the scenes' code quietly, so they open at once and work offline.
+setTimeout(() => (window.requestIdleCallback || (f => f()))(prefetchScenes), 15000);

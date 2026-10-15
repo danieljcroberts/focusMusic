@@ -68,7 +68,7 @@ public/assets/music   bundled tracks (fetched, not in git)
 scripts/              check, fetch-music, smoke, thumbs (captures the shipped scene thumbnails from a running dev server)
 ```
 
-Every scene has a link: the address bar follows the scene (`#aurora-from-orbit`), and **Share this scene** (under App in the sheet) copies it or opens the phone's share sheet. The controls are one bar: Play, Next, the soundtrack chip, the scene's name (which opens the scene's story, credits and the grid of every scene) and **⋯**, which opens the sheet with everything else in five sections, each headed by a line that says what it is doing now: Now playing, Music, Timer, Scene and App.
+**Start with** (on the first visit and at the top of the sheet) offers three moods, Study, Relax and Sleep, each setting the soundtrack, scene, ambience and timer in one tap. Scene code loads the first time a scene opens and the rest is fetched quietly in the background, so the app starts quickly. Every scene has a link: the address bar follows the scene (`#aurora-from-orbit`), and **Share this scene** (under App in the sheet) copies it or opens the phone's share sheet. The controls are one bar: Play, Next, the soundtrack chip, the scene's name (which opens the scene's story, credits and the grid of every scene) and **⋯**, which opens the sheet with everything else in five sections, each headed by a line that says what it is doing now: Now playing, Music, Timer, Scene and App.
 
 A scene that throws on a device is shown as a card with the error in the diagnostics overlay; the rest of the app carries on. The focus timer takes a long break after every fourth block and has custom durations in its menu.
 
