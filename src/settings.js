@@ -115,6 +115,14 @@ function drawWeek() {
     const lab = document.createElement('small'); lab.textContent = b.label;
     col.append(bar, lab); box.append(col);
   }
+  const mg = el('monthGrid'); mg.textContent = '';
+  const log = state.sessions || [], start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - 34 - ((start.getDay() + 6) % 7) + 6);
+  for (let k = 0; k < 35; k++) {
+    const d = new Date(start); d.setDate(start.getDate() + k); const day = d.toDateString();
+    const min = log.filter(s => new Date(s.at).toDateString() === day).reduce((a, s) => a + s.min, 0);
+    const c = document.createElement('i'); c.title = `${d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })}: ${min} min`;
+    c.style.opacity = d > new Date() ? '.08' : String(min ? .3 + Math.min(1, min / 120) * .7 : .12); if (min) c.className = 'on'; mg.append(c);
+  }
   const ul = el('weekIntents'); ul.textContent = '';
   const ints = weekIntents(); if (ints.length > 1 || (ints[0] && ints[0][0] !== 'Unlabelled')) for (const [k, m] of ints.slice(0, 5)) { const li = document.createElement('li'); li.textContent = `${k} · ${m} min`; ul.append(li); }
 }

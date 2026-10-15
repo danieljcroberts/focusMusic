@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+import { readFileSync } from 'fs';
+const axe = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
+const browser = await chromium.launch({ executablePath: process.env.SMOKE_CHROMIUM });
+const page = await browser.newPage({ viewport: { width: 430, height: 900 }, reducedMotion: 'reduce' });
+await page.addInitScript(() => localStorage.setItem('sw-state', JSON.stringify({ seenHint: true, fsAuto: false })));
+await page.goto('http://127.0.0.1:5173/#pond', { waitUntil: 'load' }); await page.waitForTimeout(1500);
+await page.addScriptTag({ content: axe });
+const run = async label => { const r = await page.evaluate(async () => (await axe.run(document, { resultTypes: ['violations'] })).violations.map(v => ({ id: v.id, impact: v.impact, n: v.nodes.length, ex: v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(' ; ') }))); console.log('==', label); for (const v of r) console.log(v.impact, v.id, v.n, '|', v.ex); };
+await page.mouse.move(100, 100); await run('bar');
+await page.evaluate(() => { document.getElementById('menuBtn').click(); for (const d of document.querySelectorAll('#sheet details')) d.open = true; }); await page.waitForTimeout(300); await run('sheet open');
+await page.evaluate(() => { document.getElementById('sheetClose').click(); document.getElementById('sceneBtn').click(); }); await page.waitForTimeout(300); await run('picker');
+await browser.close();

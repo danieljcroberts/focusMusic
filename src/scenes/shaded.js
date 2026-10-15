@@ -327,7 +327,20 @@ void main(){
   col += (h21(gl_FragCoord.xy + fract(uT)) - .5) / 160.;        // a little dither keeps the gradients smooth
   gl_FragColor = vec4(col, 1.);
 }`;
-export const canopyScene = () => build(CANOPY, { res: .8, speed: 1 });
+// The wood follows the season: fresh in spring, deep in summer, gold in autumn, bare and grey in winter.
+function seasonal(fs) {
+  const m = new Date().getMonth(), season = m <= 1 || m === 11 ? 'winter' : m <= 4 ? 'spring' : m <= 7 ? 'summer' : 'autumn';
+  const LC = {
+    spring: 'lc[0] = vec3(.5, .62, .32); lc[1] = vec3(.26, .4, .16); lc[2] = vec3(.09, .16, .06); lc[3] = vec3(.02, .035, .015);',
+    summer: 'lc[0] = vec3(.42, .52, .3); lc[1] = vec3(.2, .3, .14); lc[2] = vec3(.07, .12, .055); lc[3] = vec3(.015, .028, .015);',
+    autumn: 'lc[0] = vec3(.62, .5, .26); lc[1] = vec3(.42, .26, .1); lc[2] = vec3(.14, .09, .04); lc[3] = vec3(.03, .02, .012);',
+    winter: 'lc[0] = vec3(.5, .52, .54); lc[1] = vec3(.3, .3, .3); lc[2] = vec3(.12, .11, .1); lc[3] = vec3(.03, .03, .03);',
+  };
+  fs = fs.replace('lc[0] = vec3(.42, .52, .3); lc[1] = vec3(.2, .3, .14); lc[2] = vec3(.07, .12, .055); lc[3] = vec3(.015, .028, .015);', LC[season]);
+  if (season === 'winter') fs = fs.replace('return smoothstep(.46, .6, big * .55 + hang * .5 + fine * .08);', 'return smoothstep(.6, .72, big * .55 + hang * .5 + fine * .08);');   // bare: far fewer leaves
+  return fs;
+}
+export const canopyScene = () => build(seasonal(CANOPY), { res: .8, speed: 1 });
 
 /* Lighthouse: a headland at the hour your clock says. The beam is real volume: the sea fog is marched and lit by a cone
    that turns once every eight seconds, so it brightens as it sweeps toward you and lights the water under it. */

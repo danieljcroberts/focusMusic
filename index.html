@@ -17,16 +17,16 @@
 <canvas id="gl" hidden aria-hidden="true"></canvas>
 <img id="still" hidden alt="">
 <canvas id="fade" aria-hidden="true"></canvas>
-<canvas id="wx" aria-hidden="true"></canvas>
+<canvas id="wxfx" aria-hidden="true"></canvas>
 <div id="dim" aria-hidden="true"></div>
 <div class="shade"></div>
-<div class="chrome">
+<main class="chrome">
   <div class="top">
     <div class="brand"><b>Slow Windows</b> · focus scenes</div>
     <div class="top-right">
       <span class="clock" id="clock">--:--</span>
       <span class="intentline" id="intentLine" hidden></span>
-      <button type="button" class="icon-btn tog" id="tStart" aria-pressed="false" aria-label="Start or pause the focus timer">Focus 25:00</button>
+      <button type="button" class="icon-btn tog" id="tStart" aria-pressed="false" title="Start or pause the focus timer">Focus 25:00</button>
     </div>
   </div>
   <div class="bottom">
@@ -41,7 +41,7 @@
     <div class="groups" id="groups" role="tablist" aria-label="Scene groups" hidden></div>
     <nav id="nav" aria-label="Scenes" hidden></nav>
   </div>
-</div>
+</main>
 
 <aside class="sheet" id="sheet" hidden aria-label="Everything else">
   <header><h2>Slow Windows</h2><button type="button" class="pbtn" id="sheetClose">Close</button></header>
@@ -53,6 +53,8 @@
         <p class="note upnext" id="upNext" hidden></p>
         <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button></div>
         <label class="slider"><span>Music</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume"></label>
+        <span class="lbl">Volume limit</span>
+        <div class="seg" id="capSeg" role="group" aria-label="Volume limit"><button type="button" data-cap="1">None</button><button type="button" data-cap="0.8">80%</button><button type="button" data-cap="0.6">60%</button></div>
         <span class="lbl">Sound</span>
         <div class="seg" id="eqSeg" role="group" aria-label="Sound preset"><button type="button" data-eq="flat">Flat</button><button type="button" data-eq="speaker">Phone speaker</button><button type="button" data-eq="headphones">Headphones</button><button type="button" data-eq="night">Night</button></div>
         <label class="slider"><span>Ambience</span><input type="range" id="amb" min="0" max="1" step="0.01" value="0.35" aria-label="Ambient sound level" title="Ambient sound: rain, wind, sea, fire, matched to the scene"></label>
@@ -70,6 +72,8 @@
         <span class="lbl">Soundtracks</span>
         <div class="row wrap"><button type="button" id="stEditBtn">Edit soundtracks</button><button type="button" id="stWizBtn">Add your music…</button></div>
         <div class="row wrap" id="stRescanRow"></div>
+        <span class="lbl">Between tracks</span>
+        <div class="seg" id="xfadeSeg" role="group" aria-label="Crossfade between tracks"><button type="button" data-x="0">No gap</button><button type="button" data-x="3">3 s</button><button type="button" data-x="8">8 s</button><button type="button" data-x="12">12 s</button></div>
         <span class="lbl">Offline</span>
         <div class="row wrap"><button type="button" id="offlineBtn">Save the free tracks for offline use (250 MB)</button><button type="button" class="tog" id="keepStreamsBtn" aria-pressed="false" title="Streamed tracks you stay with are kept on this device, up to 300 MB, oldest out first">Keep streams I've heard</button></div>
       </div>
@@ -93,6 +97,7 @@
         </div>
         <div class="row wrap"><span class="note" id="tCount"></span><span class="note" id="weekLine">No focus blocks yet.</span><button type="button" id="tReset">Reset the count</button></div>
         <div class="week" id="weekBars" aria-label="Focus minutes, last seven days"></div>
+        <div class="month" id="monthGrid" aria-label="Focus minutes, last five weeks"></div>
         <ul class="intents" id="weekIntents"></ul>
         <div class="row wrap"><button type="button" class="tog" id="quietBtn" aria-pressed="true" title="While a focus block runs, a tap on the scene leaves the controls hidden; swipe up or use the keyboard to bring them back">Quiet focus</button><button type="button" class="tog" id="breakSceneBtn" aria-pressed="false" title="A break moves to a light, calm scene, and the focus block brings your scene back">Breaks change the scene</button></div>
         <span class="lbl">Sunrise alarm</span>
@@ -144,7 +149,7 @@
           <button type="button" class="tog" id="lowBtn" aria-pressed="false">Low power</button>
           <button type="button" id="shareBtn" title="Copy a link that opens on this scene">Share this scene</button>
         </div>
-        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
+        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="tourBtn">Take the tour</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
         <span class="note">Free forever. Your own music never leaves this device.</span>
       </div>
     </details>
@@ -162,6 +167,8 @@
 <div class="wiz" id="wiz" hidden role="dialog" aria-modal="true" aria-labelledby="wizTitle"><div class="box"><header><h2 id="wizTitle">Your music</h2><button type="button" class="pbtn" id="wizClose">Close</button></header><div class="body" id="wizBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
 <div class="intent" id="intent" hidden><label for="intentIn">What are you working on?</label><div class="row"><input type="text" id="intentIn" maxlength="60" placeholder="Optional" autocomplete="off"><button type="button" class="pbtn primary" id="intentOk">Go</button></div></div>
+<div class="info-card" id="trackInfo" hidden role="dialog" aria-label="About this track"><header><b id="tiTitle"></b><button type="button" class="pbtn" id="tiClose">Close</button></header><span id="tiArtist"></span><span class="muted" id="tiKind"></span><ul id="tiLines"></ul><div id="tiMore"></div></div>
+<div class="tour" id="tour" hidden role="dialog" aria-label="Tour"><p id="tourText"></p><div class="row"><span class="muted" id="tourStep"></span><button type="button" class="pbtn" id="tourSkip">Skip</button><button type="button" class="pbtn primary" id="tourNext">Next</button></div></div>
 <div class="summary" id="summary" hidden role="status"><b id="sumHead"></b><span id="sumBody"></span><ol id="sumTracks"></ol><button type="button" class="pbtn" id="sumClose">Close</button></div>
 <div class="level" id="level" hidden aria-hidden="true"><span class="track"><span class="bar" id="levelBar"></span></span><span class="lbl" id="levelLbl"></span></div>
 <svg class="ring" id="ring" viewBox="0 0 40 40" hidden aria-hidden="true"><circle cx="20" cy="20" r="16" class="track"/><circle cx="20" cy="20" r="16" class="fill" id="ringFill" pathLength="100"/></svg>
@@ -191,6 +198,7 @@
     <dt>O</dt><dd>Everything else (the sheet)</dd>
     <dt>S</dt><dd>Favourite this scene</dd>
     <dt>H</dt><dd>Love the playing track</dd>
+    <dt>I</dt><dd>About the playing track</dd>
     <dt>D</dt><dd>Drift between favourites</dd>
     <dt>V</dt><dd>Lively</dd>
     <dt>T</dt><dd>Start or pause the focus timer</dd>
@@ -210,7 +218,7 @@
 </aside>
 <div class="hint1" id="hint1" hidden role="dialog" aria-label="Getting started">
   <p><b>Welcome to Slow Windows.</b> Pick a mood to start, or press <b>Play</b> for music. Swipe sideways for scenes; tap for the controls, or near the bottom for a mini player. Double-tap: left = previous, middle = play/pause, right = next. Slide the right edge for volume. Tap the scene's name, or long-press, for all scenes; ⋯ holds everything else.</p>
-  <button type="button" class="pbtn primary" id="hint1Ok">Got it</button>
+  <div class="row"><button type="button" class="pbtn primary" id="hint1Ok">Got it</button> <button type="button" class="pbtn" id="hint1Tour">Show me around</button></div>
 </div>
 <aside class="lib" id="lib" hidden aria-label="Music library">
   <header><h2>Music</h2><button type="button" class="pbtn" id="libClose">Close</button></header>

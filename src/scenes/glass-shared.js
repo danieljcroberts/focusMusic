@@ -4,7 +4,7 @@ import { rand, rgb, layer, plain, glow } from '../util.js';
 import { img, ok } from '../assets.js';
 
 export const STAGES = [];
-export function addStage(el) { el.classList.add('stage'); el.hidden = true; fadeCv.before(el); STAGES.push(el); return el; }
+export function addStage(el) { el.classList.add('stage'); el.setAttribute('aria-hidden', 'true'); el.hidden = true; fadeCv.before(el); STAGES.push(el); return el; }
 export function blurCanvas(src, f) {
   const w = Math.max(1, Math.round(W / f)), h = Math.max(1, Math.round(H / f));
   const [a, ag] = layer(w, h); ag.imageSmoothingQuality = 'high'; ag.drawImage(src, 0, 0, w, h);

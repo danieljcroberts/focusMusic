@@ -16,8 +16,8 @@ body {
   font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   overflow: hidden;
 }
-#scene, #gl, #still, #fade, #wx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-#wx { pointer-events: none; }
+#scene, #gl, #still, #fade, #wxfx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#wxfx { pointer-events: none; }
 /* Scenes that don't listen to the music themselves breathe a little with it */
 body.pulse #scene, body.pulse #still, body.pulse .stage { filter: brightness(var(--pulse, 1)); }
 [hidden] { display: none !important; }
@@ -240,6 +240,34 @@ body.bedtime #dim { opacity: .45; }
 .mood b { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 400; font-size: 17px; }
 .mood span { font-size: 10px; line-height: 1.4; color: var(--muted); }
 .sheet .startwith { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding: 4px 4px 0; }
+.sheetsearch { width: 100%; font: inherit; font-size: 13px; color: var(--text); background: #16171d; border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.sec .hit { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 8px; }
+.month { display: grid; grid-template-columns: repeat(7, 14px); gap: 3px; }
+.month i { width: 14px; height: 14px; border-radius: 3px; background: rgba(236, 230, 218, .5); }
+.month i.on { background: var(--accent); }
+#npTitle { cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.info-card { position: fixed; z-index: 9; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px)); max-height: 80vh; overflow-y: auto; display: grid; gap: 6px;
+  padding: 16px 18px; background: rgba(9, 10, 14, .96); border: 1px solid var(--line); border-radius: 16px; font-size: 13px; }
+.info-card header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.info-card b { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 400; font-size: 22px; }
+.info-card .muted { color: var(--muted); font-size: 12px; }
+.info-card ul { margin: 4px 0; padding-left: 18px; display: grid; gap: 3px; font-size: 12px; }
+.info-card a { color: var(--accent); }
+.info-card .lbl { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding-top: 6px; }
+.info-card .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; }
+.info-card .row button { border-radius: 10px; padding: 4px 10px; font-size: 11px; }
+.tour { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); width: min(400px, calc(100% - 32px)); display: grid; gap: 10px; padding: 14px 16px;
+  background: rgba(9, 10, 14, .95); border: 1px solid var(--accent); border-radius: 16px; font-size: 13px; line-height: 1.55; }
+.tour[data-at="bottom"] { bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
+.tour[data-at="top"] { top: calc(env(safe-area-inset-top, 0px) + 72px); }
+.tour[data-at="middle"] { top: 40%; }
+.tour p { margin: 0; }
+.tour .row { display: flex; align-items: center; gap: 8px; }
+.tour .row .muted { margin-right: auto; color: var(--muted); font-size: 11px; }
+.tourhi { outline: 2px solid var(--accent) !important; outline-offset: 3px; box-shadow: 0 0 0 6px rgba(242, 194, 123, .2); }
+body.touring .chrome, body.touring .shade { opacity: 1 !important; visibility: visible !important; }
+@media (prefers-contrast: more) { :root { --muted: #ddd6c8; --line: rgba(236, 230, 218, .5); } .shade { opacity: 1 !important; } }
+.hint1 .row { display: flex; gap: 8px; }
 .summary { position: fixed; z-index: 7; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 70px); transform: translateX(-50%); width: min(380px, calc(100% - 32px)); display: grid; gap: 6px; justify-items: start;
   padding: 16px 18px; background: rgba(9, 10, 14, .9); border: 1px solid var(--line); border-radius: 16px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .summary b { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 400; font-size: 22px; }

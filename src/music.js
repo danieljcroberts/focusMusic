@@ -92,8 +92,13 @@ const FADE = 2.5;
 let fades = [];
 // Breaks duck the music to a third; the change ramps over a second and a half.
 let duck = 1, duckTarget = 1;
+// The crossfade between tracks that run into each other, in seconds (0 joins them tightly), and a volume limit.
+export let xfade = [0, 3, 8, 12].includes(state.xfade) ? state.xfade : 8;
+export function setCrossfade(v) { xfade = v; saveState({ xfade: v }); }
+export let volCap = [1, .8, .6].includes(state.volCap) ? state.volCap : 1;
+export function setVolCap(v) { volCap = v; saveState({ volCap: v }); players.forEach(p => setGain(p, p._g)); }
 function setGain(p, g) {
-  p._g = g; const v = Math.max(0, Math.min(1.5, g * master * duck * (p._norm || 1)));
+  p._g = g; const v = Math.max(0, Math.min(1.5 * volCap, g * Math.min(master, volCap) * duck * (p._norm || 1)));
   if (p._gain) p._gain.gain.setTargetAtTime(v, actx.currentTime, .03); else p.volume = Math.min(1, v);
 }
 export function setDuck(on) { duckTarget = on ? .35 : 1; }
@@ -163,9 +168,25 @@ function weighted(list, k) {
   for (let i = 0; i < list.length; i++) if ((r -= w[i]) < 0) return list[i];
   return list[list.length - 1];
 }
-export const currentLoved = () => !!curTrack && !curTrack.live && ST.isLoved(keyOf(curTrack));
+// Hearing comfort: an hour of playing near full volume brings a gentle note, once until the volume comes down.
+let loudFor = 0, loudTold = false;
+setInterval(() => {
+  if (!musicPlaying) return;
+  if (Math.min(master, volCap) >= .85) { loudFor += 5; if (loudFor >= 3600 && !loudTold) { loudTold = true; setStatus('An hour at high volume: if you are on headphones, a little lower is kinder to your ears. A volume limit is under Now playing.'); note('hearing reminder shown'); } }
+  else { loudFor = Math.max(0, loudFor - 10); if (loudFor === 0) loudTold = false; }
+}, 5000);
+export const found = () => state.found || [];
+let liveUrl = null;
+export const currentLoved = () => !!curTrack && ST.isLoved(curTrack.live ? key(curTrack) : keyOf(curTrack));
 export function toggleLove() {
-  if (!curTrack || curTrack.live) return null;
+  if (!curTrack) return null;
+  if (curTrack.live) {   // a random find: keep it, with its credit, so the Loved soundtrack can play it again
+    const k = key(curTrack), on = !ST.isLoved(k);
+    const list = found().filter(f => key(f) !== k);
+    if (on && liveUrl) list.push({ a: curTrack.a, t: curTrack.t, lic: curTrack.lic, src: curTrack.src, stream: liveUrl, genre: 'misc', mood: 'calm', conf: 'confirmed', found: true });
+    saveState({ found: list }); ST.setLoved(k, on); renderLib();
+    window.dispatchEvent(new CustomEvent('sw-loved', { detail: on })); return on;
+  }
   const k = keyOf(curTrack), on = !ST.isLoved(k); ST.setLoved(k, on);
   window.dispatchEvent(new CustomEvent('sw-loved', { detail: on })); return on;
 }
@@ -224,6 +245,15 @@ export function setArtworkSource(fn) { artwork = fn; }
 let lockLine = '';
 export function setLockLine(text) { if (text === lockLine) return; lockLine = text; announce(); }
 // The cover of the playing track, when it carries one (your own MP3s with embedded art).
+export function trackInfo() {
+  const t = curTrack; if (!t) return null;
+  if (t.own) { const e = ownTracks().find(x => x.id === t.id) || {}; return { t: t.t, a: t.a, kind: 'Your music', lic: '', lines: [e.genre && `Genre tag: ${e.genre}`, e.dur && `${Math.round(e.dur / 60)} min`, e.size && `${(e.size / 1e6).toFixed(1)} MB`, `In: ${ST.memberOf(t.id).map(s => s.name).join(', ') || 'no soundtrack'}`].filter(Boolean), more: [] }; }
+  const base = TRACKS.find(x => key(x) === key(t)) || t;
+  const genre = (ST.BUILT_IN.find(b => b.id === base.genre) || {}).name;
+  return { t: t.t, a: t.a, kind: t.live ? 'A random find on the Internet Archive' : base.file ? 'Bundled with the app' : 'Streams from archive.org', lic: t.lic, src: t.src,
+    lines: [genre && `Soundtrack: ${genre}`, base.ep && base.ep.length && `Heard in Music For Programming episode${base.ep.length > 1 ? 's' : ''} ${base.ep.join(', ')}`, base.note].filter(Boolean),
+    more: TRACKS.filter(x => x.a === t.a && key(x) !== key(t)) };
+}
 export const currentArt = () => curTrack && !curTrack.live ? coverFor(curTrack) : null;
 export function announce(t = curTrack) {
   if (!ms || !t) return;
@@ -297,8 +327,10 @@ function begin(p, seekTo, fade) {
 function start(url, tight = false) {
   hasSrc = true; queued = false; startedAt = performance.now();
   const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
-  const slow = slowNext; slowNext = false;
-  const fadeIn = tight ? .08 : seekTo == null ? (slow ? 8 : FADE) : 1.2, fadeOut = tight ? .08 : slow ? 8 : FADE;
+  const slow = slowNext, auto = autoNext; slowNext = false; autoNext = false;
+  if (auto && xfade === 0) tight = true;
+  const join = auto && xfade > 0 ? xfade : null;
+  const fadeIn = tight ? .08 : seekTo != null ? 1.2 : slow ? 8 : join || FADE, fadeOut = tight ? .08 : slow ? 8 : join || FADE;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
@@ -361,7 +393,7 @@ async function nextLive() {
       setMeta([curTrack.lic, first(m.metadata.title), Math.round(f.kb) + ' kbps'], curTrack.src, 'archive.org ↗');
       announce(curTrack);
       const url = 'https://archive.org/download/' + encodeURIComponent(id) + '/' + f.name.split('/').map(encodeURIComponent).join('/');
-      source = 'live'; remember({ kind: 'live', t: curTrack, url, meta: ui.meta.textContent });
+      source = 'live'; liveUrl = url; remember({ kind: 'live', t: curTrack, url, meta: ui.meta.textContent });
       start(url);
       setStatus(''); markLib();
       return;
@@ -397,7 +429,7 @@ function pickNext(relaxed = false) {
   const st = ST.current(), mine = new Set(st.own);
   const ok = k => !isCur(k) && (relaxed || (!recent.includes(k) && cycleOk(st.id, k)));
   const pools = [];
-  const free = TRACKS.filter(t => allowed(t) && ok(key(t)));
+  const free = [...TRACKS, ...(st.like === 'loved' ? found() : [])].filter(t => allowed(t) && ok(key(t)));
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
   // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
   if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(weighted(own, e => 'own:' + e.id))]);
@@ -467,14 +499,14 @@ export function prevTrack() {
 export const volume = () => master;
 export function setVolume(v) { ui.vol.value = Math.max(0, Math.min(1, v)); ui.vol.dispatchEvent(new Event('input')); }
 // Gapless: eight seconds before a mix track ends, the next one starts and the two crossfade.
-let queued = false, stopAtEnd = false;
+let queued = false, stopAtEnd = false, autoNext = false;
 export function setStopAtEnd(v) { stopAtEnd = v; }
 export const stoppingAtEnd = () => stopAtEnd;
 setInterval(() => {
   if (!hasSrc || audio.paused || queued || source === 'live' || !isFinite(audio.duration) || !audio.duration || stopAtEnd) return;
   // Your own tracks join tightly, as an album's do; the free tracks crossfade eight seconds early.
-  const lead = curTrack && curTrack.own ? .35 : 8;
-  if (audio.duration - audio.currentTime < lead) { queued = true; nextTrack(); }
+  const lead = curTrack && curTrack.own ? .35 : xfade > 0 ? xfade : .35;
+  if (audio.duration - audio.currentTime < lead) { queued = true; autoNext = true; nextTrack(); }
 }, curTrack && curTrack.own ? 100 : 500);
 // The sleep timer fades everything out over `seconds` and stops it.
 export function fadeOutAll(seconds) { for (const p of players) if (!p.paused) rampTo(p, 0, seconds, true); }

@@ -400,7 +400,8 @@ export function paperValleyScene() {
     g.fillStyle = rgb(PALE, .25); for (let i = 0; i < 14; i++) { const x = rand(0, W), y = wy + H * rand(.015, .055); g.beginPath(); g.roundRect(x, y, rand(20, 60) * s, 3 * s, 2); g.fill(); }
     // Dam and near hills.
     const dx = W * (W > H ? .22 : .26), dw = Math.min(W * .3, 300 * s * 1.6), dTop = hy + H * .06, dBot = hy + H * .2;
-    const hill = skyMix([10, 24, 36], [30, 70, 60], GREEN, d);
+    const month = new Date().getMonth(), winter = month <= 1 || month === 11;
+    const hill = winter ? skyMix([40, 50, 70], [190, 196, 210], [236, 240, 246], d) : skyMix([10, 24, 36], [30, 70, 60], GREEN, d);   // snow on the hills in winter
     poly(g, [[-30, H + 30], [-30, dTop - H * .04], [dx - dw * .6, dTop - H * .05], [dx - dw * .5, dTop], [dx - dw * .5, H + 30]], rgb(hill.map(v => v * .85)));
     poly(g, [[dx + dw * .5, H + 30], [dx + dw * .5, dTop], [dx + dw * .8, dTop - H * .05], [dx + dw * 1.4, dTop - H * .01], [W + 30, dTop + H * .02], [W + 30, H + 30]], rgb(hill.map(v => v * .85)));
     g.fillStyle = rgb(skyMix([90, 100, 120], [180, 190, 205], [236, 240, 244], d));

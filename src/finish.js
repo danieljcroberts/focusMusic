@@ -21,6 +21,6 @@ export function setFinish(on) {
   finishOn = on; saveState({ finish: on });
   grain.hidden = vignette.hidden = !on;
   clearInterval(timer);
-  if (on && !still) timer = setInterval(() => { grain.style.backgroundPosition = `${Math.floor(Math.random() * 128)}px ${Math.floor(Math.random() * 128)}px`; }, 90);
+  if (on && !still) timer = setInterval(() => { if (document.hidden) return; grain.style.backgroundPosition = `${Math.floor(Math.random() * 128)}px ${Math.floor(Math.random() * 128)}px`; }, 90);
 }
 setFinish(finishOn);

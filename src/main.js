@@ -8,7 +8,7 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince, eqName, setEq } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -19,6 +19,7 @@ import { closeMenus } from './menus.js';
 import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
 import { initMoods } from './moods.js';
+import './tour.js';
 import './scenesets.js';
 import * as ST from './soundtracks.js';
 import { addPhotos, removePhoto, photos, loadPhotos, onPhotosChange } from './scenes/photos.js';
@@ -231,7 +232,7 @@ function tickPulse(dt) {
 /* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
    snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
 const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk', 'photos'].includes(s.key)).map(s => s.key));
-const wxCv = el('wx'), wxG = wxCv.getContext('2d');
+const wxCv = el('wxfx'), wxG = wxCv.getContext('2d');
 let wxDrops = null;
 function drawWx(dt) {
   const amount = WX.has(SCENES[cur].key) ? Math.max(0, (weather - .5) / .5) : 0;
@@ -259,10 +260,13 @@ function render(dt) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
+  const d0 = performance.now();
   try { inst.draw(t, dt); }
   catch (e) { fail(cur, e); show(cur); setStatus(`${SCENES[cur].name} stopped with an error; the diagnostics overlay (\`) has the details.`); }
+  drawMs += (performance.now() - d0 - drawMs) * .05;
   if (fade > 0) { fade = Math.max(0, 1 - (performance.now() - fadeAt) / 1400); fadeCv.style.opacity = fade; }
 }
+let drawMs = 0;
 
 /* Share builds a link with the scene, the track and the ambience level; Previous lives in the sheet */
 el('prevBtn').addEventListener('click', () => prevTrack());
@@ -321,6 +325,7 @@ function diagLines() {
   const s = SCENES[cur], inst = instances[cur], st = stageOf(inst), amb = ambienceState();
   return [
     `${s.name} · ${inst.kind} ${st.width || st.videoWidth || '?'}×${st.height || st.videoHeight || '?'} · DPR ${DPR}${lowPower ? ' · low power' : ''}${lively ? ' · lively' : ''}${broken[cur] ? ' · BROKEN' : ''}`,
+    `cost: ${['webgl', 'video'].includes(instances[cur].kind) ? 'GPU scene' : `${drawMs.toFixed(1)} ms a frame on the CPU`} · ${drawMs > 12 || instances[cur].kind === 'webgl' ? 'heavy on the battery' : drawMs > 5 ? 'moderate' : 'light'}`,
     `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}${inst.kind === 'webgl' && (governor.scale < 1 || governor.skip) ? ` · governor ${Math.round(governor.scale * 100)}%${governor.skip ? ', half rate' : ''}` : ''}`,
     `weather ${weather.toFixed(2)} · daylight ${daylight().toFixed(2)}${localOn ? ' (local)' : ''}`,
     `music ${musicPlaying ? 'playing' : 'off'} · level ${musicLevel.toFixed(2)} · bass ${bands.bass.toFixed(2)} mid ${bands.mid.toFixed(2)} treble ${bands.treble.toFixed(2)}`,
@@ -368,7 +373,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -391,7 +396,10 @@ async function keepAwake() {
     wakeLock.addEventListener('release', () => { wakeLock = null; });
   } catch (e) { /* refused: low battery, a hidden page or a browser without it */ }
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { keepAwake(); show(cur); }   // show() starts the scene's video again
+  else STAGES.forEach(e => { if (e.tagName === 'VIDEO') e.pause(); });
+});
 
 const fsBtn = el('fs');
 function toggleFs() {
@@ -423,6 +431,7 @@ window.addEventListener('keydown', e => {
     case 'ArrowLeft': go(cur - 1); break;
     case 'n': case 'N': nextTrack(); break;
     case 'h': case 'H': love(); break;
+    case 'i': case 'I': openInfo(); break;
     case 'p': case 'P': prevTrack(); break;
     case 'ArrowUp': e.preventDefault(); setVolume(volume() + .05); showLevel('right', 'Music', volume()); break;
     case 'ArrowDown': e.preventDefault(); setVolume(volume() - .05); showLevel('right', 'Music', volume()); break;
@@ -438,7 +447,7 @@ window.addEventListener('keydown', e => {
     case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
+    case 'Escape': if (!el('trackInfo').hidden) { el('trackInfo').hidden = true; break; } if (!el('tour').hidden) { el('tourSkip').click(); break; } if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
   }
 });
 
@@ -611,6 +620,32 @@ el('photoAdd').addEventListener('click', () => {
   inp.click();
 });
 el('photoGo').addEventListener('click', () => { if (photoScene >= 0) go(photoScene); });
+
+// Between tracks and the volume limit, under Music and Now playing.
+const xButtons = [...el('xfadeSeg').querySelectorAll('button')];
+const drawX = () => xButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.x === xfade)));
+xButtons.forEach(b => b.addEventListener('click', () => { setCrossfade(+b.dataset.x); drawX(); })); drawX();
+const capButtons = [...el('capSeg').querySelectorAll('button')];
+const drawCap = () => capButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.cap === volCap)));
+capButtons.forEach(b => b.addEventListener('click', () => { setVolCap(+b.dataset.cap); drawCap(); })); drawCap();
+
+// The track info card: tap the track's name under Now playing (or press I).
+function openInfo() {
+  const info = trackInfo(); if (!info) { setStatus('Nothing playing yet.'); return; }
+  el('tiTitle').textContent = info.t; el('tiArtist').textContent = info.a; el('tiKind').textContent = [info.kind, info.lic].filter(Boolean).join(' · ');
+  const ul = el('tiLines'); ul.textContent = '';
+  for (const l of info.lines) { const li = document.createElement('li'); li.textContent = l; ul.append(li); }
+  if (info.src) { const li = document.createElement('li'), a = document.createElement('a'); a.href = info.src; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Source and full credit ↗'; li.append(a); ul.append(li); }
+  const more = el('tiMore'); more.textContent = '';
+  if (info.more.length) {
+    const h = document.createElement('span'); h.className = 'lbl'; h.textContent = `More by ${info.a}`; more.append(h);
+    for (const t of info.more) { const r = document.createElement('div'); r.className = 'row'; const n = document.createElement('span'); n.textContent = t.t; const b = document.createElement('button'); b.type = 'button'; b.textContent = 'play next'; b.addEventListener('click', () => { playNext(t); b.textContent = 'queued'; b.disabled = true; }); r.append(n, b); more.append(r); }
+  }
+  el('trackInfo').hidden = false; el('tiClose').focus();
+}
+el('tiClose').addEventListener('click', () => { el('trackInfo').hidden = true; });
+el('npTitle').addEventListener('click', openInfo); el('npTitle').setAttribute('role', 'button'); el('npTitle').tabIndex = 0; el('npTitle').title = 'About this track';
+el('npTitle').addEventListener('keydown', e => { if (e.key === 'Enter') openInfo(); });
 
 /* Mini player: the track and previous / play / next, over the bottom of the scene while the controls stay hidden.
    It follows the main player and tucks itself away after a few quiet seconds. Tapping the title opens the full controls. */

@@ -24,6 +24,25 @@ export const whenSheetOpens = f => { onOpen.push(f); };
 btn.addEventListener('click', () => openSheet());
 el('sheetClose').addEventListener('click', () => openSheet(false));
 document.addEventListener('pointerdown', e => { if (sheetOpen() && !e.target.closest('.sheet, .wiz, .lib, .help, #about, .picker, #menuBtn')) openSheet(false); });
+// Search: type a word and only the sections that mention it stay, opened, with the matching controls marked.
+// A few everyday words point at the controls that use other names.
+const ALIASES = { alarm: ['sunrise alarm', 'wake me'], wake: ['wake me'], volume: ['volume limit', 'music volume'], loud: ['volume limit'], quiet: ['quiet focus', 'volume limit'], sleep: ['sleep timer', 'bedtime'], bed: ['bedtime'], noise: ['add a sound'], eq: ['speaker', 'headphones'], bass: ['speaker'], backup: ['back up', 'restore'], export: ['back up'], photo: ['photos'], picture: ['photos'], set: ['scene sets'], playlist: ['scene sets', 'soundtracks'], shuffle: ['soundtracks'], battery: ['low power'], fade: ['between tracks'], gap: ['between tracks'], crossfade: ['between tracks'], offline: ['offline', 'keep streams'], weather: ['weather', 'use my location'], location: ['use my location'], help: ['shortcuts', 'tour'], tour: ['tour'] };
+const search = document.createElement('input'); search.type = 'search'; search.className = 'sheetsearch'; search.placeholder = 'Search: alarm, volume, photos…'; search.setAttribute('aria-label', 'Search the settings');
+sheet.querySelector('.body').prepend(search);
+const secs = [...sheet.querySelectorAll('details.sec')];
+search.addEventListener('input', () => {
+  const q = search.value.trim().toLowerCase();
+  sheet.querySelectorAll('.hit').forEach(n => n.classList.remove('hit'));
+  if (!q) { secs.forEach(d => { d.hidden = false; d.open = !!(state.sheetOpen || {})[d.id]; }); return; }
+  const words = [q, ...(ALIASES[q] || (Object.entries(ALIASES).find(([k]) => k.startsWith(q)) || [])[1] || [])];
+  let first = null;
+  for (const d of secs) {
+    const nodes = [...d.querySelectorAll('button, .lbl, label, select, summary .k')].filter(n => words.some(w => (n.textContent + ' ' + (n.title || '') + ' ' + (n.getAttribute('aria-label') || '')).toLowerCase().includes(w)));
+    d.hidden = !nodes.length; d.open = !!nodes.length;
+    nodes.forEach(n => n.classList.add('hit')); if (!first && nodes.length) first = nodes[0];
+  }
+  if (first) first.scrollIntoView({ block: 'nearest' });
+});
 // Sections remember whether they were open.
 for (const d of sheet.querySelectorAll('details')) {
   d.open = !!(state.sheetOpen || {})[d.id];

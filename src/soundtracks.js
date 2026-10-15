@@ -85,7 +85,7 @@ export function setLoved(k, on) {
   if (k.startsWith('own:')) { if (on) addOwnTo('loved', [k.slice(4)]); else removeOwnFrom('loved', k.slice(4)); } else save();
 }
 const inGenre = (t, s) => s.like === 'loved' ? loved.has(tkey(t)) : t.genre === s.like;
-export function freeTracks(s = current()) { return s.free && s.like ? TRACKS.filter(t => inGenre(t, s)) : []; }
+export function freeTracks(s = current()) { return s.free && s.like ? [...TRACKS, ...(s.like === 'loved' ? state.found || [] : [])].filter(t => inGenre(t, s)) : []; }
 export const freeAllows = (t, s = current()) => !!(s.free && s.like && inGenre(t, s));
 export const ownIds = (s = current()) => s.own;
 
