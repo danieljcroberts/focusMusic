@@ -8,7 +8,7 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -392,6 +392,7 @@ window.addEventListener('keydown', e => {
     case 'ArrowRight': go(cur + 1); break;
     case 'ArrowLeft': go(cur - 1); break;
     case 'n': case 'N': nextTrack(); break;
+    case 'h': case 'H': love(); break;
     case 'p': case 'P': prevTrack(); break;
     case 'ArrowUp': e.preventDefault(); setVolume(volume() + .05); showLevel('right', 'Music', volume()); break;
     case 'ArrowDown': e.preventDefault(); setVolume(volume() - .05); showLevel('right', 'Music', volume()); break;
@@ -491,9 +492,17 @@ function syncMini() {
   el('miniArtist').textContent = artist || 'Tap play for music';
   const playing = el('play').textContent === 'Pause';
   miniPlay.textContent = playing ? 'Pause' : 'Play'; miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  drawLove();
   const art = currentArt(), im = el('miniArt');            // a small cover, when the track carries one
   if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
 }
+function drawLove() {
+  const on = currentLoved();
+  for (const b of [el('miniLove'), el('loveBtn')]) { b.setAttribute('aria-pressed', String(on)); b.textContent = (on ? '♥' : '♡') + (b.id === 'loveBtn' ? ' Love' : ''); }
+}
+function love() { const on = toggleLove(); if (on === null) return; drawLove(); caption(on ? '♥ Loved' : 'Not loved'); haptic(); }
+el('miniLove').addEventListener('click', () => { love(); bumpMini(); });
+el('loveBtn').addEventListener('click', love);
 function showMini() { syncMini(); mini.hidden = false; bumpMini(); haptic(); }
 function hideMini() { clearTimeout(miniTimer); mini.hidden = true; }
 function bumpMini() { clearTimeout(miniTimer); miniTimer = setTimeout(hideMini, 6000); }

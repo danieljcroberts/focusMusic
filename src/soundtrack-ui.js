@@ -42,7 +42,7 @@ function fillMenu() {
   stMenu.append(h('span', { className: 'lbl', textContent: 'Soundtrack' }));
   for (const s of ST.soundtracks()) {
     const c = counts(s);
-    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? `${c.free} free` : s.live ? 'random finds' : 'add your own' }));
+    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? `${c.free} free` : s.live ? 'random finds' : s.id === 'loved' ? 'tap ♥ while playing' : 'add your own' }));
     b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(s.id === ST.current().id));
     b.addEventListener('click', () => choose(s.id));
     stMenu.append(b);

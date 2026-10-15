@@ -8,6 +8,7 @@ import { state, saveState } from './state.js';
 // The built-in soundtracks are genres, in alphabetical order. Every free track carries a genre in tracks.json; a soundtrack of your own
 // can borrow a genre's free tracks with `like`. Each has a colour and a small line icon (a 24-unit path).
 export const BUILT_IN = [
+  { id: 'loved', name: 'Loved', color: '#e85a7a', icon: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z' },
   { id: 'ambient', name: 'Ambient', color: '#6f8fd8', icon: 'M3 12c3-5 6-5 9 0s6 5 9 0' },
   { id: 'downtempo', name: 'Downtempo Electronic', color: '#e8823c', icon: 'M3 9c2-4 4-4 6 0s4 4 6 0 4-4 6 0M3 16c2-4 4-4 6 0s4 4 6 0 4-4 6 0' },
   { id: 'french', name: 'French language', color: '#5b8fd6', icon: 'M12 3l-3 18M12 3l3 18M7 21h10M9.5 13h5' },
@@ -65,7 +66,7 @@ let list = load();
 let currentId = list.some(s => s.id === state.soundtrack) ? state.soundtrack : (OLD[state.soundtrack] || 'ambient');
 const listeners = new Set();
 function save() { saveState({ soundtracks: list.map(({ id, name, color, like, free, live, own }) => ({ id, name, color, like, free, live, own })), soundtrack: currentId }); listeners.forEach(f => f()); }
-export const genres = () => BUILT_IN.filter(b => TRACKS.some(t => t.genre === b.id));   // the genres that have free tracks
+export const genres = () => BUILT_IN.filter(b => TRACKS.some(t => t.genre === b.id));   // Loved is not a genre   // the genres that have free tracks
 export const onChange = f => listeners.add(f);
 
 export const soundtracks = () => list;
@@ -74,8 +75,18 @@ export const current = () => byId(currentId) || list[0];
 export function setCurrent(id) { if (byId(id)) { currentId = id; save(); } }
 
 // Free tracks a soundtrack draws from, when its free tracks are on: those of its genre.
-export function freeTracks(s = current()) { return s.free && s.like ? TRACKS.filter(t => t.genre === s.like) : []; }
-export const freeAllows = (t, s = current()) => !!(s.free && s.like && t.genre === s.like);
+// Loved: the tracks you have hearted, free ones by key and your own by id (kept in the Loved soundtrack's own list).
+export const loved = new Set(state.loved || []);
+const tkey = t => t.a + '|' + t.t;
+export const isLoved = k => loved.has(k);
+export function setLoved(k, on) {
+  if (on) loved.add(k); else loved.delete(k);
+  saveState({ loved: [...loved] });
+  if (k.startsWith('own:')) { if (on) addOwnTo('loved', [k.slice(4)]); else removeOwnFrom('loved', k.slice(4)); } else save();
+}
+const inGenre = (t, s) => s.like === 'loved' ? loved.has(tkey(t)) : t.genre === s.like;
+export function freeTracks(s = current()) { return s.free && s.like ? TRACKS.filter(t => inGenre(t, s)) : []; }
+export const freeAllows = (t, s = current()) => !!(s.free && s.like && inGenre(t, s));
 export const ownIds = (s = current()) => s.own;
 
 export function create(name, like = null) {

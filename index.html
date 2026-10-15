@@ -49,7 +49,7 @@
       <summary><span class="k">Now playing</span><span class="v" id="sumNow"></span></summary>
       <div class="pane">
         <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span><input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Position in track" hidden></div>
-        <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" id="libBtn">All tracks</button></div>
+        <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button></div>
         <label class="slider"><span>Music</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume"></label>
         <label class="slider"><span>Ambience</span><input type="range" id="amb" min="0" max="1" step="0.01" value="0.35" aria-label="Ambient sound level" title="Ambient sound: rain, wind, sea, fire, matched to the scene"></label>
       </div>
@@ -139,6 +139,7 @@
   <button type="button" class="mb" id="miniPrev" aria-label="Previous track">&#8249;</button>
   <button type="button" class="mb play" id="miniPlay" aria-label="Play">Play</button>
   <button type="button" class="mb" id="miniNext" aria-label="Next track">&#8250;</button>
+  <button type="button" class="mb love" id="miniLove" aria-label="Love this track" aria-pressed="false">♡</button>
 </div>
 <div class="wiz" id="wiz" hidden role="dialog" aria-modal="true" aria-labelledby="wizTitle"><div class="box"><header><h2 id="wizTitle">Your music</h2><button type="button" class="pbtn" id="wizClose">Close</button></header><div class="body" id="wizBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
@@ -168,6 +169,7 @@
     <dt>M</dt><dd>Scenes change the track, on or off</dd>
     <dt>O</dt><dd>Everything else (the sheet)</dd>
     <dt>S</dt><dd>Favourite this scene</dd>
+    <dt>H</dt><dd>Love the playing track</dd>
     <dt>D</dt><dd>Drift between favourites</dd>
     <dt>V</dt><dd>Lively</dd>
     <dt>T</dt><dd>Start or pause the focus timer</dd>

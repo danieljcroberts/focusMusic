@@ -84,8 +84,8 @@ let fades = [];
 // Breaks duck the music to a third; the change ramps over a second and a half.
 let duck = 1, duckTarget = 1;
 function setGain(p, g) {
-  p._g = g; const v = Math.max(0, Math.min(1, g * master * duck));
-  if (p._gain) p._gain.gain.setTargetAtTime(v, actx.currentTime, .03); else p.volume = v;
+  p._g = g; const v = Math.max(0, Math.min(1.5, g * master * duck * (p._norm || 1)));
+  if (p._gain) p._gain.gain.setTargetAtTime(v, actx.currentTime, .03); else p.volume = Math.min(1, v);
 }
 export function setDuck(on) { duckTarget = on ? .35 : 1; }
 function rampTo(p, to, dur, stopAfter) { fades = fades.filter(x => x.p !== p); fades.push({ p, from: p._g, to, t0: performance.now(), dur, stopAfter }); }
@@ -138,6 +138,49 @@ function setMeta(parts, href, label) {
 }
 // What plays is the current soundtrack: its free tracks (when on), the viewer's own tracks sorted into it, and random
 // finds from the Internet Archive when it asks for them. See soundtracks.js.
+// What you do with each track: plays through (p) and quick skips (s), kept per track. The shuffle leans toward the
+// tracks you let play and away from the ones you skip, and hearted tracks come up a little more often.
+const stats = state.trackStats || {};
+const keyOf = t => t ? (t.own ? 'own:' + t.id : key(t)) : null;
+let startedAt = 0;
+function tally(k, f) { if (!k) return; const e = stats[k] || (stats[k] = { p: 0, s: 0 }); e[f]++; saveState({ trackStats: stats }); }
+function weightOf(k) {
+  const e = stats[k] || { p: 0, s: 0 };
+  const skip = e.s >= 2 && e.s > e.p ? Math.max(.15, .6 - .15 * (e.s - e.p)) : 1;
+  return (ST.isLoved(k) ? 1.8 : 1) * skip * (1 + Math.min(e.p, 6) * .05);
+}
+function weighted(list, k) {
+  const w = list.map(x => weightOf(k(x))); let r = Math.random() * w.reduce((a, v) => a + v, 0);
+  for (let i = 0; i < list.length; i++) if ((r -= w[i]) < 0) return list[i];
+  return list[list.length - 1];
+}
+export const currentLoved = () => !!curTrack && !curTrack.live && ST.isLoved(keyOf(curTrack));
+export function toggleLove() {
+  if (!curTrack || curTrack.live) return null;
+  const k = keyOf(curTrack), on = !ST.isLoved(k); ST.setLoved(k, on);
+  window.dispatchEvent(new CustomEvent('sw-loved', { detail: on })); return on;
+}
+// Levelling: each track's loudness is measured the first time it plays and kept, so the next time it starts at the
+// right level and quiet and loud tracks sit together. A track measured now eases to its level over a few seconds.
+const loud = state.loudness || {};
+const TARGET = .075;   // the median of the bundled tracks, as the analyser reads it (about -18 dB)
+const normFor = t => { const k = keyOf(t), r = k && loud[k]; return r ? Math.max(.55, Math.min(1.7, TARGET / r)) : 1; };
+let meas = { k: null, sum: 0, n: 0 }, tdata = null;
+setInterval(() => {
+  const p = audio;
+  if (!analyser || !p._gain || p.paused || !curTrack || curTrack.live || fades.length) return;
+  const k = keyOf(curTrack);
+  if (meas.k !== k) meas = { k, sum: 0, n: 0 };
+  if (!loud[k] && p.currentTime > 3) {
+    if (!tdata) tdata = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(tdata);
+    let sq = 0; for (let i = 0; i < tdata.length; i++) sq += tdata[i] * tdata[i];
+    const g = p._gain.gain.value; if (g > .05) { meas.sum += sq / tdata.length / (g * g); meas.n++; }
+    if (meas.n >= 80) { loud[k] = +Math.sqrt(meas.sum / meas.n).toFixed(4); saveState({ loudness: loud }); }   // about sixteen seconds
+  }
+  const want = normFor(curTrack);
+  if (Math.abs((p._norm || 1) - want) > .005) { p._norm = (p._norm || 1) + (want - (p._norm || 1)) * .08; setGain(p, p._g); }
+}, 200);
 // Free tracks you never want: kept by key in the state; skipped by the picker, the scene's pick and the cycle.
 export const never = new Set(state.never || []);
 export function setNever(t, on) { const k = key(t); if (on) never.add(k); else never.delete(k); saveState({ never: [...never] }); renderLib(); }
@@ -243,15 +286,15 @@ function begin(p, seekTo, fade) {
   pendingPlay.catch(() => {});
 }
 function start(url, tight = false) {
-  hasSrc = true; queued = false;
+  hasSrc = true; queued = false; startedAt = performance.now();
   const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
   const fadeIn = tight ? .08 : seekTo == null ? FADE : 1.2, fadeOut = tight ? .08 : FADE;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
-  if (next === prev) { setGain(prev, 0); prev.src = url; begin(prev, seekTo, seekTo == null ? .4 : 1.2); return; }
+  if (next === prev) { prev._norm = normFor(curTrack); setGain(prev, 0); prev.src = url; begin(prev, seekTo, seekTo == null ? .4 : 1.2); return; }
   if (!prev.paused) rampTo(prev, 0, fadeOut, true); else prev.pause();
-  audio = next; setGain(next, 0); next.src = url; begin(next, seekTo, fadeIn);
+  audio = next; next._norm = normFor(curTrack); setGain(next, 0); next.src = url; begin(next, seekTo, fadeIn);
 }
 export function playTrack(t) {
   if (!t) return;
@@ -347,8 +390,8 @@ function pickNext(relaxed = false) {
   const free = TRACKS.filter(t => allowed(t) && ok(key(t)));
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
   // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
-  if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(own[Math.floor(Math.random() * own.length)])]);
-  if (free.length) pools.push([1, () => playTrack(free[Math.floor(Math.random() * free.length)])]);
+  if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(weighted(own, e => 'own:' + e.id))]);
+  if (free.length) pools.push([1, () => playTrack(weighted(free, key))]);
   if (st.live && iaOnline !== false) pools.push([.5, () => nextLive()]);
   if (!pools.length) {
     if (!relaxed) { cycle = { id: st.id, done: new Set() }; return pickNext(true); }   // the cycle is complete: start a new one
@@ -380,6 +423,8 @@ function replay(en) {
 // For the soundtrack screens: play one of the viewer's tracks to hear it while sorting.
 export async function previewOwn(id) { const e = ownTracks().find(x => x.id === id); if (e) await playOwn(e); }
 export function nextTrack() {
+  // A Next within ten seconds of a track starting counts as a skip; the automatic ones (the track ending) as a play.
+  if (curTrack && !curTrack.live) { if (queued || audio.ended) tally(keyOf(curTrack), 'p'); else if (performance.now() - startedAt < 10000) tally(keyOf(curTrack), 's'); }
   if (histIdx < hist.length - 1) { histIdx++; replay(hist[histIdx]); return; }
   pickNext();
 }

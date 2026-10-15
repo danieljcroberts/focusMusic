@@ -245,6 +245,8 @@ body.idle .ring { opacity: .75; }
 .mini .mt b { font-weight: 500; font-size: 13px; color: var(--text); }
 .mini .mt span { font-size: 11px; color: var(--muted); }
 .mini .mb { flex: none; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; font-size: 26px; line-height: 1; -webkit-backdrop-filter: none; backdrop-filter: none; background: transparent; border-color: transparent; }
+.mini .mb.love { font-size: 20px; color: var(--muted); }
+.mini .mb.love[aria-pressed="true"] { color: #e85a7a; }
 .mini .mb.play { width: auto; min-width: 64px; padding-inline: 14px; font-size: 13px; font-weight: 500; background: var(--chip-on-bg); color: var(--chip-on-text); }
 body:not(.idle) .mini { display: none; }
 /* The level shown while sliding along an edge */
