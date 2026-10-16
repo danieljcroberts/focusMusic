@@ -1,6 +1,7 @@
 // Focus timer: a focus block, then a break that dims the scene; every fourth break is a long one. The break starts on
 // its own, the next block waits for you. It survives a reload: a running block picks up where the clock says it should be.
 import { state, saveState } from './state.js';
+import { NATIVE, nativeNotify, nativeAskNotify } from './native.js';
 import { setStatus } from './status.js';
 import { audioCtx, setDuck, setLockLine } from './music.js';
 import { whenSheetOpens } from './sheet.js';
@@ -43,8 +44,9 @@ function chime(notes) {
   } catch (e) {}
 }
 // A system notification when a block ends while the page is in the background. Asked for once, when the timer first starts.
-function askNotify() { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {}); }
+function askNotify() { if (NATIVE) { nativeAskNotify(); return; } if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {}); }
 async function notify(title, body) {
+  if (NATIVE) { if (document.hidden) nativeNotify(title, body); return; }   // the Android app uses Android's notifications
   if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
   try {
     const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;

@@ -6,3 +6,9 @@ originals/
 public/assets/music/
 node_modules/
 dist/
+# The Android build of the web app (scripts/build-native.mjs)
+dist-native/
+# Android signing: never commit the keystore or its passwords
+*.jks
+*.keystore
+keystore.properties

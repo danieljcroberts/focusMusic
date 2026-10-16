@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launch screen: the app's dark background with its icon in the middle. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ic_launcher_background" />
+    <item android:gravity="center" android:width="96dp" android:height="96dp" android:drawable="@mipmap/ic_launcher" />
+</layer-list>

@@ -20,6 +20,7 @@ import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
 import { initMoods, applyMood } from './moods.js';
 import { lookback } from './lookback.js';
+import { NATIVE, SITE, nativePlaying, nativeKeepAwake } from './native.js';
 import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
 import './tour.js';
 import './scenesets.js';
@@ -319,7 +320,7 @@ function setLink() {
   if (ct && !ct.live && !ct.own) parts.push('m-' + trackSlug(ct));   // your own music stays on your device
   if (Math.round(ambienceLevel * 100) !== 35) parts.push('a' + Math.round(ambienceLevel * 100));
   if (ST.current().builtIn) parts.push('s-' + ST.current().id);   // your own soundtracks stay on your device
-  return location.origin + location.pathname + '#' + parts.join('.');
+  return (NATIVE ? SITE : location.origin + location.pathname) + '#' + parts.join('.');   // a link others can open
 }
 el('shareBtn').addEventListener('click', async () => {
   const url = setLink();
@@ -434,6 +435,7 @@ for (const r of [amb, el('vol')]) { const say = () => r.setAttribute('aria-value
 /* Keep the screen on while a scene is showing. The lock drops when the tab is hidden and is taken again when it returns. */
 let wakeLock = null;
 async function keepAwake() {
+  if (NATIVE) { nativeKeepAwake(!document.body.classList.contains('sleep')); return; }   // Android keeps the screen on itself
   if (!('wakeLock' in navigator) || wakeLock || document.hidden) return;
   try {
     wakeLock = await navigator.wakeLock.request('screen');
@@ -819,8 +821,21 @@ el('sceneBtn').addEventListener('click', () => openPicker());
 window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i >= 0) go(i); });
 
 // Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+if (import.meta.env.PROD && !NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});   // the Android app carries its files itself
 
+// The Android app: the media service runs while music plays (so it keeps going with the screen off), the screen is
+// let go once the sleep timer has stopped everything, and the offline-saving buttons (a service-worker matter) are hidden,
+// since the app carries its scenes inside it.
+if (NATIVE) {
+  let was = false, wasTitle = '';
+  setInterval(() => {
+    const ct = currentTrack(), title = ct ? `${ct.t} — ${ct.a}` : '';
+    if (musicPlaying !== was || (musicPlaying && title !== wasTitle)) { was = musicPlaying; wasTitle = title; nativePlaying(musicPlaying, title); }
+  }, 1000);
+  new MutationObserver(() => nativeKeepAwake(!document.body.classList.contains('sleep'))).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  nativeKeepAwake(true);
+  for (const id of ['offlineScenesBtn', 'offlineBtn', 'keepStreamsBtn']) el(id).hidden = true;
+}
 // For the smoke test: which scenes failed, and a thumbnail capture on demand.
 window.slowWindows = { broken: () => SCENES.filter((s, i) => broken[i]).map(s => s.name), captureThumb, current: () => SCENES[cur].name };
 

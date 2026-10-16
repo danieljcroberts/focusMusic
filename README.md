@@ -36,6 +36,19 @@ scripts/deploy-pages.sh   # lint, check, build, then push dist/ to the gh-pages 
 
 GitHub Pages serves that branch once it is chosen in the repository's Settings → Pages (Deploy from a branch, `gh-pages`, root). `scripts/github-pages.workflow.yml` is an equivalent GitHub Actions workflow for when a credential with the `workflow` scope is at hand.
 
+## Android app
+
+The same code builds an Android app with [Capacitor](https://capacitorjs.com). It needs Java 21 and the Android SDK (platform 36); set `JAVA_HOME` and `ANDROID_HOME`, or put `sdk.dir=…` in `android/local.properties`.
+
+```sh
+npm run apk     # builds the web app in native mode into dist-native/, copies it into android/, then a debug APK
+                # → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+What the app adds over the web app is in `src/native.js` and `android/app/src/main/java/…/`: music keeps playing with the screen off (a media foreground service), the sunrise alarm is a real alarm clock that opens the app over the lock screen, and timer notifications use Android's own. The bundled music is left out of the app to stay under Google Play's 200 MB limit and streams from the live site instead; the scenes are inside the app. Every web change reaches the app on its next build: `npm run apk` again.
+
+For Google Play, build a signed bundle (`./gradlew bundleRelease` with a signing config). Keep the upload keystore and its passwords out of git, and backed up.
+
 ## Add music
 
 ```sh

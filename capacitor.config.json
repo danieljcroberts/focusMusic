@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.danieljcroberts.slowwindows",
+  "appName": "Slow Windows",
+  "webDir": "dist-native",
+  "android": {
+    "backgroundColor": "#07080c"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#f2c27b"
+    }
+  }
+}

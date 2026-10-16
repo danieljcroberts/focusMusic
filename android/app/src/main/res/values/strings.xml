@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Slow Windows</string>
+    <string name="title_activity_main">Slow Windows</string>
+    <string name="package_name">io.github.danieljcroberts.slowwindows</string>
+    <string name="custom_url_scheme">io.github.danieljcroberts.slowwindows</string>
+</resources>
