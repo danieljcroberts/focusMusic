@@ -4,6 +4,7 @@
 //  - the screen stays on while the app is in front;
 //  - the sunrise alarm is a real alarm clock: Android opens the app over the lock screen ten minutes early;
 //  - timer notifications come through Android's own notifications.
+import { note } from './diag.js';
 export const NATIVE = import.meta.env.MODE === 'native';
 export const SITE = 'https://danieljcroberts.github.io/focusMusic/';   // the live web app, for share links and streamed music
 let plugin = null, notes = null;
@@ -24,7 +25,14 @@ export async function nativeNotify(title, body) {
 }
 export async function nativeAskNotify() { if (!NATIVE) return; await ready; try { await notes.requestPermissions(); } catch (e) {} }
 // Playback: the media service runs while music plays (title shown in its notification), and stops when it stops.
-export async function nativePlaying(on, title) { if (!NATIVE) return; await ready; try { await (on ? plugin.startPlayback({ title: title || 'Playing' }) : plugin.stopPlayback()); } catch (e) {} }
+// The first time music plays, ask to show notifications, so the playback notification (which shows the service is
+// keeping the music going) is visible on Android 13 and later.
+let askedForPlayback = false;
+export async function nativePlaying(on, title) {
+  if (!NATIVE) return; await ready;
+  if (on && !askedForPlayback) { askedForPlayback = true; try { await notes.requestPermissions(); } catch (e) {} }
+  try { await (on ? plugin.startPlayback({ title: title || 'Playing' }) : plugin.stopPlayback()); } catch (e) { note('playback service: ' + (e && e.message)); }
+}
 export async function nativeKeepAwake(on) { if (!NATIVE) return; await ready; try { await plugin.keepAwake({ on }); } catch (e) {} }
 // The sunrise alarm: at (ms since 1970) Android opens the app; null cancels it.
 export async function nativeAlarm(at) { if (!NATIVE) return; await ready; try { await (at ? plugin.setAlarm({ at }) : plugin.cancelAlarm()); } catch (e) {} }

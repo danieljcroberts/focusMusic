@@ -3,6 +3,7 @@ package io.github.danieljcroberts.slowwindows;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.WebView;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -20,7 +21,13 @@ public class MainActivity extends BridgeActivity {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         hideBars();
         // Music and ambience may start without a tap: the sunrise alarm, and resuming where you left off.
-        getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        WebView web = getBridge().getWebView();
+        web.getSettings().setMediaPlaybackRequiresUserGesture(false);
+        // The page (and so the music) runs in the WebView's own renderer process. By default Android lowers that
+        // process to background priority whenever the WebView can't be seen, as when the screen turns off, and then
+        // freezes it, which stops the music. Keep it important even when invisible; the playback service keeps the
+        // app's own process alive alongside it.
+        if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false);
         handleSunrise(getIntent());
     }
 
