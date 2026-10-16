@@ -20,6 +20,7 @@ import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
 import { initMoods, applyMood } from './moods.js';
 import { lookback } from './lookback.js';
+import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
 import './tour.js';
 import './scenesets.js';
 import * as ST from './soundtracks.js';
@@ -79,6 +80,12 @@ const cards = SCENES.map((s, i) => {
   nav.appendChild(b);
   return { b, im, star };
 });
+// Left-out scenes are hidden from the strip (a group label hides too when all of its scenes are out).
+function drawStrip() {
+  cards.forEach((c, i) => { c.b.hidden = !included(SCENES[i].name); });
+  nav.querySelectorAll('.grp').forEach(g => { g.hidden = !SCENES.some(s => s.group === g.textContent && included(s.name)); });
+}
+drawStrip(); onExcludedChange(drawStrip);
 // Thumbnails live in IndexedDB; an older localStorage copy is moved over once.
 (async () => {
   let old = null;
@@ -224,6 +231,11 @@ function go(i) {
   noteSceneChange(); scheduleThumb();
   if (document.body.classList.contains('idle') && picker.hidden) caption(SCENES[cur].name);
   if (still) render(0);
+}
+// Next or previous, skipping the scenes you have left out.
+function step(d) {
+  const n = SCENES.length;
+  for (let k = 1; k < n; k++) { const i = ((cur + d * k) % n + n) % n; if (included(SCENES[i].name)) { go(i); return; } }
 }
 // While the controls are hidden, a scene change shows just its name for a moment.
 const toast = el('toast');
@@ -459,8 +471,8 @@ window.addEventListener('keydown', e => {
   const onControl = !!e.target.closest('button, a');
   switch (e.key) {
     case ' ': if (!onControl) { e.preventDefault(); togglePlay(); } break;
-    case 'ArrowRight': go(cur + 1); break;
-    case 'ArrowLeft': go(cur - 1); break;
+    case 'ArrowRight': step(1); break;
+    case 'ArrowLeft': step(-1); break;
     case 'n': case 'N': nextTrack(); break;
     case 'h': case 'H': love(); break;
     case 'i': case 'I': openInfo(); break;
@@ -531,7 +543,7 @@ window.addEventListener('touchend', e => {
   if (s0.drag) { haptic(); return; }
   const dx = p.clientX - s0.x, dy = p.clientY - s0.y, ms = performance.now() - s0.at;
   wakeFromSleep(); keepAwake();
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); go(cur + (dx < 0 ? 1 : -1)); return; }
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); step(dx < 0 ? 1 : -1); return; }
   if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) showByHand(); else hideByHand(); return; }
   if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {
     if (tapTimer && lastTap && Math.hypot(p.clientX - lastTap.x, p.clientY - lastTap.y) < 60) {   // double-tap, by zone
@@ -568,7 +580,7 @@ breakBtn.addEventListener('click', () => { breakScene = !breakScene; breakBtn.se
 window.addEventListener('sw-timer', e => {
   if (!breakScene) return;
   if (e.detail === 'break') {
-    const light = SCENES.map((s, i) => i).filter(i => i !== cur && ['bright', 'warm', 'calm'].includes(SCENES[i].tone) && SCENES[i].mood !== 'night' && SCENES[i].group !== 'Trip' && SCENES[i].group !== 'Classic visualisers');
+    const light = SCENES.map((s, i) => i).filter(i => i !== cur && included(SCENES[i].name) && ['bright', 'warm', 'calm'].includes(SCENES[i].tone) && SCENES[i].mood !== 'night' && SCENES[i].group !== 'Trip' && SCENES[i].group !== 'Classic visualisers');
     const favs = light.filter(i => (state.favs || []).includes(SCENES[i].name)), pool = favs.length ? favs : light;
     if (pool.length) { beforeBreak = cur; go(pool[Math.floor(Math.random() * pool.length)]); }
   } else if (beforeBreak >= 0) { go(beforeBreak); beforeBreak = -1; }
@@ -729,14 +741,27 @@ function buildPicker() {
   pickerTiles = []; pickHeads = [];
   let g = '';
   SCENES.forEach((s, i) => {
-    if (s.group !== g) { g = s.group; const h = document.createElement('h3'); h.textContent = g; h.dataset.g = g; pickerGrid.append(h); pickHeads.push(h); }
+    if (s.group !== g) {
+      g = s.group; const h = document.createElement('h3'); h.textContent = g; h.dataset.g = g;
+      // In Choose mode, each group heading can include or leave out the whole group.
+      const grp = g, tg = document.createElement('button'); tg.type = 'button'; tg.className = 'pbtn grpTog';
+      tg.addEventListener('click', () => {
+        const names = SCENES.filter(x => x.group === grp).map(x => x.name), on = names.some(n => !included(n));
+        if (!setIncluded(names, on, SCENES.map(x => x.name))) setStatus('At least one scene has to stay in.');
+      });
+      h.append(tg); pickerGrid.append(h); pickHeads.push(h);
+    }
     const b = document.createElement('button'); b.type = 'button';
     const t = document.createElement('span'); t.className = 'pt'; t.style.background = s.sw;
     const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.src = `assets/thumbs/${slug(s)}.jpg`; t.append(im);
     im.addEventListener('error', () => { if (!thumbs[s.name]) im.hidden = true; }, { once: true });
     b.append(t, s.name);
     // The lift of the long press that opened the grid would otherwise pick whatever tile is under the finger.
-    b.addEventListener('click', () => { if (holding || performance.now() - liftAt < 400) return; closePicker(); go(i); });
+    b.addEventListener('click', () => {
+      if (holding || performance.now() - liftAt < 400) return;
+      if (pickMode === 'choose') { toggleScene(i); return; }
+      closePicker(); go(i);
+    });
     pickerGrid.append(b); pickerTiles.push({ b, im });
   });
 }
@@ -754,13 +779,39 @@ function openPicker() {
 // All, by group; Favourites only; or Most watched, one list ordered by the time spent on each.
 function applyPickMode() {
   const favs = new Set(state.favs || []), rank = SCENES.map((s, i) => i).sort((a, b) => (watch[SCENES[b].name] || 0) - (watch[SCENES[a].name] || 0));
-  pickerTiles.forEach(({ b }, i) => { b.hidden = pickMode === 'fav' && !favs.has(SCENES[i].name); b.style.order = pickMode === 'most' ? String(rank.indexOf(i)) : ''; });
-  pickHeads.forEach(h => { h.hidden = pickMode === 'most' || (pickMode === 'fav' && !SCENES.some(s => s.group === h.dataset.g && favs.has(s.name))); });
+  const choosing = pickMode === 'choose', shown = i => choosing || (included(SCENES[i].name) && (pickMode !== 'fav' || favs.has(SCENES[i].name)));
+  picker.classList.toggle('choosing', choosing); el('chooseBar').hidden = !choosing;
+  pickerTiles.forEach(({ b }, i) => {
+    b.hidden = !shown(i); b.style.order = pickMode === 'most' ? String(rank.indexOf(i)) : '';
+    b.classList.toggle('off', !included(SCENES[i].name));
+    if (choosing) b.setAttribute('aria-label', `${SCENES[i].name}: ${included(SCENES[i].name) ? 'included' : 'left out'}. Tap to change.`); else b.removeAttribute('aria-label');
+  });
+  pickHeads.forEach(h => {
+    const idx = SCENES.map((s, i) => i).filter(i => SCENES[i].group === h.dataset.g);
+    h.hidden = pickMode === 'most' || !idx.some(shown);
+    const tg = h.querySelector('.grpTog'); tg.hidden = !choosing; tg.textContent = idx.some(i => !included(SCENES[i].name)) ? 'Include all' : 'Leave all out';
+  });
+  const n = SCENES.filter(s => included(s.name)).length;
+  el('chooseNote').textContent = `${n} of ${SCENES.length} scenes included. Tap a scene to include or leave it out: left-out scenes are skipped when swiping, by Drift and by break scenes.`;
   if (pickMode === 'fav' && !favs.size) pickerGrid.dataset.empty = 'Star scenes with Favourite to see them here.'; else delete pickerGrid.dataset.empty;
   el('pickMode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === pickMode)));
 }
-el('pickMode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { pickMode = b.dataset.m; saveState({ pickMode }); if (pickerTiles) applyPickMode(); pickerGrid.scrollTop = 0; }));
-function closePicker() { picker.hidden = true; }
+el('pickMode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { pickMode = b.dataset.m; if (pickMode !== 'choose') saveState({ pickMode }); if (pickerTiles) applyPickMode(); pickerGrid.scrollTop = 0; }));
+function toggleScene(i) {
+  const name = SCENES[i].name;
+  if (!setIncluded([name], !included(name), SCENES.map(x => x.name))) setStatus('At least one scene has to stay in.');
+}
+onExcludedChange(() => { if (pickerTiles) applyPickMode(); el('chooseSum').textContent = chooseSum(); });
+const chooseSum = () => excluded.size ? `${SCENES.length - excluded.size} of ${SCENES.length} included` : `all ${SCENES.length} included`;
+el('chooseSum').textContent = chooseSum();
+el('chooseAll').addEventListener('click', () => setIncluded(SCENES.map(s => s.name), true));
+el('chooseFavs').addEventListener('click', () => {
+  const favs = new Set(state.favs || []);
+  if (!favs.size) { setStatus('Star some scenes with Favourite first.'); return; }
+  setIncluded(SCENES.map(s => s.name), true); setIncluded(SCENES.filter(s => !favs.has(s.name)).map(s => s.name), false, SCENES.map(s => s.name));
+});
+el('chooseBtn').addEventListener('click', () => { el('sheetClose').click(); pickMode = 'choose'; openPicker(); });
+function closePicker() { picker.hidden = true; if (pickMode === 'choose') { pickMode = state.pickMode && state.pickMode !== 'choose' ? state.pickMode : 'all'; } }
 el('pickerClose').addEventListener('click', closePicker);
 el('sceneBtn').addEventListener('click', () => openPicker());
 

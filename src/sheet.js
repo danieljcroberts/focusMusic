@@ -1,5 +1,6 @@
 // The sheet: everything that isn't Play, Next, the soundtrack or the scene lives here, in five sections. Each section's
 // summary line says what it is doing now, so a glance covers the lot. A bottom sheet on phones, a side panel otherwise.
+import { excluded } from './excluded.js';
 import { state, saveState } from './state.js';
 import { follow, setFollow, currentTrack, musicPlaying } from './music.js';
 import * as ST from './soundtracks.js';
@@ -26,7 +27,7 @@ el('sheetClose').addEventListener('click', () => openSheet(false));
 document.addEventListener('pointerdown', e => { if (sheetOpen() && !e.target.closest('.sheet, .wiz, .lib, .help, #about, .picker, #menuBtn')) openSheet(false); });
 // Search: type a word and only the sections that mention it stay, opened, with the matching controls marked.
 // A few everyday words point at the controls that use other names.
-const ALIASES = { alarm: ['sunrise alarm', 'wake me'], wake: ['wake me'], volume: ['volume limit', 'music volume'], loud: ['volume limit'], quiet: ['quiet focus', 'volume limit'], sleep: ['sleep timer', 'bedtime'], bed: ['bedtime'], noise: ['add a sound'], eq: ['speaker', 'headphones'], bass: ['speaker'], backup: ['back up', 'restore'], export: ['back up'], photo: ['photos'], picture: ['photos'], set: ['scene sets'], playlist: ['scene sets', 'soundtracks'], shuffle: ['soundtracks'], battery: ['low power'], fade: ['between tracks'], gap: ['between tracks'], crossfade: ['between tracks'], offline: ['offline', 'keep streams'], weather: ['weather', 'use my location'], location: ['use my location'], help: ['shortcuts', 'tour'], tour: ['tour'] };
+const ALIASES = { alarm: ['sunrise alarm', 'wake me'], wake: ['wake me'], volume: ['volume limit', 'music volume'], loud: ['volume limit'], quiet: ['quiet focus', 'volume limit'], sleep: ['sleep timer', 'bedtime'], bed: ['bedtime'], noise: ['add a sound'], eq: ['speaker', 'headphones'], bass: ['speaker'], backup: ['back up', 'restore'], export: ['back up'], photo: ['photos'], picture: ['photos'], set: ['scene sets'], playlist: ['scene sets', 'soundtracks'], shuffle: ['soundtracks'], battery: ['low power'], fade: ['between tracks'], gap: ['between tracks'], crossfade: ['between tracks'], offline: ['offline', 'keep streams'], weather: ['weather', 'use my location'], location: ['use my location'], help: ['shortcuts', 'tour'], tour: ['tour'], hide: ['choose scenes'], exclude: ['choose scenes'], include: ['choose scenes'], remove: ['choose scenes'] };
 const search = document.createElement('input'); search.type = 'search'; search.className = 'sheetsearch'; search.placeholder = 'Search: alarm, volume, photos…'; search.setAttribute('aria-label', 'Search the settings');
 sheet.querySelector('.body').prepend(search);
 const secs = [...sheet.querySelectorAll('details.sec')];
@@ -80,6 +81,6 @@ function summarise() {
   const tl = el('tStart').textContent, count = el('tCount').textContent, sleep = [...el('sleepSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true');
   el('sumTimer').textContent = [tl, count, sleep && sleep.dataset.sleep !== '0' ? `sleep in ${sleep.textContent}` : ''].filter(Boolean).join(' · ');
   const tod = [...el('todSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true'), auto = el('wxAuto').getAttribute('aria-pressed') === 'true';
-  el('sumScene').textContent = [drift ? `drift every ${driftMin} min` : 'no drift', `${favs.size} favourite${favs.size === 1 ? '' : 's'}`, auto ? `weather ${Math.round(weather * 100)}% (auto)` : `weather ${Math.round(weather * 100)}%`, tod && tod.dataset.tod !== 'auto' ? tod.textContent.toLowerCase() : '', localOn ? 'local sky' : '', lively ? 'lively' : '', finishOn ? '' : 'no film finish'].filter(Boolean).join(' · ');
+  el('sumScene').textContent = [drift ? `drift every ${driftMin} min` : 'no drift', `${favs.size} favourite${favs.size === 1 ? '' : 's'}`, excluded.size ? `${excluded.size} left out` : '', auto ? `weather ${Math.round(weather * 100)}% (auto)` : `weather ${Math.round(weather * 100)}%`, tod && tod.dataset.tod !== 'auto' ? tod.textContent.toLowerCase() : '', localOn ? 'local sky' : '', lively ? 'lively' : '', finishOn ? '' : 'no film finish'].filter(Boolean).join(' · ');
   el('sumApp').textContent = [lowPower ? 'low power' : '', document.fullscreenElement ? 'full screen' : el('fsAutoBtn').getAttribute('aria-pressed') === 'true' ? 'full screen on tap' : ''].filter(Boolean).join(' · ') || 'all as usual';
 }

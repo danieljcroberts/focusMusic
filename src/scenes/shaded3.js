@@ -340,15 +340,35 @@ void main(){
   float shade = .8 + .2 * clamp(dot(-g, L) * .008, -1., 1.);
   vec3 gravel = mix(vec3(.72, .69, .62), vec3(.86, .83, .76), noise(uv * 220.)) * shade * (.9 + .1 * noise(uv * 40.));
   vec3 col = gravel;
+  // The season on the gravel: cherry petals in spring, maple leaves in autumn, a dusting of snow in winter.
+  if (SEASON == 3.) col = mix(col, vec3(.93, .95, .98), .4 + .08 * noise(uv * 12.));
+  if (SEASON == 0. || SEASON == 2.) {
+    for (int i = 0; i < 26; i++) {
+      float fi = float(i); vec2 c = (vec2(h21(vec2(fi, 41.)), h21(vec2(fi, 43.))) - .5) * vec2(2.2, 1.1);
+      float a = h21(vec2(fi, 47.)) * 6.28; vec2 q = mat2(cos(a), -sin(a), sin(a), cos(a)) * (uv - c);
+      float sz = SEASON == 0. ? .009 : .016;
+      float leaf = SEASON == 0. ? smoothstep(1., .8, length(q / vec2(sz, sz * .65)))
+                                : smoothstep(1., .8, length(q / vec2(sz, sz * .55)) + .25 * abs(sin(atan(q.y, q.x) * 2.5)));
+      vec3 lc = SEASON == 0. ? mix(vec3(1., .86, .9), vec3(.96, .62, .74), h21(vec2(fi, 49.))) : mix(vec3(.85, .22, .08), vec3(.95, .6, .12), h21(vec2(fi, 49.)));
+      col = mix(col, col * .7, smoothstep(1.2, .8, length((q + vec2(.003, -.003)) / vec2(sz, sz * .7))) * .5);   // its shadow
+      col = mix(col, lc, leaf);
+    }
+  }
   for (int i = 0; i < 3; i++) {
     vec3 s = stone(i); vec2 d = (uv - s.xy) * vec2(1., 1.25);
     float r = length(d) - s.z;
-    col = mix(col, col * .6, smoothstep(.03, 0., length((uv - s.xy + L * s.z * .35) * vec2(1., 1.25)) - s.z) * .8);   // shadow
-    float moss = smoothstep(.03, .0, r - .01) * smoothstep(-.01, .015, r) * smoothstep(.35, .65, noise(uv * 30. + float(i)));
-    col = mix(col, vec3(.25, .4, .15) * (.8 + .4 * noise(uv * 90.)), moss);
+    // A long soft shadow toward the lower right, and a dark line where stone meets gravel.
+    col = mix(col, col * .55, smoothstep(.05, 0., length((uv - s.xy + L * s.z * .6) * vec2(1., 1.25)) - s.z * 1.05) * .7);
+    col = mix(col, col * .6, smoothstep(.012, 0., r) * step(0., r));
+    // The stone: pale granite, lit from the upper left, with a soft sheen and moss in its lower hollows.
     float dome = sqrt(max(0., 1. - pow(length(d) / s.z, 2.)));
-    vec3 nrm = normalize(vec3(d / s.z, dome + .2));
-    vec3 rock = mix(vec3(.3, .29, .27), vec3(.55, .53, .5), noise(uv * 25. + float(i) * 4.)) * (.35 + .8 * clamp(dot(nrm, normalize(vec3(L, .8))), 0., 1.));
+    vec3 nrm = normalize(vec3(d / s.z * .9, dome + .15)), Ld = normalize(vec3(L, .7));
+    float lam = clamp(dot(nrm, Ld), 0., 1.), spec = pow(max(dot(reflect(-Ld, nrm), vec3(0., 0., 1.)), 0.), 12.);
+    vec3 rock = mix(vec3(.42, .41, .39), vec3(.68, .66, .62), noise(uv * 30. + float(i) * 4.)) * (.3 + .85 * lam) + spec * .18;
+    rock *= .9 + .1 * noise(uv * 160.);
+    float moss = smoothstep(.55, .72, noise(uv * 26. + float(i) * 7.)) * smoothstep(.1, -.4, dot(normalize(d + 1e-4), -L)) * smoothstep(-s.z * .7, -s.z * .15, -length(d) + s.z * .0);
+    rock = mix(rock, vec3(.22, .36, .13) * (.7 + .5 * noise(uv * 120.)), moss * .85);
+    if (SEASON == 3.) rock = mix(rock, vec3(.9, .92, .96) * (.7 + .3 * lam), .7 * smoothstep(.55, .85, nrm.z) * smoothstep(.0, .5, dot(normalize(d + 1e-4), L)));   // snow on top
     col = mix(col, rock, smoothstep(.003, -.003, r));
   }
   vec3 tint = dmix(vec3(.32, .4, .62), vec3(1., .78, .62), vec3(1., .98, .94), day);
@@ -357,7 +377,7 @@ void main(){
   col *= 1. - .25 * smoothstep(.5, 1.2, length(uv));
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const zenScene = () => build(ZEN, byClock({ res: .9 }));
+export const zenScene = () => build(withSeason(ZEN), byClock({ res: .9 }));
 
 /* Mars Dust Storm: the plain from a rover's mast. The ground is ray-marched with rocks and drifts, the butterscotch sky
    holds a small pale sun with the blue Martian halo, and a wall of dust comes and goes across the plain. */
@@ -550,6 +570,28 @@ export const midnightSunScene = () => build(MIDNIGHT, byClock({ res: .85 }));
 /* Train by Day: the carriage window on a bright morning. Low hills, a lake, birch woods and fields slide past at their
    own speeds, the poles flick by, and summer clouds drift overhead. Follows the season. */
 const DAYTRAIN = `
+// One row of birches sliding past at speed sp: rounded ragged crowns on white trunks, in groves with open field between.
+// Returns the colour over the background and its coverage.
+vec4 trees(vec2 v, float t, float sp, float sc, float y0, float sz, vec3 leaves, float seed){
+  vec3 o = vec3(0.); float a = 0.;
+  float X = (v.x + t * sp) * sc;
+  for (int i = -1; i <= 1; i++) {
+    float c = floor(X) + float(i), h = h21(vec2(c, seed));
+    float grove = smoothstep(.3, .55, noise(vec2(c * .13, seed)));
+    float here = step(h, .15 + .8 * grove);
+    float cx = (c + .5 + (h21(vec2(c, seed + 1.)) - .5) * .6) / sc - t * sp;
+    float hh = sz * (.75 + .5 * h21(vec2(c, seed + 2.)));
+    vec2 cc = vec2(cx, y0 + hh * .85), d = (v - cc) / (hh * .62);
+    float ang = atan(d.y, d.x), rr = 1. + .22 * noise(vec2(ang * 2.5 + c, seed)) + .14 * noise(d * 5. + c);
+    float crown = smoothstep(rr, rr - .1, length(d * vec2(1.25, .85))) * here;   // birch crowns: taller than wide
+    float trunk = step(abs(v.x - cx), sz * .045) * step(y0, v.y) * step(v.y, cc.y) * here;
+    vec3 tc = mix(vec3(.93, .91, .87), vec3(.12), step(.7, noise(vec2(c * 7., v.y * 90.))));
+    vec3 lc = leaves * (.7 + .5 * smoothstep(-1., 1., d.y - d.x * .4)) * (.85 + .3 * noise(d * 7. + c));
+    o = mix(o, tc, trunk); a = max(a, trunk);
+    o = mix(o, lc, crown); a = max(a, crown);
+  }
+  return vec4(o, a);
+}
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT;
   float sway = sin(t * 1.6) * .002; vec2 v = uv - vec2(0., sway);
@@ -561,16 +603,18 @@ void main(){
   float hill = -.02 + .06 * fbm3o(vec2((v.x + t * .01) * 2., 1.));
   vec3 farG = SEASON == 3. ? vec3(.8, .84, .9) : vec3(.32, .5, .3);
   col = mix(col, mix(farG, col, .45), smoothstep(hill + .002, hill - .002, v.y));
+  // The land between the hills and the track: meadow with patches, hazier toward the hills.
+  float land = hill - .012;
+  vec3 ground = mix(grass * .85, grass * 1.08, smoothstep(.35, .65, noise(vec2((v.x + t * .07) * 3., v.y * 14.)))) * (.9 + .2 * noise(vec2((v.x + t * .1) * 40., v.y * 60.)));
+  ground = mix(ground, mix(farG, col, .35), smoothstep(-.12, land, v.y) * .6);
+  col = mix(col, ground, smoothstep(land + .003, land - .003, v.y));
   float lake = -.06; float lk = step(v.y, hill - .005) * step(lake - .03, v.y) * step(.45, noise(vec2((v.x + t * .03) * 1.2, 4.)));
   col = mix(col, mix(vec3(.4, .6, .8), vec3(.85, .9, .95), noise(vec2((v.x + t * .03) * 30., v.y * 200.)) * .4), lk * step(v.y, lake + .02));
-  // Birch woods: white trunks with dark marks, a band of leaves above.
-  float ctop = -.03 + .09 * fbm3o(vec2((v.x + t * .09) * 4., 5.));
-  float bx = (v.x + t * .09) * 9.; float cell = floor(bx), f = fract(bx) - .5 + (h21(vec2(cell, 3.)) - .5) * .5;
-  float trunk = step(abs(f), .05) * step(-.2, v.y) * step(v.y, ctop) * step(.3, h21(vec2(cell, 7.)));
-  float crown = smoothstep(ctop + .004, ctop - .004, v.y) * step(-.16, v.y) * smoothstep(.3, .45, fbm3o(vec2((v.x + t * .09) * 9., v.y * 12.)));
-  col = mix(col, leaves * .45, smoothstep(ctop + .004, ctop - .004, v.y) * step(-.2, v.y));
-  col = mix(col, leaves * (.7 + .4 * noise(v * 50.)), crown);
-  col = mix(col, mix(vec3(.92, .9, .86), vec3(.1), step(.75, noise(vec2(cell, v.y * 60.)))), trunk);
+  // Birch woods in two rows: far ones slow and hazy, near ones quick.
+  vec4 far = trees(v, t, .05, 22., -.04, .05, mix(leaves, vec3(.6, .7, .8), .25), 3.);
+  col = mix(col, far.rgb, far.a);
+  vec4 near = trees(v, t, .13, 7., -.2, .13, leaves, 11.);
+  col = mix(col, near.rgb, near.a);
   // Fields close by, rushing past with their furrows.
   float fy = -.2;
   if (v.y < fy) { float fx = v.x + t * .5; vec3 fc = mix(grass * .85, grass * 1.05, smoothstep(.3, .7, noise(vec2(fx * .8, v.y * 3.)))) * (.8 + .3 * noise(vec2(fx * 40., v.y * 20.))); col = fc; }
@@ -605,37 +649,63 @@ export const dayTrainScene = () => build(withSeason(DAYTRAIN), byClock({ res: .8
 /* Rain on a Tent: inside a small tent at night, a lantern glowing. Rain beads on the fly and runs down the sloping
    panels, the fabric breathes with the wind, and the light flickers softly. Heavier with the weather. */
 const TENT = `
+// The fabric's drop shadows: soft round marks of the drops sitting on the fly, some sliding down the slope (dir).
+float drops(vec2 p, float t, float s, float dens, vec2 dir){
+  vec2 g = p * s, c = floor(g), f = fract(g) - .5;
+  float h = h21(c), on = step(1. - dens, h), slide = step(.8, h);
+  vec2 o = (vec2(h21(c + 1.7), h21(c + 3.1)) - .5) * .5 + dir * slide * (fract(t * (.05 + .1 * h21(c + 5.))) - .5) * .9;
+  float r = .1 + .1 * h21(c + 9.);
+  float m = smoothstep(r, r * .25, length(f - o));
+  float trail = slide * smoothstep(.06, .0, abs(dot(f - o, vec2(-dir.y, dir.x)))) * smoothstep(.0, -.4, dot(f - o, dir)) * smoothstep(-.6, -.1, dot(f - o, dir)) * .5;
+  return max(m, trail) * on;
+}
 void main(){
-  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, wet = uB;
-  vec2 lamp = vec2(0., -.38);
-  float flick = .92 + .05 * sin(t * 7.) + .03 * sin(t * 13.);
-  // The panels: two slopes meeting at the ridge above, the fabric moving a little with the wind.
-  float side = sign(uv.x), slope = abs(uv.x) * .9 - uv.y;
-  vec2 fp = vec2(uv.x * 1.4, slope * 1.8) + vec2(0., .01 * sin(t * .7 + uv.x * 3.) * (1. + wet));
-  float weave = .92 + .08 * (step(.5, fract(fp.x * 220.)) * .5 + step(.5, fract(fp.y * 220.)) * .5);
-  vec3 fabric = vec3(.85, .48, .18) * weave;
-  float light = flick * (1.4 / (1. + 5. * length(uv - lamp))) + .05;
-  vec3 col = fabric * light;
-  col *= .8 + .2 * side * .5 + .1;                                     // one panel a little darker
-  col = mix(col, col * .4, smoothstep(.01, 0., abs(uv.x)) * step(-.3, uv.y));   // the ridge seam
-  col = mix(col, col * .6, smoothstep(.006, 0., abs(abs(uv.x) * .9 - uv.y - .55)) * .7);   // panel seams
-  // Drops on the outside of the fly: dark beads with a lit glint, some running down the slope.
-  for (int i = 0; i < 2; i++) {
-    float s = 13. + float(i) * 8.;
-    vec2 g = (uv + vec2(0., .004 * sin(t * .7 + uv.x * 3.))) * s, c = floor(g), f = fract(g) - .5; float h = h21(c + float(i) * 7.);
-    vec2 o = (vec2(h21(c + 1.1), h21(c + 2.7)) - .5) * .6;
-    float on = step(1. - (.15 + .3 * wet), h);
-    float run = fract(t * .08 * (1. + h) + h);
-    float dd = length((f - o - vec2(0., run * .3 * step(.85, h))) * vec2(1., 1.4));
-    col = mix(col, col * .35, smoothstep(.2, .14, dd) * on);
-    col += vec3(1., .8, .55) * smoothstep(.07, .0, length(f - o - vec2(-.05, .06) - vec2(0., run * .3 * step(.85, h)))) * on * .6 * light;
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, wet = uB, asp = uRes.x / uRes.y;
+  float flick = .93 + .04 * sin(t * 7.) + .03 * sin(t * 13.1);
+  vec2 lamp = vec2(.02 * sin(t * .6), .14 + .005 * sin(t * .9));          // the lantern sways a little on its cord
+  float floorY = -.42, apex = .52;
+  float halfW = .62 * (apex - uv.y) / (apex - floorY);                     // the end wall narrows to the ridge
+  bool wall = abs(uv.x) < halfW;
+  // Light from the lantern, falling off with distance, a little brighter on the end wall it faces.
+  float Ld = length((uv - lamp) * vec2(1., 1.2));
+  float light = flick * (1.15 / (1. + 7. * Ld * Ld)) + .04;
+  vec3 fabric = vec3(.86, .5, .2);
+  vec3 col;
+  if (wall) {
+    col = fabric * light * 1.08;
+    float weave = .94 + .06 * step(.5, fract(uv.x * 260.)) * step(.5, fract(uv.y * 260.));
+    col *= weave;
+    // The door: a zip in an arch, and a mesh window at its top.
+    float dx = abs(uv.x), arch = uv.y > .02 ? length(vec2(uv.x, (uv.y - .02) * 1.1)) - .2 : dx - .2;
+    float zip = smoothstep(.006, .0, abs(arch)) * step(uv.y, .24) * (.6 + .4 * step(.5, fract((uv.y + dx) * 90.)));
+    col = mix(col, col * .45, zip);
+    float mesh = step(arch, -.02) * step(.06, uv.y);
+    col = mix(col, col * (.35 + .25 * step(.5, fract(uv.x * 120.)) * step(.5, fract(uv.y * 120.))), mesh * .8);
+    col = mix(col, col * .7, drops(uv + vec2(0., .3), t, 16., .2 + .35 * wet, vec2(0., -1.)) * (1. - mesh) * .6);
+  } else {
+    // The side panels slope away; drops slide down and outward along them.
+    float side = sign(uv.x), slopeK = smoothstep(halfW, halfW + .6, abs(uv.x));
+    col = fabric * light * (.75 - .2 * slopeK);
+    col *= .96 + .04 * sin(uv.x * 9. - uv.y * 4. + t * (.6 + wet)) * (1. + wet);   // the fabric breathing in the wind
+    col = mix(col, col * .62, drops(vec2(uv.x * .9, uv.y + abs(uv.x) * .4), t, 13., .25 + .4 * wet, normalize(vec2(side * .7, -1.))) * .75);
   }
-  // The lantern itself and the floor.
-  col += vec3(1., .75, .4) * exp(-length(uv - lamp) * 25.) * flick + vec3(1., .9, .7) * exp(-length(uv - lamp) * 120.) * flick;
-  float floorY = -.42;
-  if (uv.y < floorY) col = mix(vec3(.12, .1, .08), vec3(.35, .25, .15), exp(-length(uv - lamp) * 4.)) * (.8 + .2 * noise(uv * 60.));
-  col *= 1. - .4 * smoothstep(.4, 1.1, length(uv));
-  col = 1. - exp(-col * 1.4);
+  // Seams: the ridge corners and a band where wall meets panel.
+  col = mix(col, col * .55, smoothstep(.006, .0, abs(abs(uv.x) - halfW)) * step(floorY, uv.y));
+  // The groundsheet and a sleeping bag in the corner.
+  if (uv.y < floorY) col = vec3(.1, .12, .1) * (.5 + 1.4 * light) * (.85 + .15 * noise(uv * 50.));
+  vec2 bq = (uv - vec2(-asp * .32, -.47)) / vec2(.42, .14);
+  float bag = smoothstep(1., .96, length(bq)) * step(-.47, uv.y - .0);
+  vec3 bagC = mix(vec3(.12, .2, .32), vec3(.2, .3, .45), smoothstep(-.6, .8, bq.y)) * (.5 + 1.2 * light) * (.85 + .15 * step(.5, fract(bq.x * 6.)));
+  col = mix(col, bagC, smoothstep(1., .97, length(bq)));
+  // The lantern: a cord up to the ridge, a cap, and the glowing glass.
+  col = mix(col, vec3(.05), smoothstep(.003, .0, abs(uv.x - lamp.x * (uv.y - apex) / (lamp.y - apex))) * step(lamp.y + .05, uv.y) * step(uv.y, apex));
+  vec2 lq = uv - lamp;
+  col = mix(col, vec3(.08, .07, .06), step(abs(lq.x), .028) * step(abs(lq.y - .05), .012));
+  float glass = smoothstep(.032, .028, length(lq * vec2(1., .75)));
+  col = mix(col, vec3(1., .82, .5) * (1.4 + .3 * flick), glass);
+  col += vec3(1., .7, .35) * exp(-length(lq) * 22.) * .7 * flick;
+  col *= 1. - .35 * smoothstep(.45, 1.1, length(uv * vec2(.8, 1.)));
+  col = 1. - exp(-col * 1.5);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
 export const tentScene = () => build(TENT, byClock({ res: .85 }));
@@ -654,12 +724,23 @@ void main(){
     float y = uv.y + .55, k = clamp(y / 1.3, 0., 1.);
     float x = x0 + (sin(t * .4 + fi + y * 2.) * .05 + sin(t * .17 + fi * 2.) * .04) * k * sway;
     float stalk = smoothstep(.006, .003, abs(uv.x - x)) * step(0., y);
-    float sy = y * 6. + fi, fy = fract(sy), side = mod(floor(sy), 2.) * 2. - 1.;
-    vec2 bq = vec2((uv.x - x) * side - .028 - .01 * sin(t * .8 + sy), (fy - .5) / 6. - (uv.x - x) * side * .6);
-    float blade = smoothstep(1., .8, length(bq / vec2(.022, .1))) * step(.05, y) * step(y, 1.25);
-    vec3 kc = mix(vec3(.25, .3, .08), vec3(.5, .55, .15), noise(vec2(y * 20., fi))) * (.3 + .7 * k);
+    // Long ribbon blades, alternating sides, angled up from the stalk and fluttering in the swell; each pixel checks
+    // the blade of its own segment and the one below, since blades reach up past the next node.
+    float blade = 0.;
+    for (int jj = 0; jj < 2; jj++) {
+      float sy = y * 5. + fi * .37, j = floor(sy) - float(jj);
+      float valid = step(1., j) * step(j, 6.);
+      vec2 b = vec2(x, (j - fi * .37) / 5. - .55);
+      float side = mod(j, 2.) * 2. - 1., fl = .3 * sin(t * .7 + j * 1.7 + fi) * sway;
+      vec2 dir = normalize(vec2(side * (.55 + fl), 1.)), perp = vec2(-dir.y, dir.x);
+      float along = dot(uv - b, dir), across = dot(uv - b, perp), len = .17 + .07 * h21(vec2(fi, j));
+      float w = .017 * sin(3.1416 * clamp(along / len, 0., 1.)) * (1. + .3 * sin(along * 70. + t * 2.));
+      blade = max(blade, valid * step(0., along) * step(along, len) * smoothstep(w, w * .5, abs(across + .012 * sin(along * 18. + t))));
+    }
+    float lit = smoothstep(-.4, .6, uv.y) * (.6 + .6 * sh);
+    vec3 kc = mix(vec3(.16, .14, .04), vec3(.62, .5, .14), lit) * (.85 + .3 * noise(vec2(y * 30., fi))) * (.35 + .65 * k);
     kc = mix(kc, col, depth * .6);                                         // the far ones fade into the blue
-    col = mix(col, kc, max(stalk, blade * .9));
+    col = mix(col, kc, max(stalk, blade * .92));
   }
   for (int i = 0; i < 5; i++) {   // fish far off
     float fi = float(i), sp = .03 + .02 * h21(vec2(fi, 8.)), span = asp + .4;

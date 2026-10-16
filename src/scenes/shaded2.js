@@ -6,6 +6,7 @@ import { daylight } from '../daylight.js';
 import { weather } from '../weather.js';
 import { bands } from '../music.js';
 import { lowPower } from '../view.js';
+import { moonPhase, MOON_GLSL } from '../moon.js';
 
 const NOISE3 = `
 float h31(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -150,7 +151,7 @@ float rings(vec2 p, float t, float rate){
     float fi = float(i);
     float cyc = t * rate * (.6 + .4 * fract(fi * .37)) + fi * .713;
     float age = fract(cyc), id = floor(cyc);
-    vec2 c = vec2(h21(vec2(id, fi)), h21(vec2(fi, id + 3.))) * 12. - 6.;
+    vec2 c = vec2(h21(vec2(id, fi)) * 7. - 3.5, h21(vec2(fi, id + 3.)) * 6. + .5);   // within the view
     float d = length(p - c), r = age * 2.6;
     h += sin((d - r) * 12.) * exp(-abs(d - r) * 4.) * (1. - age) * (1. - age) * .5 * step(d, r + .5);
   }
@@ -164,7 +165,7 @@ void main(){
   float dist = 2. / -rd.y;
   vec3 p = rd * dist;
   vec2 q = p.xz;
-  float rate = .25 + .55 * wx;
+  float rate = .4 + .55 * wx;
   float e = .02;
   float h0 = rings(q, t, rate), hx = rings(q + vec2(e, 0.), t, rate), hz = rings(q + vec2(0., e), t, rate);
   vec2 slope = vec2(hx - h0, hz - h0) / e;
@@ -194,10 +195,10 @@ void main(){
   float fres = .06 + .94 * pow(1. - max(dot(-rd, n), 0.), 4.);
   vec3 col = mix(under, skyC, clamp(fres * 1.5, 0., 1.));
   // Lily pads: discs on the surface that drift and turn, with a notch and a soft shadow.
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 12; i++) {
     float fi = float(i);
-    vec2 c = vec2(h21(vec2(fi, 1.)), h21(vec2(fi, 2.))) * 10. - 5. + vec2(sin(t * .05 + fi), cos(t * .04 + fi * 2.)) * .3;
-    float r = .55 + .35 * h21(vec2(fi, 3.));
+    vec2 c = vec2(h21(vec2(fi, 1.)) * 6. - 3., h21(vec2(fi, 2.)) * 4.5 + 2.) + vec2(sin(t * .05 + fi), cos(t * .04 + fi * 2.)) * .3;   // within the view
+    float r = .35 + .3 * h21(vec2(fi, 3.));
     vec2 d = q - c; float ang = atan(d.y, d.x) + t * .02 * (fract(fi * .5) - .25);
     float notch = step(abs(ang - 1.), .25) * step(length(d), r * 1.1);
     float pad = smoothstep(r, r - .04, length(d)) * (1. - notch);
@@ -206,6 +207,14 @@ void main(){
     float shadow = smoothstep(r + .25, r, length(d + vec2(.1, .1))) * (1. - notch);
     col = mix(col, col * .55, shadow * .6 * (1. - pad));
     col = mix(col, padC, pad);
+    // Every third pad carries a water lily: pointed petals, white to pink, with a gold centre.
+    if (mod(fi, 3.) < .5) {
+      vec2 fq = d - vec2(r * .15, -r * .1); float fa = atan(fq.y, fq.x) + fi, fl = length(fq);
+      float petals = smoothstep(.0, .02, r * .42 * (.55 + .45 * abs(cos(fa * 4.))) - fl);
+      vec3 petC = mix(vec3(1., .96, .96), vec3(.95, .55, .7), h21(vec2(fi, 9.)) * (1. - fl / (r * .42))) * (.35 + .65 * day + .2);
+      col = mix(col, petC, petals);
+      col = mix(col, vec3(1., .78, .25) * (.4 + .6 * day), smoothstep(r * .1, r * .06, fl));
+    }
   }
   col = 1. - exp(-col * 1.7);
   col += dither(t);
@@ -219,7 +228,7 @@ const TRAIN = `
 float lights(vec2 p, float scale, float density, float t){
   vec2 g = p * scale; vec2 c = floor(g), f = fract(g) - .5;
   float h = h21(c + 5.);
-  float town = smoothstep(.45, .7, noise(vec2(c.x * .06, 3.)));              // lights gather into towns with dark country between
+  float town = smoothstep(.32, .6, noise(vec2(c.x * .06, 3.)));              // lights gather into towns with dark country between
   vec2 o = (vec2(h21(c + 1.1), h21(c + 2.3)) - .5) * .8;
   float d = length(f - o);
   return (smoothstep(.1, .0, d) + exp(-d * 5.) * .18) * step(1. - density * town, h) * (.7 + .3 * sin(t * 2. + h * 50.));
@@ -230,11 +239,20 @@ void main(){
   float sway = sin(t * 1.7) * .002 + sin(t * .4) * .003;
   vec2 v = uv - vec2(0., sway);
   // Sky and far hills.
-  vec3 col = mix(vec3(.04, .045, .09), vec3(.01, .01, .025), smoothstep(-.1, .45, v.y));
+  // A moonlit night: a deep blue sky, tonight's moon, and thin cloud drifting past lit from behind.
+  vec3 col = mix(vec3(.07, .085, .17), vec3(.012, .016, .04), smoothstep(-.1, .45, v.y));
+  float full = 1. - abs(MOONP * 2. - 1.);
+  vec2 mp = vec2(.32 - fract(t * .0006) * .05, .27); float md = length(v - mp);
+  col += vec3(.35, .4, .6) * exp(-md * 4.) * (.08 + .22 * full);
   col += stars(uv * 170., t, 0.) * vec3(.9, .95, 1.) * smoothstep(.0, .15, v.y);
+  float disc = smoothstep(.032, .029, md);
+  col = mix(col, vec3(1., .97, .9), disc * moonLit((v - mp) / .031));
+  float cl = smoothstep(.5, .78, fbm3o(vec2(v.x * 1.6 + t * .012, v.y * 5. + 3.))) * smoothstep(.02, .2, v.y);
+  col = mix(col, vec3(.16, .18, .28) * (.5 + .9 * exp(-md * 3.) * (.4 + .6 * full)), cl * .7);
   float hx = v.x + t * .03;
   float hill = -.02 + .06 * (.5 + .5 * sin(hx * 2.1)) + .04 * noise(vec2(hx * 4., 1.)) + .01 * noise(vec2(hx * 20., 2.));
-  col = mix(col, vec3(.012, .013, .025), smoothstep(hill + .003, hill - .003, v.y));
+  col = mix(col, vec3(.022, .026, .05), smoothstep(hill + .003, hill - .003, v.y));
+  col += vec3(.12, .14, .22) * smoothstep(.006, .0, abs(v.y - hill + .002)) * (.3 + .7 * full) * .5;   // moonlight along the ridge
   // Town lights on the plain between the hills and the track, warm and the odd cold one, in two bands.
   vec2 lp = vec2(v.x + t * .08, v.y);
   float L1 = lights(lp, 50., .3, t) * smoothstep(-.09, -.05, v.y) * smoothstep(hill, hill - .03, v.y);
@@ -282,6 +300,8 @@ void main(){
   float trail = smoothstep(.012, .0, abs(rf.y - ro.y)) * step(.9, rh) * step(ro.x, rf.x) * smoothstep(.5, ro.x, rf.x) * .5;
   col += (drop + trail * .25) * (vec3(.5, .55, .7) * .2 + col * .9);
   for (int i = 0; i < 3; i++) { vec2 lc = vec2(-.45 + .45 * float(i), .3); col += vec3(1., .85, .65) * exp(-length((uv - lc) * vec2(1., 2.)) * 14.) * .06; }
+  // The carriage faintly mirrored in the glass: a warm wash low down.
+  col += vec3(.08, .055, .03) * smoothstep(-.05, -.33, uv.y);
   // The window frame: a dark top, a sill, and the pillar on the right.
   float x01 = uv.x * uRes.y / uRes.x + .5;
   float frame = step(.4, uv.y) + step(uv.y, -.33) + step(.94, x01);
@@ -292,7 +312,7 @@ void main(){
   col += dither(t);
   gl_FragColor = vec4(col, 1.);
 }`;
-export const trainScene = () => build(TRAIN, { res: .85, speed: 1 });
+export const trainScene = () => build(MOON_GLSL(moonPhase()) + TRAIN, { res: .85, speed: 1 });
 
 /* Hearth: a low fire in a stone fireplace. The flames are noise carried upward and shaped into tongues, the logs glow
    through cracks, embers rise, and the firelight moves on the stones and the room. Rain keeps on at the window. */

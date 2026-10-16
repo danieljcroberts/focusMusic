@@ -2,6 +2,7 @@
 // suit the hour, with the next scene's music starting a few seconds ahead of the switch.
 import { SCENES } from './scenes/index.js';
 import { state, saveState } from './state.js';
+import { included } from './excluded.js';
 import { daylight } from './daylight.js';
 import { follow, pickFor, playTrack } from './music.js';
 
@@ -27,7 +28,7 @@ export function applyDriftMin(m) { driftMin = m; driftButtons.forEach(b => b.set
 driftButtons.forEach(b => b.addEventListener('click', () => applyDriftMin(+b.dataset.min)));
 
 function pickDrift() {
-  const cur = current(), all = SCENES.map((s, i) => i).filter(i => i !== cur);
+  const cur = current(), all = SCENES.map((s, i) => i).filter(i => i !== cur && included(SCENES[i].name));   // never a left-out scene
   const set = (state.sets || []).find(s => s.name === state.activeSet);
   const setPool = set ? all.filter(i => set.scenes.includes(SCENES[i].name)) : [];
   const favPool = all.filter(i => favs.has(SCENES[i].name));
@@ -35,7 +36,7 @@ function pickDrift() {
   const want = daylight() > .5 ? 'day' : 'night';
   const suited = base.filter(i => (SCENES[i].mood || 'any') === 'any' || SCENES[i].mood === want);
   const list = suited.length ? suited : base;
-  return list[Math.floor(Math.random() * list.length)];
+  return list.length ? list[Math.floor(Math.random() * list.length)] : -1;   // -1: nothing else to drift to
 }
 export function noteSceneChange() { driftLast = performance.now(); }
 export function tickDrift(now) {
@@ -43,10 +44,10 @@ export function tickDrift(now) {
   const left = driftMin * 60000 - (now - driftLast);
   if (left < 3000 && driftPick < 0) {
     driftPick = pickDrift();
-    const s = SCENES[driftPick], t = follow ? pickFor(s.music, s.tone) : null;
+    const s = SCENES[driftPick], t = s && follow ? pickFor(s.music, s.tone) : null;
     if (t) playTrack(t);   // the music leads the scene by a few seconds
   }
-  if (left <= 0) { const i = driftPick >= 0 ? driftPick : pickDrift(); driftPick = -1; go(i); }
+  if (left <= 0) { const i = driftPick >= 0 ? driftPick : pickDrift(); driftPick = -1; if (i >= 0) go(i); else driftLast = now; }
 }
 export function initDrift(opts) {
   go = opts.go; current = opts.current; cards = opts.cards;

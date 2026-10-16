@@ -180,8 +180,8 @@ export function reactionScene() {
     init() {
       [w, h] = gridSize(lowPower ? 160 : 240);
       A = new Float32Array(w * h).fill(1); B = new Float32Array(w * h); A2 = new Float32Array(w * h); B2 = new Float32Array(w * h);
-      seed(Math.round(w * h / 500) + 4, 2);
-      for (let i = 0; i < (lowPower ? 250 : 500); i++) step();   // start part-grown
+      seed(Math.round(w * h / 160) + 8, 3);
+      for (let i = 0; i < (lowPower ? 600 : 1200); i++) step();   // start well grown, so the first look is coral rather than a few dots
       [buf, bg2] = plain(w, h); im = bg2.createImageData(w, h);
       tint = new Float32Array(w * h * 3);   // the colonies take their colour from where they grow: coral, sea glass, pale gold
       const C = [[236, 118, 96], [118, 200, 188], [242, 204, 128]], ph = rand(0, 6.28);

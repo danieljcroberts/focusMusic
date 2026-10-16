@@ -118,7 +118,7 @@
           <div class="seg" id="driftSeg" role="group" aria-label="Drift interval">
             <button type="button" data-min="10" aria-pressed="false">10 min</button><button type="button" data-min="20" aria-pressed="false">20 min</button><button type="button" data-min="30" aria-pressed="false">30 min</button>
           </div></div>
-        <span class="note">Drift moves between your favourite scenes, or all of them if none are starred, preferring ones that suit the hour.</span>
+        <span class="note">Drift moves between your favourite scenes, or all of them if none are starred, preferring ones that suit the hour. It never picks a scene you have left out.</span>
         <span class="lbl">Look</span>
         <div class="row wrap">
           <button type="button" class="tog" id="finishBtn" aria-pressed="true" title="Fine grain, a soft vignette and a little warmth over every scene">Film finish</button>
@@ -132,6 +132,8 @@
           <button type="button" data-tod="auto" aria-pressed="true">Auto</button><button type="button" data-tod="night" aria-pressed="false">Night</button><button type="button" data-tod="dusk" aria-pressed="false">Dusk</button><button type="button" data-tod="day" aria-pressed="false">Day</button>
         </div>
         <div class="row"><button type="button" class="tog" id="localBtn" aria-pressed="false">Use my location</button><span class="note" id="localNote">Rain outside means rain on the glass; sunrise and sunset follow your sky.</span></div>
+        <span class="lbl">Scenes included</span>
+        <div class="row wrap"><button type="button" id="chooseBtn">Choose scenes…</button><span class="note" id="chooseSum"></span></div>
         <span class="lbl">Scene sets</span>
         <div class="row wrap" id="setList"></div>
         <div class="row"><input type="text" id="setName" maxlength="24" placeholder="Name, e.g. Mornings" aria-label="Set name"><button type="button" id="setSave">Save favourites as a set</button></div>
@@ -175,7 +177,8 @@
 <svg class="ring" id="ring" viewBox="0 0 40 40" hidden aria-hidden="true"><circle cx="20" cy="20" r="16" class="track"/><circle cx="20" cy="20" r="16" class="fill" id="ringFill" pathLength="100"/></svg>
 <div class="picker" id="picker" hidden role="dialog" aria-label="This scene and all the others">
   <header><h2 id="pickTitle">Scenes</h2><button type="button" class="pbtn" id="pickerClose">Close</button></header>
-  <div class="seg pickmode" id="pickMode" role="group" aria-label="Show"><button type="button" data-m="all" aria-pressed="true">All</button><button type="button" data-m="fav" aria-pressed="false">Favourites</button><button type="button" data-m="most" aria-pressed="false">Most watched</button></div>
+  <div class="seg pickmode" id="pickMode" role="group" aria-label="Show"><button type="button" data-m="all" aria-pressed="true">All</button><button type="button" data-m="fav" aria-pressed="false">Favourites</button><button type="button" data-m="most" aria-pressed="false">Most watched</button><button type="button" data-m="choose" aria-pressed="false" title="Choose which scenes to include">Choose</button></div>
+  <div class="choosebar" id="chooseBar" hidden><p id="chooseNote"></p><div class="row wrap"><button type="button" class="pbtn" id="chooseAll">Include all</button><button type="button" class="pbtn" id="chooseFavs">Only favourites</button></div></div>
   <div class="info">
     <p class="desc" id="desc"></p>
     <div class="credits">
