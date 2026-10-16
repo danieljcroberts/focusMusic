@@ -418,3 +418,4 @@ body.sheet-open .chrome, body.sheet-open .shade { opacity: 1 !important; visibil
 .picker .info { display: grid; gap: 8px; max-width: 72ch; }
 .picker .info .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .picker h2 { font-size: clamp(30px, 6vw, 48px); font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+.lib-total { margin: 0 0 14px; font-size: 13px; color: var(--text); }

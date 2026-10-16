@@ -29,6 +29,7 @@ for (const t of TRACKS) {
   if (!t.src) err(`track has no source link: ${k}`);
   if (!TONES.has(t.mood)) err(`track has an unknown mood "${t.mood}": ${k}`);
   if (!['ambient', 'minimalist', 'classical', 'downtempo', 'lofi', 'postrock', 'jazz', 'misc', 'french', 'synth', 'energy'].includes(t.genre)) err(`track has an unknown genre "${t.genre}": ${k}`);
+  if ((t.file || t.stream) && !t.len) warn(`track has no length, so the library totals leave it out (run node scripts/track-lengths.mjs): ${k}`);
   if (t.file && !t.stream && !/bandcamp\.com/.test(t.src || '')) warn(`bundled track has no stream URL to fetch from: ${k}`);   // Bandcamp releases are downloaded by hand
 }
 

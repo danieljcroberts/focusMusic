@@ -15,9 +15,10 @@ const h = (tag, props = {}, ...kids) => { const n = Object.assign(document.creat
 const btn = (text, onClick, cls = 'pbtn') => { const b = h('button', { type: 'button', className: cls, textContent: text }); b.addEventListener('click', onClick); return b; };
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const counts = s => {
-  const mine = ownTracks().filter(e => s.own.includes(e.id)), own = mine.length, free = ST.freeTracks(s).length;
-  const secs = mine.reduce((a, e) => a + (e.dur || 0), 0);
-  return { own, free, text: [own && `${own} of yours${secs ? ` (${fmtDur(secs)})` : ''}`, free && `${free} free`, s.live && 'random finds'].filter(Boolean).join(' + ') || 'empty' };
+  const mine = ownTracks().filter(e => s.own.includes(e.id)), own = mine.length, freeList = ST.freeTracks(s), free = freeList.length;
+  const secs = mine.reduce((a, e) => a + (e.dur || 0), 0), freeSecs = freeList.reduce((a, t) => a + (t.len || 0), 0);
+  const freeText = free && `${free} free${freeSecs ? ` (${fmtDur(freeSecs)})` : ''}`;
+  return { own, free, freeText, text: [own && `${own} of yours${secs ? ` (${fmtDur(secs)})` : ''}`, freeText, s.live && 'random finds'].filter(Boolean).join(' + ') || 'empty' };
 };
 // A line that fills in the total length of some files once it is known: "12 tracks" then "12 tracks · 48 min".
 function lengthNote(files, text) {
@@ -42,7 +43,7 @@ function fillMenu() {
   stMenu.append(h('span', { className: 'lbl', textContent: 'Soundtrack' }));
   for (const s of ST.soundtracks()) {
     const c = counts(s);
-    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? `${c.free} free` : s.live ? 'random finds' : s.id === 'loved' ? 'tap ♥ while playing' : 'add your own' }));
+    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? c.freeText : s.live ? 'random finds' : s.id === 'loved' ? 'tap ♥ while playing' : 'add your own' }));
     b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(s.id === ST.current().id));
     b.addEventListener('click', () => choose(s.id));
     stMenu.append(b);

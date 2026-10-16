@@ -5,7 +5,7 @@ import { M } from './assets.js';
 import { state, saveState } from './state.js';
 import { note } from './diag.js';
 import { setStatus } from './status.js';
-import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps } from './mine.js';
+import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps, fmtDur } from './mine.js';
 import * as ST from './soundtracks.js';
 
 const el = id => document.getElementById(id);
@@ -642,11 +642,16 @@ export function renderLib() {
     ['Likely Creative Commons, not yet confirmed', t => t.conf === 'likely' && !t.file],
   ];
   ui.list.textContent = '';
-  ui.list.append(ownSection());
+  // How much Creative Commons music there is to play, from the lengths kept in tracks.json (scripts/track-lengths.mjs).
+  const ready = TRACKS.filter(t => t.len), elsewhere = TRACKS.length - ready.length;
+  const sum = document.createElement('p'); sum.className = 'lib-total';
+  sum.textContent = `${ready.length} Creative Commons tracks to play here, ${fmtDur(ready.reduce((a, t) => a + t.len, 0))} of music in all.${elsewhere ? ` ${elsewhere} more are listed with links to where they're published.` : ''}`;
+  ui.list.append(sum, ownSection());
   for (const [label, test] of groups) {
     const items = TRACKS.filter(test); if (!items.length) continue;
     const sec = document.createElement('section');
-    const h = document.createElement('h3'); h.textContent = `${label} (${items.length})`;
+    const secs = items.reduce((a, t) => a + (t.len || 0), 0);
+    const h = document.createElement('h3'); h.textContent = `${label} (${items.length}${secs ? ` · ${fmtDur(secs)}` : ''})`;
     const ol = document.createElement('ol');
     for (const t of items) {
       const li = document.createElement('li'); li.dataset.k = key(t);
@@ -657,7 +662,7 @@ export function renderLib() {
       const body = document.createElement('div');
       const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${t.t} — ${t.a}`;
       const mm = document.createElement('div'); mm.className = 'm';
-      mm.append([t.lic, eps(t)].filter(Boolean).join(' · '));
+      mm.append([t.len && `${Math.floor(t.len / 60)}:${String(t.len % 60).padStart(2, '0')}`, t.lic, eps(t)].filter(Boolean).join(' · '));
       if (t.src) mm.append(' · ', link(t.src, 'Source ↗'));
       if (t.stream && !t.file && iaOnline === false) { const e = document.createElement('em'); e.textContent = 'streams when run with a connection'; mm.append(' · ', e); }
       if (t.note) mm.append(document.createElement('br'), t.note);

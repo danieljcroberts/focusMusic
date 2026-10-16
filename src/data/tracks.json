@@ -10,7 +10,8 @@
     "src": "https://chriszabriskie.bandcamp.com/track/chance-luck-errors-in-nature-destruction-as-a-finale",
     "stream": "https://archive.org/download/Reappear-11948/Chris_Zabriskie_-_06_-_Chance_Luck_Errors_in_Nature_Fate_Destruction_As_a_Finale.mp3",
     "conf": "confirmed",
-    "genre": "classical"
+    "genre": "classical",
+    "len": 671
   },
   {
     "a": "Calling Sister Midnight",
@@ -133,7 +134,8 @@
     "conf": "confirmed",
     "file": "miles-tilmann-particle-song-1.mp3",
     "note": "From the XMASEP 2 release on Bandcamp",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 181
   },
   {
     "a": "Miles Tilmann",
@@ -171,7 +173,8 @@
     "stream": "https://archive.org/download/mhrk083/mhrk083_Esa_Ruoho_07_Glasnevin.mp3",
     "conf": "confirmed",
     "note": "Netlabel release only; the Bandcamp reissue is all rights reserved",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 629
   },
   {
     "a": "Ian Hawgood",
@@ -184,7 +187,8 @@
     "src": "https://archive.org/details/IanHawgood-BeforeILetTheSunshineRotphch012",
     "stream": "https://archive.org/download/IanHawgood-BeforeILetTheSunshineRotphch012/01BeforeILetTheSunshineRot.mp3",
     "conf": "confirmed",
-    "genre": "classical"
+    "genre": "classical",
+    "len": 432
   },
   {
     "a": "Pulse Emitter",
@@ -199,7 +203,8 @@
     "stream": "https://archive.org/download/Longing_Thresholds-11457/Pulse_Emitter_-_LongingThresholds.mp3",
     "conf": "confirmed",
     "note": "Free Music Archive copy; Bandcamp now says all rights reserved",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 473
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -212,7 +217,8 @@
     "src": "https://agentsofthecultureindustry.bandcamp.com/album/beyond-infinity",
     "conf": "confirmed",
     "file": "agents-of-the-culture-industry-reality-effect-kafkadub.mp3",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 1270
   },
   {
     "a": "Renniac",
@@ -225,7 +231,8 @@
     "src": "https://archive.org/details/gruen012",
     "stream": "https://archive.org/download/gruen012/gruen012_ennui_06-renniac_-_earth_night.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 603
   },
   {
     "a": "_nono_",
@@ -263,7 +270,8 @@
     "src": "https://glopuntia.bandcamp.com/album/be-i-x",
     "conf": "confirmed",
     "file": "glochids-pulse-sjilver.mp3",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 133
   },
   {
     "a": "Holger Flinsch",
@@ -276,7 +284,8 @@
     "src": "https://archive.org/details/raam004",
     "stream": "https://archive.org/download/raam004/raam004_01_holger_flinsch_-_organon.mp3",
     "conf": "confirmed",
-    "genre": "synth"
+    "genre": "synth",
+    "len": 2353
   },
   {
     "a": "Gaston Arevalo",
@@ -290,7 +299,8 @@
     "stream": "https://archive.org/download/f_pass009/pass009_-_02_gaston_arevalo_-_agreste.mp3",
     "file": "gaston-arevalo-agreste.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 315
   },
   {
     "a": "Maps And Diagrams",
@@ -304,7 +314,8 @@
     "stream": "https://archive.org/download/YkYk019/ykyk019-02_maps_and_diagrams_-_eleemosyn.mp3",
     "file": "maps-and-diagrams-eleemosyn.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 339
   },
   {
     "a": "Lomov",
@@ -317,7 +328,8 @@
     "src": "https://archive.org/details/apl028",
     "stream": "https://archive.org/download/apl028/apl028-02-lomov_-_sommersumpf.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 506
   },
   {
     "a": "Sable",
@@ -330,7 +342,8 @@
     "src": "https://archive.org/details/apl010",
     "stream": "https://archive.org/download/apl010/apl010_a1-epoq_-_sable_benthal.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 1642
   },
   {
     "a": "Bannister Boy",
@@ -344,7 +357,8 @@
     "stream": "https://archive.org/download/drift005/05._-_Entrance_to_Golden_Suburbia.mp3",
     "file": "bannister-boy-entrance-to-golden-suburbia.mp3",
     "conf": "confirmed",
-    "genre": "lofi"
+    "genre": "lofi",
+    "len": 144
   },
   {
     "a": "Khonnor",
@@ -358,7 +372,8 @@
     "stream": "https://archive.org/download/pls001/pls001-06-Khonnor-I_Was_Everything_You_Wanted_Until_I_Quit.mp3",
     "file": "khonnor-i-was-everything-you-wanted-until-i-quit.mp3",
     "conf": "confirmed",
-    "genre": "lofi"
+    "genre": "lofi",
+    "len": 84
   },
   {
     "a": "SiJ",
@@ -371,7 +386,8 @@
     "src": "https://archive.org/details/gv491",
     "stream": "https://archive.org/download/gv491/01.%20SiJ%20-%20There%20Is%20No%20Life%20Without%20Love.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 908
   },
   {
     "a": "Zen Savauge",
@@ -385,7 +401,8 @@
     "stream": "https://archive.org/download/sub054/sub054-03_zensavauge_contrast_quiet_view.mp3",
     "file": "zen-savauge-quiet-view.mp3",
     "conf": "confirmed",
-    "genre": "minimalist"
+    "genre": "minimalist",
+    "len": 198
   },
   {
     "a": "Downliners Sekt",
@@ -398,7 +415,8 @@
     "src": "https://archive.org/details/Meet_the_Decline-9490",
     "stream": "https://archive.org/download/Meet_the_Decline-9490/Downliners_Sekt_-_04_-_hockey_nights_in_Canada.mp3",
     "conf": "confirmed",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 382
   },
   {
     "a": "adamned.age",
@@ -412,7 +430,8 @@
     "stream": "https://archive.org/download/Adamned.age-EiskindEp/Cam103eiskind-01-agecalmer_adamnedage.mp3",
     "file": "adamned-age-calmer.mp3",
     "conf": "confirmed",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 317
   },
   {
     "a": "Vultrapia",
@@ -426,7 +445,8 @@
     "stream": "https://archive.org/download/apl008/apl008-01-vultrapia_-_scali.mp3",
     "file": "vultrapia-scali.mp3",
     "conf": "confirmed",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 346
   },
   {
     "a": "migloJE",
@@ -439,7 +459,8 @@
     "src": "https://archive.org/details/MigloJE_Ayesteeyah",
     "stream": "https://archive.org/download/MigloJE_Ayesteeyah/kahvi174g_migloje-leti_vejai.mp3",
     "conf": "confirmed",
-    "genre": "misc"
+    "genre": "misc",
+    "len": 739
   },
   {
     "a": "Space Dimension Controller",
@@ -452,7 +473,8 @@
     "src": "https://archive.org/details/acp046_space_dimension_controller_-_unidentified_flying_oscillator",
     "stream": "https://archive.org/download/acp046_space_dimension_controller_-_unidentified_flying_oscillator/01_Unidentified_Flying_Oscillator.mp3",
     "conf": "confirmed",
-    "genre": "synth"
+    "genre": "synth",
+    "len": 136
   },
   {
     "a": "The Inventors of Aircraft",
@@ -465,7 +487,8 @@
     "src": "https://archive.org/details/ser017",
     "stream": "https://archive.org/download/ser017/ser017_05_the_inventors_of_aircraft_-_hazel.mp3",
     "conf": "confirmed",
-    "genre": "postrock"
+    "genre": "postrock",
+    "len": 438
   },
   {
     "a": "D_rradio",
@@ -479,7 +502,8 @@
     "stream": "https://archive.org/download/sute027/3.08_D_rradio_-_Leaves.mp3",
     "file": "d-rradio-leaves.mp3",
     "conf": "confirmed",
-    "genre": "postrock"
+    "genre": "postrock",
+    "len": 241
   },
   {
     "a": "Puffin On My Side",
@@ -543,7 +567,8 @@
     "stream": "https://archive.org/download/Montero__Navarro_Bootleg_Remix-8523/Offthesky_-_03_-_MonteroNavarro_Bootleg_Remix.mp3",
     "conf": "likely",
     "note": "Free Music Archive mirror of the netlabel release",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 361
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -581,7 +606,8 @@
     "file": "agents-of-the-culture-industry-everything-is-changing.mp3",
     "conf": "confirmed",
     "note": "Beyond Infinity, part 1 (34 min). Licence confirmed on the album page, 2026-10-10.",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 2038
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -593,7 +619,8 @@
     "file": "agents-of-the-culture-industry-another-world-is-necessary.mp3",
     "conf": "confirmed",
     "note": "Beyond Infinity, part 3 (11 min). Licence confirmed on the album page, 2026-10-10.",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 691
   },
   {
     "a": "Glochids",
@@ -605,7 +632,8 @@
     "file": "glochids-smell.mp3",
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 242
   },
   {
     "a": "Glochids",
@@ -617,7 +645,8 @@
     "file": "glochids-on-gel.mp3",
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "minimalist"
+    "genre": "minimalist",
+    "len": 366
   },
   {
     "a": "Glochids",
@@ -629,7 +658,8 @@
     "file": "glochids-tescent.mp3",
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 312
   },
   {
     "a": "Glochids",
@@ -641,7 +671,8 @@
     "file": "glochids-mercuset.mp3",
     "conf": "confirmed",
     "note": "BE I-X (9 min). Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 569
   },
   {
     "a": "Glochids",
@@ -653,7 +684,8 @@
     "file": "glochids-plummi.mp3",
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 443
   },
   {
     "a": "Miles Tilmann",
@@ -665,7 +697,8 @@
     "file": "miles-tilmann-winder.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 192
   },
   {
     "a": "Miles Tilmann",
@@ -677,7 +710,8 @@
     "file": "miles-tilmann-mercury-2.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 195
   },
   {
     "a": "Miles Tilmann",
@@ -689,7 +723,8 @@
     "file": "miles-tilmann-alpha-chime.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2 (10 min). Licence confirmed on the album page, 2026-10-10.",
-    "genre": "minimalist"
+    "genre": "minimalist",
+    "len": 621
   },
   {
     "a": "Miles Tilmann",
@@ -701,7 +736,8 @@
     "file": "miles-tilmann-middle-fields.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 294
   },
   {
     "a": "Miles Tilmann",
@@ -713,7 +749,8 @@
     "file": "miles-tilmann-particle-3.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
-    "genre": "downtempo"
+    "genre": "downtempo",
+    "len": 232
   },
   {
     "a": "Miles Tilmann",
@@ -725,7 +762,8 @@
     "file": "miles-tilmann-melt.mp3",
     "conf": "confirmed",
     "note": "XMASEP 2 (11 min). Licence confirmed on the album page, 2026-10-10.",
-    "genre": "ambient"
+    "genre": "ambient",
+    "len": 641
   },
   {
     "a": "A Beautiful Machine",
@@ -737,7 +775,8 @@
     "stream": "https://archive.org/download/emb014/emb014_02_A_Beautiful_Machine_-_Empty_Space_Points_Of_Light.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"EMB014 - A Beautiful Machine - Home\" on archive.org; licence as stated on the release."
+    "note": "From \"EMB014 - A Beautiful Machine - Home\" on archive.org; licence as stated on the release.",
+    "len": 448
   },
   {
     "a": "A Beautiful Machine",
@@ -749,7 +788,8 @@
     "stream": "https://archive.org/download/emb011/emb011_01_A_Beautiful_Machine_-_Entwine.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"EMB011 - A Beautiful Machine - Solar Winds, White Noise, Antigravity\" on archive.org; licence as stated on the release."
+    "note": "From \"EMB011 - A Beautiful Machine - Solar Winds, White Noise, Antigravity\" on archive.org; licence as stated on the release.",
+    "len": 406
   },
   {
     "a": "Wacky Southern Current",
@@ -761,7 +801,8 @@
     "stream": "https://archive.org/download/NS042/04-NS042-west_of_the_dam.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release."
+    "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release.",
+    "len": 370
   },
   {
     "a": "Wacky Southern Current",
@@ -773,7 +814,8 @@
     "stream": "https://archive.org/download/NS042/05-NS042-the_nearest_star.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release."
+    "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release.",
+    "len": 293
   },
   {
     "a": "Milhaven",
@@ -785,7 +827,8 @@
     "stream": "https://archive.org/download/12rec.035/Milhaven_-_04_Firnis.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"Milhaven - I.M. Wagner EP [12rec.035]\" on archive.org; licence as stated on the release."
+    "note": "From \"Milhaven - I.M. Wagner EP [12rec.035]\" on archive.org; licence as stated on the release.",
+    "len": 331
   },
   {
     "a": "Jasmin",
@@ -797,7 +840,8 @@
     "stream": "https://archive.org/download/12rec.027/Jasmin_-_03_Rote_Sonne.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"jasmin - EP02 [12rec.027]\" on archive.org; licence as stated on the release."
+    "note": "From \"jasmin - EP02 [12rec.027]\" on archive.org; licence as stated on the release.",
+    "len": 223
   },
   {
     "a": "moji moji",
@@ -809,7 +853,8 @@
     "stream": "https://archive.org/download/rb093/03-Camino_del_Colorado.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"moji moji - N\" on archive.org; licence as stated on the release."
+    "note": "From \"moji moji - N\" on archive.org; licence as stated on the release.",
+    "len": 380
   },
   {
     "a": "Sekotis",
@@ -821,7 +866,8 @@
     "stream": "https://archive.org/download/NS045/01-NS045-Rivers_and_Mountains.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"Picture puzzle pattern door\" on archive.org; licence as stated on the release."
+    "note": "From \"Picture puzzle pattern door\" on archive.org; licence as stated on the release.",
+    "len": 393
   },
   {
     "a": "Jupiter Makes Me Scream",
@@ -833,7 +879,8 @@
     "stream": "https://archive.org/download/001records.com-03-_JMMS_Converge/01JupiterMakesMeScream_-_morningWhispers.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"001records.com-03-_JMMS_Converge\" on archive.org; licence as stated on the release."
+    "note": "From \"001records.com-03-_JMMS_Converge\" on archive.org; licence as stated on the release.",
+    "len": 229
   },
   {
     "a": "Nic Bommarito",
@@ -845,7 +892,8 @@
     "stream": "https://archive.org/download/12rec.058/Nic_Bommarito_-_01_Hymn_For_200_Sugar_Packets.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"Nic Bommarito - Harp Fragments [12rec.058]\" on archive.org; licence as stated on the release."
+    "note": "From \"Nic Bommarito - Harp Fragments [12rec.058]\" on archive.org; licence as stated on the release.",
+    "len": 373
   },
   {
     "a": "Sister Benz",
@@ -857,7 +905,8 @@
     "stream": "https://archive.org/download/pj012/sisterbenz-Track01.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "note": "From \"Sister Benz - [pj012] e.p.\" on archive.org; licence as stated on the release."
+    "note": "From \"Sister Benz - [pj012] e.p.\" on archive.org; licence as stated on the release.",
+    "len": 319
   },
   {
     "a": "Herr Doktor",
@@ -869,7 +918,8 @@
     "stream": "https://archive.org/download/enrmp345_herr_doktor_-_199x/03_herr_doktor_-_inner_city_lights.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Herr Doktor - 199X [enrmp345]\" on archive.org; licence as stated on the release."
+    "note": "From \"Herr Doktor - 199X [enrmp345]\" on archive.org; licence as stated on the release.",
+    "len": 218
   },
   {
     "a": "The Abdukted",
@@ -881,7 +931,8 @@
     "stream": "https://archive.org/download/enrcmp23_-_meet_me_at_kuiper_s/102_the_abdukted_-_chasing_lights.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release."
+    "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release.",
+    "len": 257
   },
   {
     "a": "Starlight Boy",
@@ -893,7 +944,8 @@
     "stream": "https://archive.org/download/enrcmp23_-_meet_me_at_kuiper_s/105_starlight_boy_-_night_light.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release."
+    "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release.",
+    "len": 273
   },
   {
     "a": "Frau Holle",
@@ -905,7 +957,8 @@
     "stream": "https://archive.org/download/toulp11/02_frau_holle_accretion_disc_quasar_i.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Ascending Souls\" on archive.org; licence as stated on the release."
+    "note": "From \"Ascending Souls\" on archive.org; licence as stated on the release.",
+    "len": 331
   },
   {
     "a": "Spacebirds",
@@ -917,7 +970,8 @@
     "stream": "https://archive.org/download/lv001-rdSpacebirds-Spacebirds-12010DeluxeEdition/05Jupiter_Light_by_Spacebirds.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"[LV001-Rd] Spacebirds - Spacebirds-1 (2010) Deluxe Edition\" on archive.org; licence as stated on the release."
+    "note": "From \"[LV001-Rd] Spacebirds - Spacebirds-1 (2010) Deluxe Edition\" on archive.org; licence as stated on the release.",
+    "len": 330
   },
   {
     "a": "Sergey Korzhenevskiy",
@@ -929,7 +983,8 @@
     "stream": "https://archive.org/download/united-soviet-space-rangers/02.Sergey%20Korzhenevskiy%20-%20The%20Eagle%20Above%20the%20Moon%20Surface.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Various Artists - united:soviet.space.rangers [USC-WR-2004.0444]\" on archive.org; licence as stated on the release."
+    "note": "From \"Various Artists - united:soviet.space.rangers [USC-WR-2004.0444]\" on archive.org; licence as stated on the release.",
+    "len": 380
   },
   {
     "a": "Juno6",
@@ -941,7 +996,8 @@
     "stream": "https://archive.org/download/1bit_017/1bit017_-_01_-_Juno6_-_Argonaut.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Juno6 - Ita est [1bit 017]\" on archive.org; licence as stated on the release."
+    "note": "From \"Juno6 - Ita est [1bit 017]\" on archive.org; licence as stated on the release.",
+    "len": 431
   },
   {
     "a": "Michael Ballus",
@@ -953,7 +1009,8 @@
     "stream": "https://archive.org/download/rfr020/rfr020_01_Schnee_auf_den_Daechern.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"[RFR020] Michael Ballus - In weiter Ferne\" on archive.org; licence as stated on the release."
+    "note": "From \"[RFR020] Michael Ballus - In weiter Ferne\" on archive.org; licence as stated on the release.",
+    "len": 360
   },
   {
     "a": "Animatek",
@@ -965,7 +1022,8 @@
     "stream": "https://archive.org/download/Miga03/Azul.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Animatek - Capibara Tracks - [Miga03]\" on archive.org; licence as stated on the release."
+    "note": "From \"Animatek - Capibara Tracks - [Miga03]\" on archive.org; licence as stated on the release.",
+    "len": 487
   },
   {
     "a": "Softspace",
@@ -977,7 +1035,8 @@
     "stream": "https://archive.org/download/mt007/01_-_Candle_Flicker.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "note": "From \"Softspace - Experiments at the Edge of Time [mt007]\" on archive.org; licence as stated on the release."
+    "note": "From \"Softspace - Experiments at the Edge of Time [mt007]\" on archive.org; licence as stated on the release.",
+    "len": 345
   },
   {
     "a": "ProleteR",
@@ -989,7 +1048,8 @@
     "stream": "https://archive.org/download/DWK123/ProleteR_-_01_-_April_Showers.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Curses From Past Times (LP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Curses From Past Times (LP)\" on archive.org; licence as stated on the release.",
+    "len": 269
   },
   {
     "a": "Poldoore",
@@ -1001,7 +1061,8 @@
     "stream": "https://archive.org/download/DWK155/Poldoore_-_01_-_Lush_Life.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Lush Life (EP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Lush Life (EP)\" on archive.org; licence as stated on the release.",
+    "len": 170
   },
   {
     "a": "Anitek",
@@ -1013,7 +1074,8 @@
     "stream": "https://archive.org/download/DWK315/02_-_Anitek_-_So_Far.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Luna (LP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Luna (LP)\" on archive.org; licence as stated on the release.",
+    "len": 173
   },
   {
     "a": "Lo-Fi Scientists",
@@ -1025,7 +1087,8 @@
     "stream": "https://archive.org/download/DWK044/Lo-Fi_Scientists_-_01_-_Jazz_Baby.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Lo-Fi Scientists\" on archive.org; licence as stated on the release."
+    "note": "From \"Lo-Fi Scientists\" on archive.org; licence as stated on the release.",
+    "len": 327
   },
   {
     "a": "deeB",
@@ -1037,7 +1100,8 @@
     "stream": "https://archive.org/download/DWK163/deeB_-_05_-_Chillwings.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Daydream (EP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Daydream (EP)\" on archive.org; licence as stated on the release.",
+    "len": 237
   },
   {
     "a": "Romo",
@@ -1049,7 +1113,8 @@
     "stream": "https://archive.org/download/DWK138/Romo_-_07_-_Stargazing.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Listen, Love (EP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Listen, Love (EP)\" on archive.org; licence as stated on the release.",
+    "len": 172
   },
   {
     "a": "Thegntlmn",
@@ -1061,7 +1126,8 @@
     "stream": "https://archive.org/download/DWK154/Thegntlmn_-_08_-_All_There_Is.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Earbuds (Volume 1) (EP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Earbuds (Volume 1) (EP)\" on archive.org; licence as stated on the release.",
+    "len": 186
   },
   {
     "a": "Esbe",
@@ -1073,7 +1139,8 @@
     "stream": "https://archive.org/download/DWK069/Esbe_-_05_-_Bluesy_Moon.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Late Night Headphones (Volume 1) LP\" on archive.org; licence as stated on the release."
+    "note": "From \"Late Night Headphones (Volume 1) LP\" on archive.org; licence as stated on the release.",
+    "len": 200
   },
   {
     "a": "Jenova 7 & Mr. Moods",
@@ -1085,7 +1152,8 @@
     "stream": "https://archive.org/download/DWK137/Jenova_7_And_Mr._Moods_-_03_-_Under_The_Falling_Stars.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Time Travellers (LP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Time Travellers (LP)\" on archive.org; licence as stated on the release.",
+    "len": 249
   },
   {
     "a": "Boogie Belgique",
@@ -1097,7 +1165,8 @@
     "stream": "https://archive.org/download/DWK217/Boogie_Belgique_-_07_-_Travelling.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "note": "From \"Nightwalker (Vol. 1) (LP)\" on archive.org; licence as stated on the release."
+    "note": "From \"Nightwalker (Vol. 1) (LP)\" on archive.org; licence as stated on the release.",
+    "len": 208
   },
   {
     "a": "Kai Engel",
@@ -1109,7 +1178,8 @@
     "stream": "https://archive.org/download/SCL133/03_-_Rainfall_Serenade.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Kai Engel - Evening Colors [SCL133]\" on archive.org; licence as stated on the release."
+    "note": "From \"Kai Engel - Evening Colors [SCL133]\" on archive.org; licence as stated on the release.",
+    "len": 333
   },
   {
     "a": "Fabrizio Paterlini",
@@ -1121,7 +1191,8 @@
     "stream": "https://archive.org/download/ca315_fp/01_Profondo_Blu.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Fabrizio Paterlini - Viandanze (EP) (ca315)\" on archive.org; licence as stated on the release."
+    "note": "From \"Fabrizio Paterlini - Viandanze (EP) (ca315)\" on archive.org; licence as stated on the release.",
+    "len": 171
   },
   {
     "a": "Nest",
@@ -1133,7 +1204,8 @@
     "stream": "https://archive.org/download/ser013/ser013_02_nest_-_kyoto.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Nest - Nest EP\" on archive.org; licence as stated on the release."
+    "note": "From \"Nest - Nest EP\" on archive.org; licence as stated on the release.",
+    "len": 327
   },
   {
     "a": "Bartois",
@@ -1145,7 +1217,8 @@
     "stream": "https://archive.org/download/ca359_b/02_When_I_Wonder.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Bartois - Solo Piano (ca359)\" on archive.org; licence as stated on the release."
+    "note": "From \"Bartois - Solo Piano (ca359)\" on archive.org; licence as stated on the release.",
+    "len": 275
   },
   {
     "a": "Leandro Casas",
@@ -1157,7 +1230,8 @@
     "stream": "https://archive.org/download/ca441_l/1-SinApuro.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Leandro Casas - Entre Líneas (ca441)\" on archive.org; licence as stated on the release."
+    "note": "From \"Leandro Casas - Entre Líneas (ca441)\" on archive.org; licence as stated on the release.",
+    "len": 240
   },
   {
     "a": "adam balusik",
@@ -1169,7 +1243,8 @@
     "stream": "https://archive.org/download/adamb_three_trees/01.%20three%20trees%20that%20lead%20to%20a%20dream.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"adam balusik: three trees (LP)\" on archive.org; licence as stated on the release."
+    "note": "From \"adam balusik: three trees (LP)\" on archive.org; licence as stated on the release.",
+    "len": 241
   },
   {
     "a": "Nöno",
@@ -1181,7 +1256,8 @@
     "stream": "https://archive.org/download/ca479_n/04-Tarde.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Nöno - Juguetes (ca479)\" on archive.org; licence as stated on the release."
+    "note": "From \"Nöno - Juguetes (ca479)\" on archive.org; licence as stated on the release.",
+    "len": 391
   },
   {
     "a": "Gillicuddy",
@@ -1193,7 +1269,8 @@
     "stream": "https://archive.org/download/ca488_g/01-jupiter-the-blue.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Gillicuddy - ...Plays Guitar (ca488)\" on archive.org; licence as stated on the release."
+    "note": "From \"Gillicuddy - ...Plays Guitar (ca488)\" on archive.org; licence as stated on the release.",
+    "len": 154
   },
   {
     "a": "Nuno Adelaida",
@@ -1205,7 +1282,8 @@
     "stream": "https://archive.org/download/NunoAdelaida-Amentia/Nuno_Adelaida_06_Never_Too_Late_To_Change_Anything.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"Nuno Adelaida - Amentia\" on archive.org; licence as stated on the release."
+    "note": "From \"Nuno Adelaida - Amentia\" on archive.org; licence as stated on the release.",
+    "len": 184
   },
   {
     "a": "Dastan Jackles",
@@ -1217,7 +1295,8 @@
     "stream": "https://archive.org/download/SBWS195/02%20Fjo%CC%88ll.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"[SBWS195] Dastan Jackles - Fjöll\" on archive.org; licence as stated on the release."
+    "note": "From \"[SBWS195] Dastan Jackles - Fjöll\" on archive.org; licence as stated on the release.",
+    "len": 177
   },
   {
     "a": "Miranda Shvangiradze",
@@ -1229,6 +1308,7 @@
     "stream": "https://archive.org/download/Vkrsnl038MirandaShvangiradzeTalkToMeEp/1RainyThoughts.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "note": "From \"VKRSNL038 Miranda Shvangiradze Talk to Me EP\" on archive.org; licence as stated on the release."
+    "note": "From \"VKRSNL038 Miranda Shvangiradze Talk to Me EP\" on archive.org; licence as stated on the release.",
+    "len": 209
   }
 ]
