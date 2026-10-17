@@ -418,7 +418,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -835,6 +835,24 @@ if (NATIVE) {
   new MutationObserver(() => nativeKeepAwake(!document.body.classList.contains('sleep'))).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   nativeKeepAwake(true);
   for (const id of ['offlineScenesBtn', 'offlineBtn', 'keepStreamsBtn']) el(id).hidden = true;
+  // Updates: the live site publishes app-version.json with each release (scripts/release.sh). When it names a newer
+  // version than this one, offer the download; "Later" waits for the release after that. Checked at start and every
+  // six hours. The download opens in the phone's browser, which hands the APK to Android's installer.
+  const mine = Number(import.meta.env.VITE_APP_VERSION) || 0;
+  const checkUpdate = async () => {
+    try {
+      const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json();
+      if (!(v.code > mine) || v.code === state.skipVersion) return;
+      el('updateText').textContent = `A new version of the app is ready (${v.name}).${v.notes ? ' ' + v.notes : ''}`;
+      el('updateGet').href = SITE + v.apk; el('updateBar').hidden = false;
+    } catch (e) { /* offline, or nothing published yet */ }
+  };
+  el('updateGet').addEventListener('click', () => { el('updateBar').hidden = true; setStatus('Downloading the update. Open it when it finishes to install.'); });
+  el('updateLater').addEventListener('click', async () => {
+    el('updateBar').hidden = true;
+    try { const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json(); saveState({ skipVersion: v.code }); } catch (e) {}
+  });
+  setTimeout(checkUpdate, 8000); setInterval(checkUpdate, 6 * 3600 * 1000);
 }
 // For the smoke test: which scenes failed, and a thumbnail capture on demand.
 window.slowWindows = { broken: () => SCENES.filter((s, i) => broken[i]).map(s => s.name), captureThumb, current: () => SCENES[cur].name };

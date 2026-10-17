@@ -45,7 +45,13 @@ npm run apk     # builds the web app in native mode into dist-native/, copies it
                 # → android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-What the app adds over the web app is in `src/native.js` and `android/app/src/main/java/…/`: music keeps playing with the screen off (a media foreground service), the sunrise alarm is a real alarm clock that opens the app over the lock screen, and timer notifications use Android's own. The bundled music is left out of the app to stay under Google Play's 200 MB limit and streams from the live site instead; the scenes are inside the app. Every web change reaches the app on its next build: `npm run apk` again.
+What the app adds over the web app is in `src/native.js` and `android/app/src/main/java/…/`: music keeps playing with the screen off (a media foreground service), the sunrise alarm is a real alarm clock that opens the app over the lock screen, and timer notifications use Android's own. The bundled music is left out of the app to stay under Google Play's 200 MB limit and streams from the live site instead; the scenes are inside the app. Every web change reaches the app on its next build. To release both at once:
+
+```sh
+npm run release -- "What changed, in a line"
+```
+
+That raises the Android version, builds the web app and the APK, commits and pushes the version change, and publishes both to GitHub Pages, the APK beside an `app-version.json` that the installed app checks: phones with the app then offer the update, with that line as its note. A plain `scripts/deploy-pages.sh` keeps the published APK in place.
 
 For Google Play, build a signed bundle (`./gradlew bundleRelease` with a signing config). Keep the upload keystore and its passwords out of git, and backed up.
 

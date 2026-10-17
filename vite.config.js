@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+
+// The Android app's version (android/app/build.gradle, raised by scripts/release.sh), for the update notice.
+try { process.env.VITE_APP_VERSION = /versionCode (\d+)/.exec(readFileSync('android/app/build.gradle', 'utf8'))[1]; } catch (e) { process.env.VITE_APP_VERSION = '0'; }
 
 // The files a viewer needs to use every scene offline: the scene art and videos, the thumbnails, and (in a build) every
 // code chunk. Written as offline.json, which "Save every scene for offline use" in the sheet reads.

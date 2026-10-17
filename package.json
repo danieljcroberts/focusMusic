@@ -16,6 +16,7 @@
     "portrait": "node scripts/portrait.mjs",
     "build:android": "node scripts/build-native.mjs",
     "apk": "node scripts/build-native.mjs && cd android && ./gradlew assembleDebug",
+    "release": "scripts/release.sh",
     "smoke:quick": "SMOKE_SCENES='Rain on Glass,Lava Lamp,Supercell,Holmestrand,Offshore Wind,Pixel Woods,Deep Field,Spectrum Bars,Cat on the Windowsill,Open Water' node scripts/smoke.mjs"
   },
   "devDependencies": {
