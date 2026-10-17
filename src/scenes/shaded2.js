@@ -56,7 +56,8 @@ void main(){
   float sd = floor(uB * 97.);
   vec3 lp = vec3((fract(sin(sd * 12.9) * 43758.) - .5) * 24., 2.5 + fract(sin(sd * 7.1) * 9133.) * 3., 56. + (fract(sin(sd * 3.7) * 2671.) - .5) * 14.);
   // Night sky with a last band of light low down, stars above; the moon behind the bank now and then.
-  vec3 sky = mix(vec3(.1, .11, .17), vec3(.01, .012, .03), smoothstep(-.02, .35, rd.y));
+  vec3 sky = mix(vec3(.16, .15, .2), vec3(.012, .014, .035), smoothstep(-.02, .35, rd.y));
+  sky += vec3(.55, .3, .22) * exp(-abs(rd.y + .01) * 14.) * .55;       // the last of the sunset under the bank
   sky += stars(uv * 150., t, 0.) * vec3(.9, .95, 1.) * smoothstep(.05, .2, rd.y);
   vec3 col = sky;
   float T = 1.;
@@ -73,9 +74,9 @@ void main(){
         if (d > .001) {
           float up = smoothstep(1.5, 4.5, p.y);
           float sh = exp(-dens(p + vec3(0., .6, 0.), 2) * 2.);
-          vec3 c = mix(vec3(.02, .022, .032), vec3(.15, .16, .2), sh * (.15 + .85 * up));
+          vec3 c = mix(vec3(.03, .03, .045), vec3(.2, .2, .25), sh * (.15 + .85 * up));
           c += vec3(.75, .8, 1.) * flash * 4. * exp(-length(p - lp) * .16);     // lit from within
-          c += vec3(.22, .2, .17) * exp(-abs(p.y - 1.6) * 2.) * (1. - exp(-d)) * .4;   // the base catches the last light
+          c += vec3(.45, .28, .2) * exp(-abs(p.y - 1.6) * 1.6) * (1. - exp(-d)) * .6;   // the base catches the last light
           float a = 1. - exp(-d * step_ * .9);
           acc += T * a * c; T *= 1. - a;
         }
@@ -103,10 +104,23 @@ void main(){
   float el = uv.y + .1;
   float shaft = smoothstep(.4, .8, fbm3o(vec2(uv.x * 3. + t * .01, 1.))) * smoothstep(.1, .02, el) * smoothstep(-.02, .01, el);
   float streak = .8 + .2 * noise(vec2(uv.x * 60., uv.y * 5. + t * 1.5));
-  col = mix(col, vec3(.09, .1, .13) + vec3(.5, .55, .8) * flash * .15, shaft * (.5 + .4 * wx) * streak);
+  col = mix(col, vec3(.14, .13, .16) + vec3(.5, .55, .8) * flash * .15, shaft * (.55 + .4 * wx) * streak);
+  // Lights on the plain: a farm with two windows under the tree, and a far village along the horizon.
+  for (int i = 0; i < 9; i++) {
+    float fi = float(i), lx = -.6 + fi * .17 + .04 * sin(fi * 7.), ly = -.1 + .003 + .004 * h21(vec2(fi, 2.));
+    float on = step(.3, h21(vec2(fi, 5.))) * (.7 + .3 * sin(t * .5 + fi));
+    col += vec3(1., .8, .5) * exp(-length((uv - vec2(lx, ly)) * vec2(1., 1.5)) * 500.) * on * .9;
+  }
   float hill = -.1 + .006 * noise(vec2(uv.x * 6., 2.)) + .003 * noise(vec2(uv.x * 40., 3.));
-  vec3 ground = vec3(.012, .016, .012) + vec3(.3, .33, .45) * flash * .05 * smoothstep(-.5, -.1, uv.y);
-  ground *= .8 + .3 * noise(vec2(uv.x * 30., uv.y * 200.));
+  // The field: stubble rows running away from us, wind running through in waves, and the last light on it.
+  float depth = clamp((hill - uv.y) * 4., 0., 1.);
+  vec3 ground = mix(vec3(.05, .045, .03), vec3(.025, .028, .022), depth) + vec3(.3, .33, .45) * flash * .05 * smoothstep(-.5, -.1, uv.y);
+  ground *= .75 + .35 * noise(vec2(uv.x * (12. + depth * 60.), uv.y * 120.)) + .15 * sin(uv.x * 20. - uv.y * 60. + t * 2.) * depth;
+  ground += vec3(.2, .12, .08) * exp(-(hill - uv.y) * 25.) * .5;
+  // The farmhouse under the tree: a dark gable with two lit windows.
+  vec2 hq = uv - vec2(-.24, hill);
+  float house = step(0., hq.x) * step(hq.x, .05) * step(0., hq.y) * step(hq.y, .018 + .012 * (1. - abs(hq.x - .025) / .025));
+  float win = step(abs(hq.x - .015), .004) * step(abs(hq.y - .008), .004) + step(abs(hq.x - .035), .004) * step(abs(hq.y - .008), .004);
   // Tree: a trunk and three round masses.
   vec2 tp = vec2(-.33, hill + .005);
   float tree = smoothstep(.006, .003, abs(uv.x - tp.x) - .003) * step(tp.y, uv.y) * step(uv.y, tp.y + .06);
@@ -118,7 +132,8 @@ void main(){
   float post = step(.1, uv.x) * smoothstep(.06, .03, abs(fract(px) - .5)) * step(hill - .002, uv.y) * step(uv.y, hill + .016);
   float wire = step(.1, uv.x) * smoothstep(.0015, .0005, abs(uv.y - hill - .012)) * .7;
   col = mix(col, ground, smoothstep(hill + .003, hill - .003, uv.y));
-  col = mix(col, vec3(.004, .005, .008), max(max(tree, post), wire));
+  col = mix(col, vec3(.004, .005, .008), max(max(max(tree, post), wire), house));
+  col += vec3(1., .75, .4) * win * house * .9;
   col = 1. - exp(-col * 1.6);
   col += dither(t);
   gl_FragColor = vec4(col, 1.);

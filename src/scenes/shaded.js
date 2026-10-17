@@ -264,7 +264,8 @@ float foliage(vec2 p, float k){
   float big = fbm(p * (2.4 + k * .8) + k * 7.3);
   float fine = noise(p * (18. + k * 6.) + k * 3.);
   float hang = smoothstep(-.25 + k * .05, .45, p.y + (big - .5) * .7);
-  return smoothstep(.46, .6, big * .55 + hang * .5 + fine * .08);
+  float mid = noise(p * (7. + k * 2.) + k * 11.);
+  return smoothstep(.47 + k * .05, .7 + k * .05, big * .45 + hang * .5 + mid * (.14 + k * .05) + fine * (.14 + k * .04));   // lacy, more broken nearer the eye
 }
 // Trunks of one depth layer: where across the trunk this point is (-1..1), or 2 outside one.
 float trunkX(vec2 p, float k){
@@ -303,12 +304,13 @@ void main(){
     vec2 p = uv + vec2(sway * (1. + k), 0.);
     float fol = foliage(p, k), tx = trunkX(p, k);
     float trunk = smoothstep(1., .93, abs(tx));
-    vec3 c = lc[i];
+    vec3 c = lc[i] * (1. + k * .45);   // the near layers lighter than silhouettes, so their leaves read
     float round_ = sqrt(max(0., 1. - tx * tx));
     vec3 bark = c * (.35 + .65 * round_) * (.8 + .4 * noise(vec2(p.x * 90., p.y * 14.) + k)) + light * .07 * smoothstep(.2, .9, tx) * round_ * (1. - k * .25);
     c = mix(c, bark, trunk);
-    c = mix(c, c * 1.6 + light * .05, fol * smoothstep(.35, .0, foliage(p + vec2(.02, .03), k)) * (1. - k * .2));   // leaves on the sun side glow
-    c = mix(c, c * (.75 + .5 * noise(p * (50. + k * 20.) + k)), fol * (1. - trunk));                               // leaf texture
+    float rim = fol * smoothstep(.5, .0, foliage(p + vec2(.025, .035), k)) * (1. - k * .2);
+    c = mix(c, c * 1.5 + light * (.12 + .08 * k), rim);                                                              // leaves on the sun side glow through
+    c = mix(c, c * (.7 + .6 * noise(p * (40. + k * 20.) + k) * noise(p * (90. + k * 30.) + k * 3.)), fol * (1. - trunk));   // leaf texture, two scales
     float m = max(fol, trunk);
     col = mix(col, c, m);
     if (i == 1) {

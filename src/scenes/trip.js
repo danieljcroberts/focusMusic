@@ -307,20 +307,31 @@ void main(){
   float n1 = fbm(p + fbm(p * 1.7 - t));
   float n2 = fbm(p * 2.3 + vec2(3.1, 7.7) + fbm(p * 3.1 + t * .7));
   float n3 = fbm(p * .7 - vec2(9.2, 2.4) + t * .3);
-  vec3 col = vec3(.01, .01, .03);
-  col += vec3(.55, .12, .45) * smoothstep(.35, .85, n1) * .8;
-  col += vec3(.1, .35, .75) * smoothstep(.4, .9, n2) * .7;
-  col += vec3(.95, .55, .25) * pow(smoothstep(.55, 1., n3 * n1 * 2.), 1.5) * (1. + uBass * .6);
-  col += vec3(.9, .85, 1.) * pow(smoothstep(.6, 1., n1 * n2 * 2.2), 3.) * .6;
-  // dark dust lanes
-  col *= .5 + .5 * smoothstep(.2, .6, fbm(p * 2.8 + vec2(4.4, 1.9)));
-  // stars behind the gas, dimmed where it is thick
-  vec2 sp = gl_FragCoord.xy / uRes.y * 90.;
-  vec2 id = floor(sp), f = fract(sp) - .5;
-  float h = h21(id);
-  float star = smoothstep(.08, .0, length(f - (vec2(h, fract(h * 9.3)) - .5) * .8)) * step(.93, h);
-  float twinkle = .6 + .4 * sin(uT * (1. + h * 3.) + h * 20.);
-  col += vec3(.9, .95, 1.) * star * twinkle * (1. - smoothstep(.3, .8, n1 + n2 * .5)) * 1.2;
+  vec3 col = vec3(.008, .008, .025);
+  // A bright core off to one side, where new stars are lighting the gas from within.
+  vec2 core = vec2(.25 + .05 * sin(t * 3.), .08); float cd = length((uv - core) * vec2(1., 1.4));
+  float glow = exp(-cd * 2.2);
+  col += vec3(.6, .14, .5) * smoothstep(.32, .85, n1) * (.9 + glow);
+  col += vec3(.1, .4, .85) * smoothstep(.38, .9, n2) * .8;
+  col += vec3(1., .6, .3) * pow(smoothstep(.5, 1., n3 * n1 * 2.), 1.4) * (1.1 + uBass * .6 + glow);
+  col += vec3(1., .9, .75) * pow(smoothstep(.55, 1., n1 * n2 * 2.2), 2.5) * .9;
+  col += vec3(1., .8, .6) * glow * glow * (.6 + .3 * smoothstep(.3, .7, n1)) ;   // the core's light on the gas
+  // dark dust lanes, thinner near the core
+  col *= .45 + .55 * smoothstep(.15, .6, fbm(p * 2.8 + vec2(4.4, 1.9)) + glow * .4);
+  // stars behind the gas, dimmed where it is thick: a fine field and a few bright ones with a soft halo
+  float thick = smoothstep(.3, .85, n1 + n2 * .5);
+  for (int s = 0; s < 2; s++) {
+    float sc = s == 0 ? 90. : 32.;
+    vec2 sp = gl_FragCoord.xy / uRes.y * sc + float(s) * 7.;
+    vec2 id = floor(sp), f = fract(sp) - .5;
+    float h = h21(id + float(s) * 13.);
+    float d = length(f - (vec2(h, fract(h * 9.3)) - .5) * .8);
+    float star = (s == 0 ? smoothstep(.08, .0, d) : smoothstep(.1, .0, d) + exp(-d * 7.) * .35) * step(s == 0 ? .93 : .96, h);
+    float twinkle = .65 + .35 * sin(uT * (1. + h * 3.) + h * 20.);
+    vec3 sc_ = mix(vec3(.75, .85, 1.), vec3(1., .9, .75), fract(h * 5.));
+    col += sc_ * star * twinkle * (1. - thick * (s == 0 ? 1. : .7)) * (s == 0 ? 1.2 : 1.8);
+  }
+  col *= 1. - .3 * smoothstep(.5, 1.15, length(uv));
   col = mix(col, hsv(uHue, .5, 1.) * length(col) * .6, .12 * uLively);
   gl_FragColor = vec4(col, 1.);
 }`, { speed: 1 });

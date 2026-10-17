@@ -47,8 +47,9 @@ void main(){
 
   // Sky behind the storm: dark overhead, a pale clearer band low on the horizon where light gets in under the deck.
   float el = rd.y;
-  vec3 sky = mix(vec3(.24, .27, .28), vec3(.06, .08, .1), smoothstep(-.02, .3, el));
-  sky += vec3(.62, .5, .34) * exp(-abs(el + .004) * 55.) * (.28 + .12 * sin(uv.x * 2.1 + 1.));   // warm light under the storm, uneven
+  vec3 sky = mix(vec3(.36, .36, .34), vec3(.07, .09, .12), smoothstep(-.02, .3, el));
+  sky += vec3(.8, .62, .4) * exp(-abs(el + .004) * 40.) * (.4 + .15 * sin(uv.x * 2.1 + 1.));   // warm light under the storm, uneven
+  sky += vec3(.5, .55, .5) * exp(-abs(el - .05) * 25.) * .15;   // a paler band where the deck lifts
   sky += vec3(.7, .75, 1.) * flash * .08 * exp(-length(rd.xy - normalize(lp - vec3(0.)).xy) * 3.);
 
   vec3 col = sky; float T = 1.;
@@ -68,10 +69,10 @@ void main(){
         float sh = exp(-dens(p + L * .35, 3) * 2.8);         // how much light gets down to here from above
         float up = smoothstep(.8, 3.4, p.y);                   // tops are brighter, the underside dark
         float edge = 1. - exp(-d * 2.);                          // thin edges catch more light (a cheap powder term)
-        vec3 c = mix(vec3(.075, .09, .1), vec3(.58, .62, .66), sh * (.25 + .75 * up) * (.55 + .45 * edge));
+        vec3 c = mix(vec3(.06, .07, .085), vec3(.7, .73, .76), sh * (.25 + .75 * up) * (.55 + .45 * edge));
         c += vec3(.05, .08, .06) * (1. - up);                  // a faint green cast under the base, as supercells have
         float bl = baseH(length(p.xz - C.xz));
-        c += vec3(.42, .38, .3) * exp(-max(0., p.y - bl) * 7.) * edge * .7;   // low light from the horizon catches only the skin of the base
+        c += vec3(.55, .45, .32) * exp(-max(0., p.y - bl) * 7.) * edge * .9;   // low light from the horizon catches only the skin of the base
         c *= .55 + .9 * n3(p * vec3(1.6, 2.4, 1.6) + vec3(0., 0., uT * .02));   // rags and folds in the underside
         c = mix(haze, c, exp(-tt * .032));                     // distance fades the cloud into the haze at the horizon
         c += vec3(.75, .8, 1.) * flash * 5. * exp(-length(p - lp) * .85);   // lit from within by lightning
@@ -94,8 +95,14 @@ void main(){
   float hill = -.012 + .03 * fbm3(vec3(uv.x * 3.1, 3.1, 0.), 4) + .012 * sin(uv.x * 1.3) + .006 * n3(vec3(uv.x * 40., 1., 0.));   // fields, hedges and trees   // in view angle, like the horizon
   if (el < hill + .01) {
     float k = smoothstep(hill, hill - .004, el);
-    vec3 ground = vec3(.015, .02, .02) + vec3(.4, .45, .55) * flash * .05;
+    // A wheat field running up to the hills, bent flat in waves by the outflow wind, lit by the band of light.
+    float depth = clamp((hill - el) * 5., 0., 1.);
+    float wave = sin(uv.x * 14. + el * 90. + t * 2.5) * .5 + .5;
+    vec3 ground = mix(vec3(.3, .22, .1), vec3(.06, .05, .035), smoothstep(0., .6, depth)) * (.7 + .3 * n3(vec3(uv.x * (20. + depth * 80.), el * 150., 1.)) + .15 * wave * depth);
+    ground += vec3(.4, .45, .55) * flash * .08;
     col = mix(col, ground, k);
+    // A far farm's lights at the foot of the hills.
+    for (int i = 0; i < 4; i++) { float fi = float(i); vec2 lp2 = vec2(.2 + fi * .11, -.016 + .004 * sin(fi)); col += vec3(1., .8, .5) * exp(-length(uv - lp2) * 450.) * .8 * k; }
   }
   col = 1. - exp(-col * 1.5);                                   // gentle tone curve
   col = pow(col, vec3(1.08));

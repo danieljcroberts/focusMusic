@@ -127,18 +127,39 @@ export const snowfallScene = () => threeScene(THREE => {
 export const starfieldScene = () => threeScene(THREE => {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, 1, .1, 400);
+  // The Milky Way: a band of pale cloud and countless faint stars, painted once onto the inside of a far sphere that turns slowly.
+  const c = document.createElement('canvas'); c.width = 2048; c.height = 1024;
+  const g = c.getContext('2d');
+  g.fillStyle = '#02030a'; g.fillRect(0, 0, 2048, 1024);
+  g.save(); g.translate(1024, 512); g.rotate(-.35);
+  for (let i = 0; i < 700; i++) {   // the band: large, very faint patches along a tilted line, denser toward the middle
+    const x = rand(-1500, 1500), y = (rand(-1, 1) + rand(-1, 1) + rand(-1, 1)) * 80 * (1 + .3 * Math.sin(x * .004)), r = rand(60, 180);
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    const dark = Math.random() < .2;   // dust lanes
+    gr.addColorStop(0, dark ? 'rgba(2,3,10,.3)' : `rgba(${190 + rand(0, 40)},${190 + rand(0, 30)},${225 + rand(0, 30)},${rand(.025, .06)})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  for (let i = 0; i < 4000; i++) { const x = rand(-1500, 1500), y = (rand(-1, 1) + rand(-1, 1)) * 110, r = rand(.7, 1.6); g.fillStyle = `rgba(235,238,255,${rand(.2, .7)})`; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); }
+  g.restore();
+  for (let i = 0; i < 1500; i++) { const r = rand(.7, 1.6); g.fillStyle = `rgba(220,228,255,${rand(.08, .4)})`; g.beginPath(); g.arc(rand(0, 2048), rand(0, 1024), r, 0, 6.283); g.fill(); }   // the rest of the sky
+  const skyTex = new THREE.CanvasTexture(c); skyTex.colorSpace = THREE.SRGBColorSpace; skyTex.anisotropy = 4;   // painted in sRGB, so the dark stays dark
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(380, 48, 32), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, depthWrite: false }));
+  scene.add(sky);
+  // Stars drifting past in three depths; the near, bright ones take real star colours from blue-white to orange.
   const groups = [];
-  for (const [n, size, speed] of [[5000, .6, 5], [500, 1.6, 7], [60, 3.4, 9]]) {
+  const tint = () => { const k = Math.random(); return k < .12 ? [.7, .8, 1] : k < .3 ? [.85, .9, 1] : k < .75 ? [1, 1, 1] : k < .92 ? [1, .92, .75] : [1, .75, .55]; };
+  for (const [n, size, speed] of [[4000, .7, 4], [700, 1.8, 6], [90, 4.2, 8]]) {
     const pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      pos[i * 3] = rand(-120, 120); pos[i * 3 + 1] = rand(-70, 70); pos[i * 3 + 2] = rand(-300, 0);
-      const k = Math.random(), c = k < .6 ? [1, 1, 1] : k < .85 ? [.75, .85, 1] : [1, .9, .7];
-      col.set(c, i * 3);
-    }
+    for (let i = 0; i < n; i++) { pos[i * 3] = rand(-120, 120); pos[i * 3 + 1] = rand(-70, 70); pos[i * 3 + 2] = rand(-300, 0); col.set(tint(), i * 3); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size, map: dotTexture(THREE), vertexColors: true, transparent: true, opacity: .95, depthWrite: false, sizeAttenuation: true }));
     scene.add(pts); groups.push({ pos, geo, speed, n });
   }
+  // A meteor now and then: a short bright streak that fades in a second.
+  const mGeo = new THREE.BufferGeometry(); mGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+  const mMat = new THREE.LineBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0 });
+  const meteor = new THREE.Line(mGeo, mMat); scene.add(meteor);
+  let next = 12, mAge = 9, mFrom = new THREE.Vector3(), mDir = new THREE.Vector3();
   return {
     scene, camera,
     update(t, dt) {
@@ -147,6 +168,15 @@ export const starfieldScene = () => threeScene(THREE => {
         gr.geo.attributes.position.needsUpdate = true;
       }
       camera.rotation.z = t * .004; camera.rotation.y = Math.sin(t * .05) * .03;
+      sky.rotation.y = t * .003; sky.rotation.x = .2;
+      next -= dt;
+      if (next <= 0) { next = 10 + Math.random() * 25; mAge = 0; mFrom.set(rand(-60, 60), rand(-10, 50), rand(-120, -60)); mDir.set(rand(-1, 1), rand(-1, -.3), 0).normalize().multiplyScalar(rand(25, 45)); }
+      mAge += dt;
+      if (mAge < 1.2) {
+        const k = mAge / 1.2, head = mFrom.clone().addScaledVector(mDir, k), tail = head.clone().addScaledVector(mDir, -.18);
+        mGeo.attributes.position.array.set([tail.x, tail.y, tail.z, head.x, head.y, head.z]); mGeo.attributes.position.needsUpdate = true;
+        mMat.opacity = Math.sin(k * Math.PI) * .9;
+      } else mMat.opacity = 0;
     }
   };
 });

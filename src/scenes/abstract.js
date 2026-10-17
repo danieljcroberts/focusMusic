@@ -151,7 +151,7 @@ export function inkScene(opts = {}) {
 
 /* Reaction-Diffusion: Gray-Scott coral and spots growing, splitting and slowly changing their minds */
 export function reactionScene() {
-  let w, h, A, B, A2, B2, buf, bg2, im, tint, f = .0545, k = .062, seedIn = 8;
+  let w, h, A, B, A2, B2, buf, bg2, im, tint, f = .0545, k = .062, seedIn = 8, warm = 0;
   const hit = bassHits(5);
   function seed(n, r) {
     for (let s = 0; s < n; s++) {
@@ -180,8 +180,9 @@ export function reactionScene() {
     init() {
       [w, h] = gridSize(lowPower ? 160 : 240);
       A = new Float32Array(w * h).fill(1); B = new Float32Array(w * h); A2 = new Float32Array(w * h); B2 = new Float32Array(w * h);
-      seed(Math.round(w * h / 160) + 8, 3);
-      for (let i = 0; i < (lowPower ? 600 : 1200); i++) step();   // start well grown, so the first look is coral rather than a few dots
+      seed(Math.round(w * h / 300) + 6, 2);
+      for (let i = 0; i < 150; i++) step();   // a quick start, then the coral grows in over the first seconds (warm, in draw)
+      warm = lowPower ? 500 : 900;
       [buf, bg2] = plain(w, h); im = bg2.createImageData(w, h);
       tint = new Float32Array(w * h * 3);   // the colonies take their colour from where they grow: coral, sea glass, pale gold
       const C = [[236, 118, 96], [118, 200, 188], [242, 204, 128]], ph = rand(0, 6.28);
@@ -196,7 +197,8 @@ export function reactionScene() {
       f = .0367 + (.0545 - .0367) * s; k = .0649 + (.062 - .0649) * s;
       seedIn -= dt;
       if (seedIn <= 0 || hit(dt)) { seed(1, 3); seedIn = rand(10, 16); }
-      const n = Math.round((lowPower ? 3 : 5) * (lively ? 2 : 1) * (1 + bands.mid * .6));
+      let n = Math.round((lowPower ? 3 : 5) * (lively ? 2 : 1) * (1 + bands.mid * .6));
+      if (warm > 0) { const extra = Math.min(warm, lowPower ? 20 : 30); warm -= extra; n += extra; }   // growing in
       for (let i = 0; i < n; i++) step();
       const px = im.data, glowUp = 1 + bands.bass * .12;
       for (let y = 0; y < h; y++) {
