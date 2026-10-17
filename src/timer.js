@@ -68,6 +68,19 @@ export function toggleTimer() {
 }
 function reset(keepCount = false) { timer.mode = 'focus'; timer.left = timer.f * 60; timer.running = false; if (!keepCount) timer.count = 0; setDuck(false); draw(); save(); }
 // Completed focus blocks, kept locally, summarised as a line in the sheet.
+// Today's focus minutes and the day streak (the same forgiving streak as weekLine), for the Android widget.
+export function focusToday() {
+  const log = state.sessions || [], today = new Date().toDateString(), days = new Set(log.map(s => new Date(s.at).toDateString()));
+  let streak = 0, rest = -99;
+  for (let i = 0; i < 400; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (days.has(d.toDateString())) streak++;
+    else if (i === 0) continue;
+    else if (i - rest >= 7) rest = i;
+    else break;
+  }
+  return { minutes: log.filter(s => new Date(s.at).toDateString() === today).reduce((a, s) => a + s.min, 0), streak, running: timer.running && timer.mode === 'focus' };
+}
 export function weekLine() {
   const log = state.sessions || [], week = Date.now() - 7 * 86400000, recent = log.filter(s => s.at > week);
   if (!recent.length) return 'No focus blocks this week yet.';

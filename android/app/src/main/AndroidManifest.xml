@@ -15,6 +15,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
             android:exported="true">
 
             <intent-filter>
@@ -35,6 +36,11 @@
             android:icon="@drawable/ic_tile_bedtime" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
+        <!-- The home-screen widget: today's focus minutes and the streak. -->
+        <receiver android:name=".FocusWidget" android:exported="true" android:label="Focus">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_focus_info" />
+        </receiver>
         <!-- The sunrise alarm going off. -->
         <receiver android:name=".AlarmReceiver" android:exported="false" />
 
@@ -64,6 +70,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Optional: rain and sunrise times for where you are ("Use my location"). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Setting a scene as the wallpaper. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <!-- Saving postcards to the pictures folder on Android 9 and older (newer versions need no permission). -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 </manifest>

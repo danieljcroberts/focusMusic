@@ -230,16 +230,22 @@ function snapshot() {
 }
 // A postcard: the scene as it is now, at the screen's full resolution, with its name and the date small in a corner.
 // The Android app saves it to Pictures/Slow Windows; a browser shares it where it can, or downloads it.
-async function postcard() {
+// The scene as it is now, as a PNG blob at the screen's resolution, with or without a small caption.
+async function frameBlob(caption = true) {
   const c = document.createElement('canvas'); c.width = Math.round(W * DPR); c.height = Math.round(H * DPR);
   const g = c.getContext('2d');
   g.fillStyle = SCENES[cur].sw || '#07080c'; g.fillRect(0, 0, c.width, c.height);
   try { drawFrame(c, g); } catch (e) {}
-  const fs = Math.round(Math.min(c.width, c.height) * .022), pad = fs * 1.4;
-  g.font = `${fs}px "IBM Plex Mono", monospace`; g.textBaseline = 'bottom';
-  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = fs * .6; g.fillStyle = 'rgba(236,230,218,.82)';
-  g.fillText(`${SCENES[cur].name} · ${new Date().toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })} · Slow Windows`, pad, c.height - pad);
-  const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+  if (caption) {
+    const fs = Math.round(Math.min(c.width, c.height) * .022), pad = fs * 1.4;
+    g.font = `${fs}px "IBM Plex Mono", monospace`; g.textBaseline = 'bottom';
+    g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = fs * .6; g.fillStyle = 'rgba(236,230,218,.82)';
+    g.fillText(`${SCENES[cur].name} · ${new Date().toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })} · Slow Windows`, pad, c.height - pad);
+  }
+  return new Promise(r => c.toBlob(r, 'image/png'));
+}
+async function postcard() {
+  const blob = await frameBlob(true);
   if (!blob) { setStatus("Couldn't make a picture of this scene."); return; }
   const name = `slow-windows-${slug(SCENES[cur])}-${new Date().toISOString().slice(0, 10)}.png`;
   if (NATIVE) { setStatus(await nativeSavePicture(blob, name) ? 'Saved to your photos, in the Slow Windows album.' : "Couldn't save the picture."); return; }
@@ -795,7 +801,7 @@ window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i
 // Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
 if (import.meta.env.PROD && !NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});   // the Android app carries its files itself
 
-initNativeUi({ caption });
+initNativeUi({ caption, frame: () => frameBlob(false), go, current: () => cur, find: key => SCENES.findIndex(s => s.key === key), sceneName: () => SCENES[cur].name });
 initBench({ scenes: SCENES, go, current: () => cur });
 // For the smoke test: which scenes failed, and a thumbnail capture on demand.
 window.slowWindows = { broken: () => SCENES.filter((s, i) => broken[i]).map(s => s.name), captureThumb, current: () => SCENES[cur].name };

@@ -259,13 +259,25 @@ export const tideScene = () => build(`const float WINTER = ${season() === 3 ? 1 
    worked out by looking toward the sun from each point, and dust drifting through the bright ones. */
 const CANOPY = `
 vec2 SUN;
-// Leafy masses hanging from the top of one depth layer, ragged and a little see-through at the edges.
+// Leaf clusters: soft round tufts on a jittered grid at scale sc, each a little different in size; the gaps between
+// them are what makes the canopy lacy rather than solid.
+float clusters(vec2 p, float sc, float k){
+  vec2 g = p * sc, c = floor(g); float v = 0.;
+  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
+    vec2 cc = c + vec2(float(i), float(j)); float h = h21(cc + k * 7.1);
+    vec2 o = cc + .5 + (vec2(h21(cc + 1.3 + k), h21(cc + 4.7 + k)) - .5) * .8;
+    float r = .3 + .4 * h, d = length((g - o) * vec2(1., 1.25)) / r;
+    v = max(v, (1. - smoothstep(.55, 1., d)) * step(.3, h));
+  }
+  return v;
+}
+// Foliage of one depth layer: clusters hanging from the top, thinning out lower down, with finer leaves at their edges.
 float foliage(vec2 p, float k){
-  float big = fbm(p * (2.4 + k * .8) + k * 7.3);
-  float fine = noise(p * (18. + k * 6.) + k * 3.);
-  float hang = smoothstep(-.25 + k * .05, .45, p.y + (big - .5) * .7);
-  float mid = noise(p * (7. + k * 2.) + k * 11.);
-  return smoothstep(.47 + k * .05, .7 + k * .05, big * .45 + hang * .5 + mid * (.14 + k * .05) + fine * (.14 + k * .04));   // lacy, more broken nearer the eye
+  float big = fbm(p * (1.6 + k * .5) + k * 7.3);
+  float hang = smoothstep(-.32 + k * .06, .45, p.y + (big - .5) * .6);
+  float cl = max(clusters(p, 5.5 + k * 1.5, k), .85 * clusters(p + 3.1, 10. + k * 2.5, k + 1.));
+  float fine = noise(p * (24. + k * 6.) + k * 3.);
+  return smoothstep(.4, .62, cl * hang * (.55 + .9 * big) + fine * .08);
 }
 // Trunks of one depth layer: where across the trunk this point is (-1..1), or 2 outside one.
 float trunkX(vec2 p, float k){

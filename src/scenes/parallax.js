@@ -49,7 +49,7 @@ export function driftScene(o) {
 
 // Night sky additions: our own twinkling stars and the odd shooting star.
 export function skyExtras() {
-  let tw = [], meteor = null, next = 6;
+  let tw = [], meteor = null, next = 6, plane = null, nextPlane = 40;
   return {
     setup() { tw = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random() * .7, ph: rand(0, 6.28), sp: rand(.6, 1.8), r: rand(.6, 1.4) })); },
     extra(t, dt) {
@@ -60,6 +60,16 @@ export function skyExtras() {
       }
       next -= dt;
       if (!meteor && next <= 0) { meteor = { x: rand(.2, .9) * W, y: rand(.05, .35) * H, life: 0 }; next = rand(9, 20); }
+      // An aircraft, far up: a steady white light with a red one blinking beside it, taking a minute to cross.
+      nextPlane -= dt;
+      if (!plane && nextPlane <= 0) { plane = { p: 0, dir: Math.random() < .5 ? 1 : -1, y: rand(.08, .4), dur: rand(50, 80) }; nextPlane = rand(120, 240); }
+      if (plane) {
+        plane.p += dt / plane.dur;
+        const x = (plane.dir > 0 ? -.05 + plane.p * 1.1 : 1.05 - plane.p * 1.1) * W, y = plane.y * H + Math.sin(plane.p * 3) * H * .01;
+        ctx.fillStyle = 'rgba(255,250,240,.9)'; ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
+        if (Math.sin(t * 6.283) > .7) { ctx.fillStyle = 'rgba(255,70,60,.95)'; ctx.beginPath(); ctx.arc(x - plane.dir * 5, y + 1, 1.3, 0, Math.PI * 2); ctx.fill(); }
+        if (plane.p >= 1) plane = null;
+      }
       if (meteor) {
         meteor.life += dt / 1.1;
         const p = meteor.life, len = 120, x = meteor.x - p * 260, y = meteor.y + p * 110;

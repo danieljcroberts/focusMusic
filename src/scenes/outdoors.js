@@ -246,7 +246,7 @@ export function lanternsScene() {
 
 /* Rooftops in the Rain: zinc roofs, dormers and chimney pots at night, lit windows, a chimney smoking */
 export function rooftopsScene() {
-  let sky, mid, near, wins, figure, nextFig, smoke, puff, drops, flue, roofs, winter;
+  let sky, mid, near, wins, figure, nextFig, smoke, puff, drops, flue, roofs, winter, cat = null, nextCat = 90;
   const snowCap = (g, x, y, w, h) => { g.fillStyle = 'rgba(232,236,246,.92)'; g.beginPath(); g.ellipse(x + w / 2, y, w / 2 + h * .4, h, 0, Math.PI, TAU); g.fill(); };
   function building(g, x0, w, top, u, list, depth) {
     const eave = top + u * 1.25, inset = u * .32;
@@ -383,6 +383,21 @@ export function rooftopsScene() {
       }
       fig(true);
       if (flue.near) puffs();
+      // A cat along the ridge of a near roof: it walks in, sits a while looking out, and walks on.
+      nextCat -= dt;
+      if (!cat && nextCat <= 0 && roofs.length) { const r = roofs[Math.floor(rand(0, roofs.length))]; cat = { r, p: 0, dur: rand(40, 70), dir: Math.random() < .5 ? 1 : -1, sit: rand(.3, .6) }; nextCat = rand(150, 300); }
+      if (cat) {
+        const c = cat; c.p += dt / c.dur;
+        const e = c.p < c.sit - .1 ? c.p / (c.sit - .1) * .5 : c.p > c.sit + .1 ? .5 + (c.p - c.sit - .1) / (1 - c.sit - .1) * .5 : .5, sitting = Math.abs(c.p - c.sit) <= .1;
+        const x = c.r.x0 + c.r.w * (c.dir > 0 ? .05 + .9 * e : .95 - .9 * e), y = c.r.top, cs = u * .09, walk = sitting ? 0 : Math.sin(t * 9) * cs * .06;
+        ctx.fillStyle = '#07070a';
+        ctx.beginPath(); ctx.ellipse(x, y - cs * .35 + walk, cs * (sitting ? .32 : .5), cs * (sitting ? .42 : .3), 0, 0, TAU); ctx.fill();   // body
+        ctx.beginPath(); ctx.arc(x + c.dir * cs * (sitting ? .1 : .45), y - cs * (sitting ? .85 : .6) + walk, cs * .2, 0, TAU); ctx.fill();   // head
+        for (const ear of [-1, 1]) { ctx.beginPath(); const hx = x + c.dir * cs * (sitting ? .1 : .45) + ear * cs * .12, hy2 = y - cs * (sitting ? .98 : .73) + walk; ctx.moveTo(hx - cs * .07, hy2); ctx.lineTo(hx, hy2 - cs * .16); ctx.lineTo(hx + cs * .07, hy2); ctx.fill(); }
+        ctx.strokeStyle = '#07070a'; ctx.lineWidth = cs * .07; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - c.dir * cs * .45, y - cs * .3); ctx.quadraticCurveTo(x - c.dir * cs * .8, y - cs * (.5 + .25 * Math.sin(t * 1.3)), x - c.dir * cs * .7, y - cs * .85 - .2 * cs * Math.sin(t * 1.3)); ctx.stroke();   // tail
+        if (!sitting) for (let k = 0; k < 4; k++) { ctx.beginPath(); const lx = x + (k - 1.5) * cs * .22, sw = Math.sin(t * 9 + k * 1.6) * cs * .12; ctx.moveTo(lx, y - cs * .3); ctx.lineTo(lx + sw, y); ctx.stroke(); }
+        if (c.p >= 1) cat = null;
+      }
       if (snowing()) {   // snow instead of rain when it is snowing (or, without local weather, in winter)
         const n = Math.floor(drops.length * .5 * (.3 + .7 * weather));
         ctx.fillStyle = 'rgba(235,238,248,.75)'; ctx.beginPath();
@@ -412,7 +427,7 @@ export function rooftopsScene() {
 
 /* Harbour at Dawn: fishing boats rocking at their moorings, gulls circling, a lighthouse on the breakwater; the light follows the clock */
 export function harbourScene() {
-  let sky, boats, gulls, built = 0, hy, lh, winter, wxP = [], rings = [];
+  let sky, boats, gulls, built = 0, hy, lh, winter, wxP = [], rings = [], passing = null, nextPass = 60;
   const HULLS = [[180, 60, 48], [44, 84, 140], [40, 110, 90], [226, 224, 214], [200, 150, 60], [90, 60, 110]];
   function boatSprite(L, hull, d) {
     const lightK = .3 + .7 * d, tint = c => mix(c.map(v => v * lightK), skyMix([20, 26, 50], [120, 80, 90], [200, 200, 210], d), .25 * (1 - d));
@@ -506,6 +521,21 @@ export function harbourScene() {
       const mist = 1 - Math.abs(d - .5) * 2;
       if (mist > .05) { const mg = ctx.createLinearGradient(0, hy - H * .04, 0, hy + H * .08); const mc = skyMix([60, 60, 80], [240, 200, 190], [230, 235, 240], d); mg.addColorStop(0, rgb(mc, 0)); mg.addColorStop(.5, rgb(mc, .3 * mist)); mg.addColorStop(1, rgb(mc, 0)); ctx.fillStyle = mg; ctx.fillRect(0, hy - H * .04, W, H * .12); }
       if (night > .4) { ctx.globalCompositeOperation = 'lighter'; glow(ctx, lh.x, lh.y, s * .05 * (1 + .3 * Math.sin(t * .8)), [255, 230, 170], (.4 + .3 * Math.sin(t * .8)) * (night - .3)); ctx.globalCompositeOperation = 'source-over'; }
+      // A boat crossing the bay far out, every few minutes, taking a minute or two: a small dark hull with a wheelhouse,
+      // a mast light and a wake, mirrored faintly in the water.
+      nextPass -= dt;
+      if (!passing && nextPass <= 0) { passing = { dir: Math.random() < .5 ? 1 : -1, p: 0, dur: 70 + Math.random() * 60, y: hy + H * .035 + Math.random() * H * .02 }; nextPass = 150 + Math.random() * 180; }
+      if (passing) {
+        passing.p += dt / passing.dur;
+        const px = (passing.dir > 0 ? -.08 + passing.p * 1.16 : 1.08 - passing.p * 1.16) * W, py = passing.y, L = s * .06, bob = Math.sin(t * .7) * L * .02;
+        const hullC = rgb(skyMix([8, 9, 14], [40, 30, 36], [50, 52, 58], d));
+        ctx.fillStyle = hullC; ctx.beginPath(); ctx.moveTo(px - L * .5, py + bob); ctx.lineTo(px + L * .5, py + bob); ctx.lineTo(px + L * .42, py + L * .08 + bob); ctx.lineTo(px - L * .45, py + L * .08 + bob); ctx.fill();
+        ctx.fillRect(px - L * .15 * passing.dir - L * .1, py - L * .1 + bob, L * .2, L * .1); ctx.fillRect(px - L * .35 * passing.dir - L * .005, py - L * .3 + bob, L * .01, L * .3);
+        if (night > .4) { ctx.globalCompositeOperation = 'lighter'; glow(ctx, px - L * .35 * passing.dir, py - L * .3 + bob, L * .08, [255, 240, 200], .8 * (night - .3)); glow(ctx, px - L * .15 * passing.dir, py - L * .04 + bob, L * .06, [255, 200, 140], .5 * (night - .3)); ctx.globalCompositeOperation = 'source-over'; }
+        ctx.fillStyle = rgb(skyMix([120, 130, 160], [230, 200, 180], [240, 245, 250], d), .35); ctx.fillRect(px - passing.dir * L * .5, py + L * .08, -passing.dir * L * (1.2 + .6 * Math.sin(t)), 1.2);   // the wake
+        ctx.fillStyle = rgb(skyMix([8, 9, 14], [40, 30, 36], [50, 52, 58], d), .25); ctx.fillRect(px - L * .45, py + L * .1, L * .9, L * .06);   // its reflection
+        if (passing.p >= 1) passing = null;
+      }
       for (const b of boats) {
         const sp = b.spr, ang = Math.sin(t * b.f + b.ph) * .035 + Math.sin(t * b.f * 1.7 + b.ph) * .012, bob = Math.sin(t * b.f * 1.3 + b.ph) * b.L * .008, y = b.y + bob;
         // Reflection: the boat mirrored, broken into wavering slices.

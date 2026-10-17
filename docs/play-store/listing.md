@@ -17,7 +17,7 @@ Calm living scenes, free Creative Commons music and a focus timer. No ads.
 
 ## Full description (4000)
 
-Slow Windows is a quiet place to work, rest and fall asleep: over a hundred living scenes, Creative Commons music, ambient sound and a focus timer, free and without ads, accounts or tracking.
+Slow Windows is a quiet place to work, rest and fall asleep: 110 living scenes, Creative Commons music, ambient sound and a focus timer, free and without ads, accounts or tracking.
 
 SCENES THAT FOLLOW YOUR WORLD
 • Rain on glass, a fjord under the aurora, a harbour at dawn, a tent in the rain, a koi pond, a library window and many more, most drawn live in code.
@@ -39,7 +39,8 @@ FOCUS AND SLEEP
 YOURS
 • Choose which scenes to include, keep favourites, add your own photos as scenes, mix in rain, sea, fire, brown noise and more.
 • Save any scene as a picture.
-• Quick Settings tiles for Focus and Bedtime.
+• Quick Settings tiles for Focus and Bedtime, a home-screen widget with today's focus minutes, and picture-in-picture.
+• Set any scene as your wallpaper, refreshed each morning so it follows the season and the weather.
 
 Free forever. No ads, no accounts, no tracking: everything you set up stays on your device.
 

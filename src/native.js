@@ -58,3 +58,14 @@ export async function nativeSavePicture(blob, name) {
     await plugin.savePicture({ data, name }); return true;
   } catch (e) { note('save picture: ' + (e && e.message)); return false; }
 }
+const b64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+// Sets a picture (a Blob) as the wallpaper: which is 'home', 'lock' or 'both'. True when it worked.
+export async function nativeSetWallpaper(blob, which = 'both') {
+  if (!NATIVE) return false; await ready;
+  try { await plugin.setWallpaper({ data: await b64(blob), which }); return true; } catch (e) { note('wallpaper: ' + (e && e.message)); return false; }
+}
+// Today's focus minutes, the streak and whether a block runs, for the home-screen widget.
+export async function nativeWidget(d) { if (!NATIVE) return; await ready; try { await plugin.setWidgetData(d); } catch (e) {} }
+// Picture-in-picture when the app is left, on or off; onNativePip(f) hears f(true) entering it and f(false) leaving.
+export async function nativePip(on) { if (!NATIVE) return; await ready; try { await plugin.setPip({ on: !!on }); } catch (e) {} }
+export async function onNativePip(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('pip', e => f(!!e.in)); } catch (e) {} }

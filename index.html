@@ -76,6 +76,7 @@
         <span class="lbl">Between tracks</span>
         <div class="seg" id="xfadeSeg" role="group" aria-label="Crossfade between tracks"><button type="button" data-x="0">No gap</button><button type="button" data-x="3">3 s</button><button type="button" data-x="8">8 s</button><button type="button" data-x="12">12 s</button></div>
         <span class="lbl">Offline</span>
+        <div class="row wrap" id="pipRow" hidden><button type="button" class="tog" id="pipBtn" aria-pressed="false" title="When you leave the app, the scene keeps playing in a small window over whatever you do next">Picture-in-picture when leaving</button></div>
         <div class="row wrap" id="dlRow" hidden><button type="button" id="dlBtn">Download music to this phone</button><button type="button" id="dlRemove" hidden>Remove downloaded music</button><span class="note" id="dlNote"></span></div>
         <div class="row wrap"><button type="button" id="offlineScenesBtn">Save every scene for offline use (35 MB)</button><button type="button" id="offlineBtn">Save the free tracks for offline use (250 MB)</button><button type="button" class="tog" id="keepStreamsBtn" aria-pressed="false" title="Streamed tracks you stay with are kept on this device, up to 300 MB, oldest out first">Keep streams I've heard</button></div>
       </div>
@@ -133,6 +134,7 @@
           <button type="button" data-tod="auto" aria-pressed="true">Auto</button><button type="button" data-tod="night" aria-pressed="false">Night</button><button type="button" data-tod="dusk" aria-pressed="false">Dusk</button><button type="button" data-tod="day" aria-pressed="false">Day</button>
         </div>
         <div class="row"><button type="button" class="tog" id="localBtn" aria-pressed="false">Use my location</button><span class="note" id="localNote">Rain outside means rain on the glass; sunrise and sunset follow your sky.</span></div>
+        <div class="row wrap" id="wallRow" hidden><span class="note">Set this scene as the wallpaper:</span><button type="button" id="wallHome">Home screen</button><button type="button" id="wallLock">Lock screen</button><button type="button" id="wallBoth">Both</button><button type="button" class="tog" id="wallDaily" aria-pressed="false" hidden title="The first time the app opens each day, the wallpaper is set again, so it follows the season, the weather and the light">Refresh each morning</button><span class="note" id="wallNote"></span></div>
         <div class="row wrap"><button type="button" id="postcardBtn" title="Save the scene as it is now as a picture (C)">Save as a picture</button></div>
         <span class="lbl">Scenes included</span>
         <div class="row wrap"><button type="button" id="chooseBtn">Choose scenes…</button><span class="note" id="chooseSum"></span></div>

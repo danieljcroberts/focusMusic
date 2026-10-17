@@ -28,13 +28,14 @@ const MODS = {
   abstract: () => import('./abstract.js'),
   cozy: () => import('./cozy.js'),
   shaded3: () => import('./shaded3.js'),
+  shaded4: () => import('./shaded4.js'),
 };
 const L = (mod, make) => ({ mod, make });
 
 const FACTORIES = {
   rain: () => rainImprovedScene({ bg: 'tokyo' }),
   snow: () => snowScene({ bg: 'toronto' }),
-  cafe: () => rainImprovedScene({ mode: 'cafe', bg: 'tokyo' }),
+  cafe: () => rainImprovedScene({ mode: 'cafe', bg: 'street' }),
   windscreen: () => rainImprovedScene({ mode: 'car', bg: 'traffic' }),
   greenhouse: () => rainImprovedScene({ mode: 'greenhouse', bg: 'foliage' }),
 
@@ -138,6 +139,11 @@ const FACTORIES = {
   midnightSun: L('shaded3', m => m.midnightSunScene()),
   dayTrain: L('shaded3', m => m.dayTrainScene()),
   tent: L('shaded3', m => m.tentScene()),
+  hut: L('shaded4', m => m.hutScene()),
+  onsen: L('shaded4', m => m.onsenScene()),
+  noonDesert: L('shaded4', m => m.noonDesertScene()),
+  shelter: L('shaded4', m => m.shelterScene()),
+  observatory: L('shaded4', m => m.observatoryScene()),
   reef: () => parallaxScene({ bw: 256, bh: 192, bg: '#2a62d8', layers: [
     { src: 'reef-far.png', v: .6 }, { src: 'reef-sand.png', v: 2 }, { src: 'reef-fore-2.png', v: 5 }, { src: 'reef-fore-1.png', v: 9 }],
     extra(t, dt, b) {

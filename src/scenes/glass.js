@@ -4,6 +4,7 @@ import { rand, layer, plain, wipe } from '../util.js';
 import { img } from '../assets.js';
 import { report } from '../diag.js';
 import { weather } from '../weather.js';
+import { daylight } from '../daylight.js';
 import { musicLevel, musicPlaying } from '../music.js';
 import { addStage, blurCanvas, BGS, bgPending, paintBg, makeSim, glKit, glFailed, dropSprite } from './glass-shared.js';
 
@@ -128,7 +129,7 @@ export function rainImprovedScene(opts = {}) {
   // rain: outside the glass, with shader runs and gusts. cafe and greenhouse: condensation inside, slower mist; the café is
   // wiped by a hand now and then, the greenhouse drips from the roof. car: rain on a windscreen with wipers.
   const mode = opts.mode || 'rain', cafe = mode === 'cafe', greenhouse = mode === 'greenhouse', car = mode === 'car', steam = cafe || greenhouse;
-  let stage, kit, failed = false, built = false, bg = opts.bg || 'tokyo', sim, fogC, fogG, beadC, beadG;
+  let stage, kit, failed = false, built = false, builtAt = -1, bg = opts.bg || 'tokyo', sim, fogC, fogG, beadC, beadG;
   let uT, uRes, uRain, uD, uRunU, uMistAmt, uTintMul, uTintAdd, uRunsOn, uBladeOn, uBladeU, rain = .6, gust = 0, nextGust = 20, maxDrops = 16;
   let wipeTimer = rand(40, 90), wiping = 0, wipeX = 0, wipeY = 0, wipeDir = 1;
   let wiperTimer = 6, wiper = 0; const WIPE = 1.5, bladeData = new Float32Array(8);
@@ -218,7 +219,7 @@ export function rainImprovedScene(opts = {}) {
     },
     draw(t, dt) {
       if (failed) { glFailed(stage); return; }
-      if (!built) { if (bgPending(bg)) return; build(); built = true; }
+      if (!built || (!BGS[bg].file && Math.abs(daylight() - builtAt) > .06)) { if (bgPending(bg)) return; build(); built = true; builtAt = daylight(); }   // drawn backdrops follow the clock
       const level = steam ? .5 : Math.min(1, weather * ((car ? .95 : .8) + .45 * musicLevel));
       // Mist returns (slowly for steam), old beads evaporate.
       fogG.fillStyle = `rgba(255,255,255,${Math.min(1, dt / (steam ? 26 : 11))})`; fogG.fillRect(0, 0, fogC.width, fogC.height);

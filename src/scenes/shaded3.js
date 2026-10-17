@@ -153,6 +153,28 @@ void main(){
     if (i < 4) { float m = fbm3o(vec2(uv.x * 2. + t * .01 * (k + 1.), uv.y * 6. + k)) * smoothstep(top - .02, top - .12, uv.y) * smoothstep(top - .3, top - .1, uv.y);
       col = mix(col, vec3(.55, .45, .6) * (.4 + .8 * d), m * .45); }
   }
+  // A deer at the edge of the near grass, every few minutes: it walks in from the right, stands looking out, and goes.
+  float cyc = mod(t + 250., 280.), ph = cyc / 42.;   // first comes half a minute in, then every few minutes
+  if (ph < 1.) {
+    float in_ = smoothstep(0., .28, ph), out_ = smoothstep(.72, 1., ph), walking = step(.01, abs(in_ - 1.) + .0) * step(ph, .28) + step(.72, ph);
+    float dx = aspW(1.1) * .5 + .12 - in_ * .4 - out_ * .4;
+    vec2 dp = (uv - vec2(dx, -.33)) / .06; dp.y -= walking * .05 * abs(sin(t * 5.));
+    float sw = walking * sin(t * 5.) * .35;
+    float dd = length(dp * vec2(1., 1.8)) - 1.;                                           // body
+    dd = min(dd, seg(dp, vec2(-.8, .3), vec2(-1.35, 1.1)) - .2);                           // neck
+    dd = min(dd, length((dp - vec2(-1.55, 1.25)) * vec2(1., 1.4)) - .28);                   // head
+    dd = min(dd, seg(dp, vec2(-1.75, 1.2), vec2(-1.98, 1.12)) - .1);                        // muzzle
+    dd = min(dd, seg(dp, vec2(-1.5, 1.45), vec2(-1.62, 1.8)) - .05);                        // ear
+    dd = min(dd, seg(dp, vec2(-1.4, 1.5), vec2(-1.2, 2.2)) - .035); dd = min(dd, seg(dp, vec2(-1.28, 1.95), vec2(-1.05, 2.1)) - .03);   // antlers
+    dd = min(dd, seg(dp, vec2(-1.45, 1.55), vec2(-1.75, 2.15)) - .035); dd = min(dd, seg(dp, vec2(-1.62, 1.9), vec2(-1.9, 2.0)) - .03);
+    dd = min(dd, seg(dp, vec2(-.7, -.4), vec2(-.75 + sw, -1.9)) - .08); dd = min(dd, seg(dp, vec2(-.45, -.4), vec2(-.4 - sw, -1.9)) - .08);   // legs
+    dd = min(dd, seg(dp, vec2(.55, -.4), vec2(.6 - sw, -1.9)) - .08); dd = min(dd, seg(dp, vec2(.8, -.4), vec2(.85 + sw, -1.9)) - .08);
+    dd = min(dd, seg(dp, vec2(.95, .2), vec2(1.15, -.1)) - .07);                            // tail
+    dd *= .06;
+    float fill = smoothstep(.0025, -.0025, dd);
+    col = mix(col, vec3(.012, .012, .022), fill);
+    col += vec3(.35, .35, .5) * smoothstep(.004, 0., abs(dd + .003)) * fill * (.4 + .6 * d);   // moonlit rim
+  }
   // Fireflies in the near grass.
   for (int i = 0; i < 2; i++) {
     float s = 9. + float(i) * 6.;

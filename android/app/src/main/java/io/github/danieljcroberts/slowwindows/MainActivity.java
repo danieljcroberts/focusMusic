@@ -1,6 +1,9 @@
 package io.github.danieljcroberts.slowwindows;
 
+import android.app.PictureInPictureParams;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.util.Rational;
 import android.os.Build;
 import android.os.Bundle;
 import android.webkit.WebView;
@@ -41,6 +44,22 @@ public class MainActivity extends BridgeActivity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) hideBars();
+    }
+
+    // Picture-in-picture: when the app is left (Home, or the app switcher) and the option is on, the scene keeps
+    // playing in a small window. The page is told, so it can hide its controls.
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (SlowWindowsPlugin.pipWanted && Build.VERSION.SDK_INT >= 26 && Build.VERSION.SDK_INT < 31) {
+            try { enterPictureInPictureMode(new PictureInPictureParams.Builder().setAspectRatio(new Rational(16, 9)).build()); } catch (Exception e) { }
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean inPip, Configuration newConfig) {
+        super.onPictureInPictureModeChanged(inPip, newConfig);
+        SlowWindowsPlugin.pip(inPip);
     }
 
     @Override

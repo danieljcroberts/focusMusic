@@ -3,17 +3,56 @@
 // Bedtime, the screen is held on while a scene shows, the web's offline buttons (a service-worker matter) are hidden,
 // and newer versions of the app are offered.
 import { TRACKS, currentTrack, playingNow, togglePlay, nextTrack, prevTrack } from './music.js';
-import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch } from './native.js';
+import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch, nativeSetWallpaper, nativeWidget, nativePip, onNativePip } from './native.js';
 import { loadDownloads, downloadAll, removeDownloads, downloadedCount } from './downloads.js';
 import { shouldOffer } from './update.js';
-import { timerRunning, toggleTimer } from './timer.js';
+import { timerRunning, toggleTimer, focusToday } from './timer.js';
 import { setStatus } from './status.js';
 import { state, saveState } from './state.js';
+import { SCENES } from './scenes/index.js';
 
 const el = id => document.getElementById(id);
-// caption: shows a word over the scene (from main.js).
-export function initNativeUi({ caption }) {
+// caption: shows a word over the scene; frame(): the scene as a PNG blob; go, current, find, sceneName: the scenes (from main.js).
+export function initNativeUi({ caption, frame, go, current, find, sceneName }) {
   if (!NATIVE) return;
+  // Wallpaper: the scene as it is now, on the home screen, the lock screen or both. With "refresh each morning" on, the
+  // first open of each day sets it again, so it follows the season, the weather and the light: if that scene isn't the
+  // one on screen, the app shows it for a few seconds to take the picture, then comes back.
+  el('wallRow').hidden = false;
+  const wp = () => state.wallpaper || null;
+  const setWall = async which => {
+    el('wallHome').disabled = el('wallLock').disabled = el('wallBoth').disabled = true;
+    const ok = await nativeSetWallpaper(await frame(), which);
+    el('wallHome').disabled = el('wallLock').disabled = el('wallBoth').disabled = false;
+    if (ok) { saveState({ wallpaper: { scene: SCENES[current()].key, which, daily: !!(wp() && wp().daily), day: new Date().toDateString() } }); drawWall(); }
+    setStatus(ok ? `Wallpaper set: ${sceneName()}.` : "Couldn't set the wallpaper.");
+  };
+  const drawWall = () => { const w = wp(); el('wallDaily').hidden = !w; el('wallDaily').setAttribute('aria-pressed', String(!!(w && w.daily))); el('wallNote').textContent = w ? `${SCENES.find(s => s.key === w.scene)?.name || 'A scene'} is the wallpaper.` : ''; };
+  el('wallHome').addEventListener('click', () => setWall('home'));
+  el('wallLock').addEventListener('click', () => setWall('lock'));
+  el('wallBoth').addEventListener('click', () => setWall('both'));
+  el('wallDaily').addEventListener('click', () => { const w = wp(); if (!w) return; saveState({ wallpaper: { ...w, daily: !w.daily } }); drawWall(); });
+  drawWall();
+  setTimeout(async () => {
+    const w = wp(); if (!w || !w.daily || w.day === new Date().toDateString()) return;
+    const i = find(w.scene); if (i < 0) return;
+    const back = current();
+    if (i !== back) { caption('Refreshing the wallpaper…'); go(i); await new Promise(r => setTimeout(r, 6000)); }
+    else await new Promise(r => setTimeout(r, 2000));
+    const ok = await nativeSetWallpaper(await frame(), w.which);
+    if (i !== back) go(back);
+    if (ok) saveState({ wallpaper: { ...w, day: new Date().toDateString() } });
+  }, 12000);
+  // The home-screen widget: kept up to date when a block starts or ends, and at start-up.
+  const pushWidget = () => nativeWidget(focusToday());
+  pushWidget(); window.addEventListener('sw-focus-start', pushWidget); window.addEventListener('sw-block-done', pushWidget); window.addEventListener('sw-timer', pushWidget);
+  setInterval(pushWidget, 10 * 60 * 1000);
+  // Picture-in-picture: a toggle; while in the small window the controls hide.
+  el('pipRow').hidden = false;
+  const drawPip = () => el('pipBtn').setAttribute('aria-pressed', String(!!state.pip));
+  el('pipBtn').addEventListener('click', () => { saveState({ pip: !state.pip }); drawPip(); nativePip(state.pip); });
+  drawPip(); nativePip(!!state.pip);
+  onNativePip(inPip => { document.body.classList.toggle('pip', inPip); if (inPip) { el('sheetClose').click(); } });
   // The playback notification and lock screen follow the track and whether it plays (read from the players, since
   // drawing stops with the screen off), and their buttons drive the player.
   let was = null, wasTitle = '';

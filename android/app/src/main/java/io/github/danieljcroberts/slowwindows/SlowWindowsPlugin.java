@@ -2,6 +2,11 @@ package io.github.danieljcroberts.slowwindows;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.PictureInPictureParams;
+import android.app.WallpaperManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Rational;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.net.Uri;
@@ -105,6 +110,46 @@ public class SlowWindowsPlugin extends Plugin {
             try (OutputStream out = cr.openOutputStream(uri)) { out.write(bytes); }
             call.resolve();
         } catch (Exception e) { call.reject("could not save: " + e.getMessage()); }
+    }
+
+    // The scene as the phone's wallpaper: a PNG (base64) for the home screen, the lock screen or both.
+    @PluginMethod
+    public void setWallpaper(PluginCall call) {
+        String data = call.getString("data"), which = call.getString("which", "both");
+        if (data == null) { call.reject("data is required"); return; }
+        new Thread(() -> {
+            try {
+                byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                WallpaperManager wm = WallpaperManager.getInstance(getContext());
+                if (Build.VERSION.SDK_INT >= 24) {
+                    int flags = which.equals("home") ? WallpaperManager.FLAG_SYSTEM : which.equals("lock") ? WallpaperManager.FLAG_LOCK : WallpaperManager.FLAG_SYSTEM | WallpaperManager.FLAG_LOCK;
+                    wm.setBitmap(bmp, null, true, flags);
+                } else wm.setBitmap(bmp);
+                call.resolve();
+            } catch (Exception e) { call.reject("could not set the wallpaper: " + e.getMessage()); }
+        }).start();
+    }
+
+    // Today's focus minutes and the streak, for the home-screen widget.
+    @PluginMethod
+    public void setWidgetData(PluginCall call) {
+        FocusWidget.save(getContext(), call.getInt("minutes", 0), call.getInt("streak", 0), Boolean.TRUE.equals(call.getBoolean("running", false)));
+        call.resolve();
+    }
+
+    // Picture-in-picture when the app is left: on or off. Android 12 and later can enter it as the gesture happens.
+    static volatile boolean pipWanted = false;
+    @PluginMethod
+    public void setPip(PluginCall call) {
+        pipWanted = Boolean.TRUE.equals(call.getBoolean("on", false));
+        if (Build.VERSION.SDK_INT >= 31) getActivity().runOnUiThread(() -> { try { getActivity().setPictureInPictureParams(new PictureInPictureParams.Builder().setAspectRatio(new Rational(16, 9)).setAutoEnterEnabled(pipWanted).setSeamlessResizeEnabled(false).build()); } catch (Exception e) { } });
+        call.resolve();
+    }
+    static void pip(boolean in) {
+        if (instance == null) return;
+        JSObject o = new JSObject(); o.put("in", in);
+        instance.notifyListeners("pip", o);
     }
 
     private PendingIntent alarmOperation(Context ctx) {

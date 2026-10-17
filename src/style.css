@@ -447,4 +447,6 @@ body.sheet-open .chrome, body.sheet-open .shade { opacity: 1 !important; visibil
 .bench p { margin: 0; }
 .bench ol { margin: 0; padding-left: 18px; max-height: 40vh; overflow: auto; font-size: 12px; color: var(--muted); display: grid; gap: 2px; }
 .bench .row { display: flex; gap: 8px; }
+/* Picture-in-picture (the Android app): only the scene shows in the small window. */
+body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip #toast { display: none !important; }
 
