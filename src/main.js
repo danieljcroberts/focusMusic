@@ -4,11 +4,11 @@ import { A, ok } from './assets.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { weather, tickWeather } from './weather.js';
-import { daylight, skyMix } from './daylight.js';
+import { daylight } from './daylight.js';
 import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, playedSince, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -19,8 +19,12 @@ import { closeMenus } from './menus.js';
 import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
 import { initMoods, applyMood } from './moods.js';
-import { lookback } from './lookback.js';
-import { NATIVE, SITE, nativePlaying, nativeKeepAwake } from './native.js';
+import { listening, setListening } from './listen.js';
+import './summary.js';
+import { tickGrade, drawWx } from './overlays.js';
+import { initBench, benching } from './bench.js';
+import { initNativeUi } from './native-ui.js';
+import { NATIVE, SITE, nativeKeepAwake, nativeSavePicture } from './native.js';
 import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
 import './tour.js';
 import './scenesets.js';
@@ -191,7 +195,7 @@ function updateText() {
   el('artlic').textContent = info.lic;
   el('bgRow').hidden = !s.bgs;
   if (s.bgs) bgButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === instances[cur].bg)));
-  setScene(s.music, s.tone);
+  setScene(s.music, s.tone, s.key);
   window.dispatchEvent(new CustomEvent('sw-scene', { detail: { tone: s.tone, mood: s.mood } }));
   setAmbienceKind(s.sound || 'none');
   const mt = byKey[s.music];
@@ -204,24 +208,47 @@ function updateText() {
   cards[cur].b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: still ? 'auto' : 'smooth' });
   drawFav();
 }
+// The current frame of the scene, drawn into another canvas (the crossfade's, or a postcard's).
+function drawFrame(c, g) {
+  const k = instances[cur].kind;
+  if (k === 'canvas' || broken[cur]) g.drawImage(cv, 0, 0, c.width, c.height);
+  else if (k === 'webgl') { const st = stageOf(instances[cur]); if (!st.hidden) g.drawImage(st, 0, 0, c.width, c.height); }
+  else if (k === 'video') {
+    const v = stageOf(instances[cur]);
+    if (v.videoWidth) { const s = Math.max(c.width / v.videoWidth, c.height / v.videoHeight); g.drawImage(v, (c.width - v.videoWidth * s) / 2, (c.height - v.videoHeight * s) / 2, v.videoWidth * s, v.videoHeight * s); }
+  }
+  else if (k === 'image' && ok(stillImg)) {
+    const s = Math.max(c.width / stillImg.naturalWidth, c.height / stillImg.naturalHeight);
+    const w = stillImg.naturalWidth * s, h = stillImg.naturalHeight * s;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(stillImg, (c.width - w) / 2, (c.height - h) / 2, w, h);
+  }
+}
 function snapshot() {
   fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fadeCv.width, fadeCv.height);
-  const k = instances[cur].kind;
-  try {
-    if (k === 'canvas' || broken[cur]) fctx.drawImage(cv, 0, 0);
-    else if (k === 'webgl') { const st = stageOf(instances[cur]); if (!st.hidden) fctx.drawImage(st, 0, 0, fadeCv.width, fadeCv.height); }
-    else if (k === 'video') {
-      const v = stageOf(instances[cur]);
-      if (v.videoWidth) { const s = Math.max(fadeCv.width / v.videoWidth, fadeCv.height / v.videoHeight); fctx.drawImage(v, (fadeCv.width - v.videoWidth * s) / 2, (fadeCv.height - v.videoHeight * s) / 2, v.videoWidth * s, v.videoHeight * s); }
-    }
-    else if (k === 'image' && ok(stillImg)) {
-      const s = Math.max(fadeCv.width / stillImg.naturalWidth, fadeCv.height / stillImg.naturalHeight);
-      const w = stillImg.naturalWidth * s, h = stillImg.naturalHeight * s;
-      fctx.imageSmoothingEnabled = false;
-      fctx.drawImage(stillImg, (fadeCv.width - w) / 2, (fadeCv.height - h) / 2, w, h);
-    }
-  } catch (e) { /* a blank snapshot just means no crossfade */ }
+  try { drawFrame(fadeCv, fctx); } catch (e) { /* a blank snapshot just means no crossfade */ }
 }
+// A postcard: the scene as it is now, at the screen's full resolution, with its name and the date small in a corner.
+// The Android app saves it to Pictures/Slow Windows; a browser shares it where it can, or downloads it.
+async function postcard() {
+  const c = document.createElement('canvas'); c.width = Math.round(W * DPR); c.height = Math.round(H * DPR);
+  const g = c.getContext('2d');
+  g.fillStyle = SCENES[cur].sw || '#07080c'; g.fillRect(0, 0, c.width, c.height);
+  try { drawFrame(c, g); } catch (e) {}
+  const fs = Math.round(Math.min(c.width, c.height) * .022), pad = fs * 1.4;
+  g.font = `${fs}px "IBM Plex Mono", monospace`; g.textBaseline = 'bottom';
+  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = fs * .6; g.fillStyle = 'rgba(236,230,218,.82)';
+  g.fillText(`${SCENES[cur].name} · ${new Date().toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })} · Slow Windows`, pad, c.height - pad);
+  const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+  if (!blob) { setStatus("Couldn't make a picture of this scene."); return; }
+  const name = `slow-windows-${slug(SCENES[cur])}-${new Date().toISOString().slice(0, 10)}.png`;
+  if (NATIVE) { setStatus(await nativeSavePicture(blob, name) ? 'Saved to your photos, in the Slow Windows album.' : "Couldn't save the picture."); return; }
+  const file = new File([blob], name, { type: 'image/png' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: SCENES[cur].name }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); setStatus('Picture saved.');
+}
+el('postcardBtn').addEventListener('click', () => { el('sheetClose').click(); setTimeout(postcard, 400); });
 function go(i) {
   i = (i + SCENES.length) % SCENES.length;
   if (i === cur) return;
@@ -254,45 +281,6 @@ function tickPulse(dt) {
   const on = Math.abs(pulse - 1) > .003;
   document.body.classList.toggle('pulse', on);
   if (on) document.body.style.setProperty('--pulse', pulse.toFixed(3));
-}
-/* Time of day and season for the pixel-art landscapes (and Bamboo and Canopy), which were drawn for one hour and one time of year: a multiplied
-   tint follows the clock (cool and dark at night, warm at dusk, clear by day), and a light colour grade follows the
-   month (fresher in spring, richer in summer, turning gold in autumn, paler in winter). Recomputed once a second. */
-const CLOCKED = new Set(['woods', 'ridge', 'peaks', 'seaview', 'summits', 'pier', 'bamboo', 'canopy']);
-const SEASONED = new Set(['woods', 'ridge', 'peaks', 'seaview', 'pier', 'campfire', 'pixeltrain']);
-const SEASON_GRADE = ['saturate(1.05) hue-rotate(-4deg)', 'saturate(1.15)', 'sepia(.22) saturate(1.2) hue-rotate(-14deg)', 'saturate(.68) brightness(1.04)'];
-const todEl = el('tod');
-let gradeAt = -1, gradeKey = '';
-function tickGrade(now) {
-  if (now - gradeAt < 1000 && gradeKey === SCENES[cur].key) return;
-  gradeAt = now; gradeKey = SCENES[cur].key;
-  const m = new Date().getMonth(), season = m <= 1 || m === 11 ? 3 : m <= 4 ? 0 : m <= 7 ? 1 : 2;
-  const sg = SEASONED.has(gradeKey) && !(season === 3 && gradeKey === 'summits') ? SEASON_GRADE[season] : '';
-  document.body.classList.toggle('season', !!sg);
-  if (sg) document.body.style.setProperty('--season', sg); else document.body.style.removeProperty('--season');
-  todEl.hidden = !CLOCKED.has(gradeKey);
-  if (!todEl.hidden) { const [r, g, b] = skyMix([62, 78, 132], [255, 186, 150], [255, 255, 255]); todEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`; }
-}
-/* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
-   snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
-const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk', 'photos'].includes(s.key)).map(s => s.key));
-const wxCv = el('wxfx'), wxG = wxCv.getContext('2d');
-let wxDrops = null;
-function drawWx(dt) {
-  const amount = WX.has(SCENES[cur].key) ? Math.max(0, (weather - .5) / .5) : 0;
-  if (amount <= 0) { if (!wxCv.hidden) { wxCv.hidden = true; wxDrops = null; } return; }
-  if (wxCv.hidden) { wxCv.hidden = false; wxCv.width = Math.round(W * DPR); wxCv.height = Math.round(H * DPR); }
-  const m = new Date().getMonth(), snow = m >= 10 || m <= 1, n = Math.round((snow ? 140 : 220) * amount * (lowPower ? .5 : 1));
-  if (!wxDrops || wxDrops.length !== n) wxDrops = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, v: snow ? 30 + Math.random() * 40 : 500 + Math.random() * 400, l: snow ? 1.5 + Math.random() * 2 : 10 + Math.random() * 18, w: Math.random() * 6.28 }));
-  wxG.setTransform(DPR, 0, 0, DPR, 0, 0); wxG.clearRect(0, 0, W, H);
-  wxG.strokeStyle = `rgba(214, 226, 240, ${.35 * amount})`; wxG.fillStyle = `rgba(255, 255, 255, ${.8 * amount})`; wxG.lineWidth = 1;
-  wxG.beginPath();
-  for (const d of wxDrops) {
-    d.y += d.v * dt; if (snow) d.x += Math.sin(t * .8 + d.w) * 12 * dt; else d.x -= 60 * dt;
-    if (d.y > H + 20) { d.y = -20; d.x = Math.random() * W; } if (d.x < -20) d.x = W + 20;
-    if (snow) { wxG.moveTo(d.x + d.l, d.y); wxG.arc(d.x, d.y, d.l, 0, 6.283); } else { wxG.moveTo(d.x, d.y); wxG.lineTo(d.x - 2, d.y + d.l); }
-  }
-  if (snow) wxG.fill(); else wxG.stroke();
 }
 function render(dt) {
   const inst = instances[cur];
@@ -385,11 +373,12 @@ el('copyDiagBtn').addEventListener('click', async () => {
 const watch = state.watch || {}; let watchSaved = 0;
 function frame(now) {
   const real = (now - last) / 1000, dt = Math.min(.05, real) * sleepPace(now); last = now; t += dt;   // the sleep timer slows the scene toward the end
-  if (!document.hidden) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + Math.min(.05, real); if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
+  if (!document.hidden && !listening) { const n = SCENES[cur].name; watch[n] = (watch[n] || 0) + Math.min(.05, real); if (now - watchSaved > 30000) { watchSaved = now; saveState({ watch }); } }
   tickWeather(dt); sampleMusic(dt); tickFades(now); watchFps(real);
-  tickDrift(now); tickSleep(now); tickPulse(dt); tickGrade(now); tickHaptic(dt);
+  if (!benching()) tickDrift(now);   // Drift waits while every scene is being tested
+  tickSleep(now); tickPulse(dt); tickGrade(now, SCENES[cur].key); tickHaptic(dt);
   if (diagOn() && now - diagAt > 500) { diagAt = now; drawDiag(); }
-  if (picker.hidden) { render(dt); drawWx(dt); }   // nothing to draw behind the full-screen scene grid
+  if (picker.hidden && !listening) { render(dt); drawWx(dt, SCENES[cur].key, t); }   // nothing to draw behind the scene grid or in listen-only
   requestAnimationFrame(frame);
 }
 if (still) setInterval(() => { tickFades(performance.now()); sampleMusic(.1); }, 100);
@@ -432,11 +421,14 @@ amb.addEventListener('input', () => setAmbienceLevel(Number(amb.value)));
 for (const r of [amb, el('vol')]) { const say = () => r.setAttribute('aria-valuetext', Math.round(r.value * 100) + '%'); r.addEventListener('input', say); say(); }
 ['pointerdown', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, startAmbience, { once: true, passive: true }));
 
+// Listen only lets the screen sleep (the web's wake lock is let go; the Android app stops holding the screen on).
+el('listenBtn').addEventListener('click', () => { el('sheetClose').click(); setListening(true); });
+window.addEventListener('sw-listening', e => { if (e.detail && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } else if (!e.detail) keepAwake(); });
 /* Keep the screen on while a scene is showing. The lock drops when the tab is hidden and is taken again when it returns. */
 let wakeLock = null;
 async function keepAwake() {
   if (NATIVE) { nativeKeepAwake(!document.body.classList.contains('sleep')); return; }   // Android keeps the screen on itself
-  if (!('wakeLock' in navigator) || wakeLock || document.hidden) return;
+  if (!('wakeLock' in navigator) || wakeLock || document.hidden || listening) return;
   try {
     wakeLock = await navigator.wakeLock.request('screen');
     wakeLock.addEventListener('release', () => { wakeLock = null; });
@@ -490,6 +482,8 @@ window.addEventListener('keydown', e => {
     case 's': case 'S': toggleFav(); break;
     case 'd': case 'D': setDrift(!drift); break;
     case 'a': case 'A': openAbout(); break;
+    case 'b': case 'B': setListening(true); break;
+    case 'c': case 'C': postcard(); break;
     case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
@@ -587,28 +581,6 @@ window.addEventListener('sw-timer', e => {
     if (pool.length) { beforeBreak = cur; go(pool[Math.floor(Math.random() * pool.length)]); }
   } else if (beforeBreak >= 0) { go(beforeBreak); beforeBreak = -1; }
 });
-
-// The end of a focus block: a small card with the minutes, the scene and what played, gone after a while.
-const summary = el('summary'); let summaryTimer;
-window.addEventListener('sw-block-done', e => {
-  const { min, scene, count, break: br } = e.detail, tracks = playedSince(Date.now() - min * 60000);
-  el('sumHead').textContent = e.detail.intent ? `${min} minutes on ${e.detail.intent}` : `${min} minutes of focus`;
-  el('sumBody').textContent = `Block ${count} today · ${scene}${tracks.length ? ` · ${tracks.length} track${tracks.length === 1 ? '' : 's'}` : ''} · ${br} minute break`;
-  el('sumBody').textContent += e.detail.away ? ` · left the app ${e.detail.away} time${e.detail.away === 1 ? '' : 's'}` : ' · stayed with it';
-  const ol = el('sumTracks'); ol.textContent = '';
-  for (const t of tracks.slice(-5)) { const li = document.createElement('li'); li.textContent = `${t.t} — ${t.a}`; ol.append(li); }
-  summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 20000);
-});
-el('sumClose').addEventListener('click', () => { summary.hidden = true; });
-// The first open in a new week: last week's look-back on the same card, staying up a little longer.
-setTimeout(() => {
-  if (!el('hint1').hidden || !summary.hidden) return;
-  const w = lookback(); if (!w) return;
-  el('sumHead').textContent = w.head; el('sumBody').textContent = w.body;
-  const ol = el('sumTracks'); ol.textContent = '';
-  for (const x of w.items) { const li = document.createElement('li'); li.textContent = x; ol.append(li); }
-  summary.hidden = false; clearTimeout(summaryTimer); summaryTimer = setTimeout(() => { summary.hidden = true; }, 45000);
-}, 5000);
 
 // Feel the beat: a light buzz on strong beats in the visualiser scenes, off unless turned on.
 let hapticBeat = !!state.hapticBeat, beatCool = 0, lastBass = 0;
@@ -823,37 +795,8 @@ window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i
 // Installable and usable offline once the service worker has seen the files. Fails quietly where it isn't allowed.
 if (import.meta.env.PROD && !NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});   // the Android app carries its files itself
 
-// The Android app: the media service runs while music plays (so it keeps going with the screen off), the screen is
-// let go once the sleep timer has stopped everything, and the offline-saving buttons (a service-worker matter) are hidden,
-// since the app carries its scenes inside it.
-if (NATIVE) {
-  let was = false, wasTitle = '';
-  setInterval(() => {
-    const ct = currentTrack(), title = ct ? `${ct.t} — ${ct.a}` : '';
-    if (musicPlaying !== was || (musicPlaying && title !== wasTitle)) { was = musicPlaying; wasTitle = title; nativePlaying(musicPlaying, title); }
-  }, 1000);
-  new MutationObserver(() => nativeKeepAwake(!document.body.classList.contains('sleep'))).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  nativeKeepAwake(true);
-  for (const id of ['offlineScenesBtn', 'offlineBtn', 'keepStreamsBtn']) el(id).hidden = true;
-  // Updates: the live site publishes app-version.json with each release (scripts/release.sh). When it names a newer
-  // version than this one, offer the download; "Later" waits for the release after that. Checked at start and every
-  // six hours. The download opens in the phone's browser, which hands the APK to Android's installer.
-  const mine = Number(import.meta.env.VITE_APP_VERSION) || 0;
-  const checkUpdate = async () => {
-    try {
-      const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json();
-      if (!(v.code > mine) || v.code === state.skipVersion) return;
-      el('updateText').textContent = `A new version of the app is ready (${v.name}).${v.notes ? ' ' + v.notes : ''}`;
-      el('updateGet').href = SITE + v.apk; el('updateBar').hidden = false;
-    } catch (e) { /* offline, or nothing published yet */ }
-  };
-  el('updateGet').addEventListener('click', () => { el('updateBar').hidden = true; setStatus('Downloading the update. Open it when it finishes to install.'); });
-  el('updateLater').addEventListener('click', async () => {
-    el('updateBar').hidden = true;
-    try { const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json(); saveState({ skipVersion: v.code }); } catch (e) {}
-  });
-  setTimeout(checkUpdate, 8000); setInterval(checkUpdate, 6 * 3600 * 1000);
-}
+initNativeUi({ caption });
+initBench({ scenes: SCENES, go, current: () => cur });
 // For the smoke test: which scenes failed, and a thumbnail capture on demand.
 window.slowWindows = { broken: () => SCENES.filter((s, i) => broken[i]).map(s => s.name), captureThumb, current: () => SCENES[cur].name };
 

@@ -9,6 +9,7 @@ import { hash, rgb, layer, glow } from '../util.js';
 import { daylight, skyMix } from '../daylight.js';
 import { weather } from '../weather.js';
 import { bands, musicLevel } from '../music.js';
+import { seasonName } from '../season.js';
 
 function seeded(seed) { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }; }
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -51,8 +52,8 @@ export function holmestrandScene() {
     const port = H > W, s = Math.min(W, H) / 800, tw = 1 - Math.abs(d * 2 - 1), gold = tw * (1 - weather * .5);
     const hy = H * (port ? .4 : .45), sunX = W * (port ? .64 : .7), wy1 = H * (port ? .55 : .6);
     const lit = .35 + .65 * d;
-    // The season, from the month: winter is bare and snowy, spring fresh and light, summer deep green, autumn gold.
-    const month = new Date().getMonth(), season = month <= 1 || month === 11 ? 'winter' : month <= 4 ? 'spring' : month <= 7 ? 'summer' : 'autumn';
+    // The season (the hemisphere's): winter is bare and snowy, spring fresh and light, summer deep green, autumn gold.
+    const season = seasonName();
     G = { hy, sunX, s, gold, port, wy1, lit, season };
     let g;
 

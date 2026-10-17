@@ -7,6 +7,8 @@ import { note } from './diag.js';
 import { setStatus } from './status.js';
 import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps, fmtDur } from './mine.js';
 import * as ST from './soundtracks.js';
+import { trackWeight, pickWeighted, withSceneLove } from './shuffle.js';
+import { localTrack } from './downloads.js';
 
 const el = id => document.getElementById(id);
 export { TRACKS };
@@ -68,6 +70,8 @@ function agc(k, v, dt) {
   return Math.max(0, Math.min(1, (v - s.lo) / range));
 }
 function average(a, from, to) { let s = 0; for (let i = from; i < to; i++) s += a[i]; return s / (to - from) / 255; }
+// Whether music is playing right now, read from the players themselves (musicPlaying is only refreshed while drawing).
+export const playingNow = () => players.some(p => !p.paused && !p.ended);
 export function sampleMusic(dt) {
   musicPlaying = players.some(p => !p.paused && !p.ended && p.readyState > 2);
   let target = 0;
@@ -118,9 +122,9 @@ export function tickFades(now) {
 // then another of the same mood takes its place, so a scene does not sound the same on every visit.
 export let follow = !!state.follow;   // off unless the viewer turned it on
 export function setFollow(v) { follow = v; saveState({ follow: v }); }
-let sceneKey = null, sceneTone = null;
+let sceneKey = null, sceneTone = null, sceneName = null;
 const recent = [];
-export function setScene(k, tone) { sceneKey = k; sceneTone = tone || null; }
+export function setScene(k, tone, scene) { sceneKey = k; sceneTone = tone || null; sceneName = scene || null; }
 export const sceneTrack = () => byKey[sceneKey];
 export function pickFor(key, tone) {
   const pref = byKey[key];
@@ -158,16 +162,11 @@ const stats = state.trackStats || {};
 const keyOf = t => t ? (t.own ? 'own:' + t.id : key(t)) : null;
 let startedAt = 0;
 function tally(k, f) { if (!k) return; const e = stats[k] || (stats[k] = { p: 0, s: 0 }); e[f]++; saveState({ trackStats: stats }); }
-function weightOf(k) {
-  const e = stats[k] || { p: 0, s: 0 };
-  const skip = e.s >= 2 && e.s > e.p ? Math.max(.15, .6 - .15 * (e.s - e.p)) : 1;
-  return (ST.isLoved(k) ? 1.8 : 1) * skip * (1 + Math.min(e.p, 6) * .05);
-}
-function weighted(list, k) {
-  const w = list.map(x => weightOf(k(x))); let r = Math.random() * w.reduce((a, v) => a + v, 0);
-  for (let i = 0; i < list.length; i++) if ((r -= w[i]) < 0) return list[i];
-  return list[list.length - 1];
-}
+const weightOf = k => trackWeight(stats[k], ST.isLoved(k), (sceneLoves[sceneName] || []).includes(k));
+const weighted = (list, k) => pickWeighted(list, list.map(x => weightOf(k(x))));
+// Tracks hearted while a scene was on come back more when that scene is on again.
+let sceneLoves = state.sceneLoves || {};
+const noteSceneLove = (k, on) => { if (!sceneName) return; sceneLoves = withSceneLove(sceneLoves, sceneName, k, on); saveState({ sceneLoves }); };
 // Hearing comfort: an hour of playing near full volume brings a gentle note, once until the volume comes down.
 let loudFor = 0, loudTold = false;
 setInterval(() => {
@@ -184,10 +183,10 @@ export function toggleLove() {
     const k = key(curTrack), on = !ST.isLoved(k);
     const list = found().filter(f => key(f) !== k);
     if (on && liveUrl) list.push({ a: curTrack.a, t: curTrack.t, lic: curTrack.lic, src: curTrack.src, stream: liveUrl, genre: 'misc', mood: 'calm', conf: 'confirmed', found: true });
-    saveState({ found: list }); ST.setLoved(k, on); renderLib();
+    saveState({ found: list }); ST.setLoved(k, on); noteSceneLove(k, on); renderLib();
     window.dispatchEvent(new CustomEvent('sw-loved', { detail: on })); return on;
   }
-  const k = keyOf(curTrack), on = !ST.isLoved(k); ST.setLoved(k, on);
+  const k = keyOf(curTrack), on = !ST.isLoved(k); ST.setLoved(k, on); noteSceneLove(k, on);
   window.dispatchEvent(new CustomEvent('sw-loved', { detail: on })); return on;
 }
 // Levelling: each track's loudness is measured the first time it plays and kept, so the next time it starts at the
@@ -350,7 +349,7 @@ export function playTrack(t) {
   ui.title.textContent = `${t.t} — ${t.a}`;
   setMeta([t.lic, eps(t), t.file ? 'bundled' : 'streaming'], t.src, 'Source ↗');
   announce(t);
-  start(t.file ? M + t.file : t.stream);
+  start(t.file ? (localTrack(t.file) || M + t.file) : t.stream);   // a copy kept on this device first (Android app)
   markLib();
   if (!t.file) setTimeout(() => { if (curTrack === t) keepStream(t); }, 20000);   // a track you stayed with
 }

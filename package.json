@@ -12,11 +12,13 @@
     "check": "node scripts/check.mjs",
     "fetch-music": "node scripts/fetch-music.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "test": "npm run lint && npm run check && npm run build && npm run smoke",
+    "unit": "node --test \"tests/*.test.mjs\"",
+    "test": "npm run lint && npm run unit && npm run check && npm run build && npm run smoke",
     "portrait": "node scripts/portrait.mjs",
     "build:android": "node scripts/build-native.mjs",
     "apk": "node scripts/build-native.mjs && cd android && ./gradlew assembleDebug",
     "release": "scripts/release.sh",
+    "bundle": "node scripts/build-native.mjs && cd android && ./gradlew bundleRelease && echo Signed bundle: android/app/build/outputs/bundle/release/app-release.aab",
     "smoke:quick": "SMOKE_SCENES='Rain on Glass,Lava Lamp,Supercell,Holmestrand,Offshore Wind,Pixel Woods,Deep Field,Spectrum Bars,Cat on the Windowsill,Open Water' node scripts/smoke.mjs"
   },
   "devDependencies": {

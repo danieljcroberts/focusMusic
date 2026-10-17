@@ -2,12 +2,22 @@ package io.github.danieljcroberts.slowwindows;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.OutputStream;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.WindowManager;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.Logger;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -18,22 +28,23 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "SlowWindows")
 public class SlowWindowsPlugin extends Plugin {
     private static SlowWindowsPlugin instance;
-    private static boolean pendingSunrise = false;
+    private static String pendingLaunch = "";
 
     @Override
     public void load() { instance = this; }
 
-    // Called when the alarm opens the app: tell the page now if it is listening, or when it asks at start-up.
-    static void sunrise() {
-        if (instance != null && instance.hasListeners("sunrise")) instance.notifyListeners("sunrise", new JSObject());
-        else pendingSunrise = true;
+    // Called when the app is opened for a reason (the alarm, a Quick Settings tile): tell the page now if it is
+    // listening, or when it asks at start-up.
+    static void launch(String reason) {
+        if (instance != null && instance.hasListeners("launch")) { JSObject o = new JSObject(); o.put("reason", reason); instance.notifyListeners("launch", o); }
+        else pendingLaunch = reason;
     }
 
     @PluginMethod
     public void launchReason(PluginCall call) {
         JSObject r = new JSObject();
-        r.put("reason", pendingSunrise ? "sunrise" : "");
-        pendingSunrise = false;
+        r.put("reason", pendingLaunch);
+        pendingLaunch = "";
         call.resolve(r);
     }
 
@@ -47,21 +58,53 @@ public class SlowWindowsPlugin extends Plugin {
         call.resolve();
     }
 
+    // The playing track and whether it plays. Starts the playback service the first time music plays; after that it
+    // updates it, which also works with the app in the background (a track ending, or a button on the lock screen).
     @PluginMethod
     public void startPlayback(PluginCall call) {
-        String title = call.getString("title", "Playing");
+        String title = call.getString("title", "Playing"), artist = call.getString("artist", "");
+        boolean playing = Boolean.TRUE.equals(call.getBoolean("playing", true));
         Context ctx = getContext();
-        try {
-            if (PlaybackService.running) PlaybackService.update(ctx, title);
-            else ContextCompat.startForegroundService(ctx, new Intent(ctx, PlaybackService.class).putExtra("title", title));
-            call.resolve();
-        } catch (Exception e) { call.reject("Could not start playback service: " + e.getMessage()); }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                if (PlaybackService.instance != null) PlaybackService.instance.setState(title, artist, playing);
+                else if (playing) ContextCompat.startForegroundService(ctx, new Intent(ctx, PlaybackService.class)
+                    .setAction(PlaybackService.ACTION_STATE).putExtra("title", title).putExtra("artist", artist).putExtra("playing", true));
+            } catch (Exception e) { Logger.error("SlowWindows", "playback service: " + e.getMessage(), e); }
+        });
+        call.resolve();
     }
 
     @PluginMethod
     public void stopPlayback(PluginCall call) {
         getContext().stopService(new Intent(getContext(), PlaybackService.class));
         call.resolve();
+    }
+
+    // A press on the notification, the lock screen or a headphone button: play, pause, next or prev, for the page.
+    static void media(String action) {
+        if (instance == null) return;
+        JSObject o = new JSObject(); o.put("action", action);
+        instance.notifyListeners("media", o);
+    }
+
+    // A postcard: a PNG (base64) saved to the phone's pictures, in a "Slow Windows" album.
+    @PluginMethod
+    public void savePicture(PluginCall call) {
+        String data = call.getString("data"), name = call.getString("name", "slow-windows.png");
+        if (data == null) { call.reject("data is required"); return; }
+        try {
+            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+            ContentResolver cr = getContext().getContentResolver();
+            ContentValues v = new ContentValues();
+            v.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+            v.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+            if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Slow Windows");
+            Uri uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+            if (uri == null) { call.reject("no place to save"); return; }
+            try (OutputStream out = cr.openOutputStream(uri)) { out.write(bytes); }
+            call.resolve();
+        } catch (Exception e) { call.reject("could not save: " + e.getMessage()); }
     }
 
     private PendingIntent alarmOperation(Context ctx) {

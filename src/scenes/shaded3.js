@@ -6,6 +6,8 @@ import { daylight } from '../daylight.js';
 import { weather } from '../weather.js';
 import { lowPower } from '../view.js';
 import { moonPhase, MOON_GLSL } from '../moon.js';
+import { season } from '../season.js';
+import { auroraStrength, watchAurora } from '../aurora.js';
 
 const H = `
 float h31(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -64,8 +66,7 @@ vec4 fish(vec2 p, vec2 c, float s, float dir, float t, float ph, vec3 top, vec3 
 `;
 const build = (fs, o) => shaderScene(H + fs, { res: .8, ...o });
 const withMoon = fs => MOON_GLSL(moonPhase()) + fs;   // tonight's phase
-const byClock = (extra = {}) => ({ before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather); }, ...extra });
-const season = () => { const m = new Date().getMonth(); return m <= 1 || m === 11 ? 3 : m <= 4 ? 0 : m <= 7 ? 1 : 2; };   // spring 0, summer 1, autumn 2, winter 3
+const byClock = (extra = {}) => ({ before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather); gl.uniform1f(u.uC, auroraStrength); }, ...extra });
 const withSeason = fs => `const float SEASON = ${season()}.;\n` + fs;
 
 /* Aquarium: a planted tank seen through the glass. Light falls in shafts from the surface and ripples over the gravel,
@@ -474,7 +475,7 @@ vec3 scene(vec2 uv, float t, bool refl){
   vec3 col = mix(vec3(.08, .14, .3), vec3(.01, .02, .06), smoothstep(-.05, .45, uv.y));
   col += vec3(.2, .3, .55) * exp(-abs(uv.y + .02) * 10.) * .5 * (.6 + .4 * uA);
   col += stars(uv * 150., t, 0.) * vec3(.9, .95, 1.) * (refl ? .4 : 1.);
-  col += aurora(rd, t) * (1. + .3 * uBass);
+  col += aurora(rd, t) * (1. + .3 * uBass) * (.35 + 1.3 * uC);   // uC: tonight's real aurora strength
   float asp = aspW(1.15);
   float leftM = -.06 + .3 * smoothstep(-.1, -asp * .5, uv.x) * mtn(uv.x * 2., 1.) * .9;
   float rightM = -.06 + .28 * smoothstep(.15, asp * .5, uv.x) * mtn(uv.x * 2.3, 4.) * .9;
@@ -508,7 +509,7 @@ void main(){
   col = 1. - exp(-col * 1.6);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const polarNightScene = () => build(POLAR, byClock({ res: .75 }));
+export const polarNightScene = () => { watchAurora(); return build(POLAR, byClock({ res: .75 })); };
 
 /* Midnight Sun: a fishing village in the far north at midnight in summer. The sun hangs just above the sea, gold on the
    water, jagged peaks behind, and red cabins on stilts with fish racks along the shore. */

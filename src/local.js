@@ -4,17 +4,20 @@
 import { setWeatherOverride } from './weather.js';
 import { setSunTimes } from './daylight.js';
 import { state, saveState } from './state.js';
+import { setRealSnow, snowFrom } from './season.js';
 
 export let localOn = !!(state.local && state.local.lat !== undefined);
 let timer = null;
 
 async function refresh() {
   const { lat, lon } = state.local;
-  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=rain,showers,snowfall,cloud_cover&daily=sunrise,sunset&timezone=auto&forecast_days=1`);
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=rain,showers,snowfall,cloud_cover,temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1`);
   if (!r.ok) throw new Error('weather ' + r.status);
   const d = await r.json();
   const mm = (d.current.rain || 0) + (d.current.showers || 0) + (d.current.snowfall || 0) * 10, cloud = Math.round(d.current.cloud_cover || 0);
   // Dry: a little mist with the cloud. Wet: 0.35 at a drizzle up to 1 at 3 mm/h or more.
+  // Snow or rain: from the snowfall, the weather code and the temperature.
+  setRealSnow(snowFrom({ temp: d.current.temperature_2m, snowfall: d.current.snowfall, code: d.current.weather_code, wet: mm > 0 }));
   setWeatherOverride(mm > 0 ? Math.min(1, .35 + mm / 3 * .65) : Math.max(.08, cloud / 100 * .3));
   const hours = iso => { const [h, m] = iso.slice(11, 16).split(':'); return +h + m / 60; };
   setSunTimes(hours(d.daily.sunrise[0]), hours(d.daily.sunset[0]));
@@ -30,6 +33,6 @@ export async function enableLocal() {
 }
 export function disableLocal() {
   localOn = false; saveState({ local: null }); clearInterval(timer);
-  setWeatherOverride(null); setSunTimes(null, null);
+  setWeatherOverride(null); setSunTimes(null, null); setRealSnow(null);
 }
 if (localOn) { start(); refresh().catch(() => {}); }

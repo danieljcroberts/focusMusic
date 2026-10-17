@@ -26,6 +26,15 @@
 
         <!-- Keeps the app alive while music plays with the screen off. -->
         <service android:name=".PlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <!-- Quick Settings tiles: Focus and Bedtime, from the pull-down panel. -->
+        <service android:name=".FocusTileService" android:exported="true" android:label="Focus"
+            android:icon="@drawable/ic_tile_focus" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".BedtimeTileService" android:exported="true" android:label="Bedtime"
+            android:icon="@drawable/ic_tile_bedtime" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
         <!-- The sunrise alarm going off. -->
         <receiver android:name=".AlarmReceiver" android:exported="false" />
 
@@ -55,4 +64,6 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Optional: rain and sunrise times for where you are ("Use my location"). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Saving postcards to the pictures folder on Android 9 and older (newer versions need no permission). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 </manifest>

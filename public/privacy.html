@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slow Windows privacy</title>
+<style>
+  :root { --bg: #07080c; --text: #ece6da; --muted: #b3ab9b; --accent: #f2c27b; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-weight: 400; font-size: 30px; margin: 0 0 4px; }
+  h2 { font-weight: 500; font-size: 18px; margin: 32px 0 8px; }
+  p, li { color: var(--text); }
+  .muted { color: var(--muted); font-size: 14px; }
+  a { color: var(--accent); }
+  ul { padding-left: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Privacy</h1>
+  <p class="muted">Slow Windows, the web app and the Android app. Last updated 17 October 2026.</p>
+
+  <p>Slow Windows is free and has no accounts, no adverts, no analytics and no tracking. It does not collect, sell or share
+  personal information. Everything you set up stays on your device.</p>
+
+  <h2>What stays on your device</h2>
+  <ul>
+    <li>Your settings, favourites, focus sessions, scene choices and listening history are kept in the app's own storage on
+    your device. They are never sent anywhere. "Back up" in the app saves them to a file only you handle.</li>
+    <li>Music and photos you add are copied into the app's storage on your device. They are never uploaded.</li>
+    <li>Music you download for offline listening, and pictures you save of a scene, stay on your device.</li>
+  </ul>
+
+  <h2>What the app fetches, and from where</h2>
+  <p>To work, the app downloads files from these services. Like any website, each sees your device's internet address
+  when it is asked for something; none is given anything else about you.</p>
+  <ul>
+    <li><b>GitHub Pages</b> (danieljcroberts.github.io), where the app itself, its scene art and some of its music are
+    hosted. The Android app also checks here for a newer version.</li>
+    <li><b>The Internet Archive</b> (archive.org), which hosts most of the Creative Commons music the app streams.</li>
+    <li><b>Google Fonts</b>, for the app's typefaces.</li>
+    <li><b>NOAA's Space Weather Prediction Center</b> (services.swpc.noaa.gov), for the aurora forecast shown in the
+    aurora scenes. Nothing about you is sent.</li>
+    <li><b>Open-Meteo</b> (open-meteo.com), only if you turn on "Use my location": your position, rounded to about a
+    kilometre, is sent to get the local weather and sunrise times. It is kept only on your device, and turning the option
+    off removes it.</li>
+  </ul>
+
+  <h2>Android permissions</h2>
+  <ul>
+    <li><b>Notifications</b>: the playing track with its controls, and the end of a focus block.</li>
+    <li><b>Run in the foreground and keep the device awake while playing</b>: so music keeps playing with the screen off.</li>
+    <li><b>Alarms</b>: the sunrise alarm, which opens the app at the time you choose.</li>
+    <li><b>Approximate location</b>: only when you turn on "Use my location", for local weather and sunrise times.</li>
+    <li><b>Storage</b> (Android 9 and older only): to save a picture of a scene to your photos.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>The app collects nothing from anyone, children included.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or concerns: open an issue at <a href="https://github.com/danieljcroberts/focusMusic/issues">github.com/danieljcroberts/focusMusic</a>.</p>
+</main>
+</body>
+</html>

@@ -7,7 +7,7 @@ import { report } from '../diag.js';
 import { addStage, glKit, glFailed } from './glass-shared.js';
 
 const PRELUDE = `precision highp float;
-uniform vec2 uRes; uniform float uT, uBass, uMid, uTreble, uLevel, uLively, uHue, uA, uB;
+uniform vec2 uRes; uniform float uT, uBass, uMid, uTreble, uLevel, uLively, uHue, uA, uB, uC;
 uniform sampler2D uSpec, uWave;
 varying vec2 vUv;
 #define PI 3.14159265
@@ -42,7 +42,7 @@ export function shaderScene(fs, o = {}) {
         stage = addStage(document.createElement('canvas'));
         try { kit = glKit(stage, PRELUDE + fs); } catch (e) { report(e); }
         if (!kit) { failed = true; return; }
-        for (const n of ['uT', 'uBass', 'uMid', 'uTreble', 'uLevel', 'uLively', 'uHue', 'uRes', 'uA', 'uB']) u[n] = kit.u(n);
+        for (const n of ['uT', 'uBass', 'uMid', 'uTreble', 'uLevel', 'uLively', 'uHue', 'uRes', 'uA', 'uB', 'uC']) u[n] = kit.u(n);
         specC = document.createElement('canvas'); specC.width = 256; specC.height = 1; specG = specC.getContext('2d'); specIm = specG.createImageData(256, 1);
         waveC = document.createElement('canvas'); waveC.width = 512; waveC.height = 1; waveG = waveC.getContext('2d'); waveIm = waveG.createImageData(512, 1);
       }

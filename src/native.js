@@ -28,19 +28,33 @@ export async function nativeAskNotify() { if (!NATIVE) return; await ready; try 
 // The first time music plays, ask to show notifications, so the playback notification (which shows the service is
 // keeping the music going) is visible on Android 13 and later.
 let askedForPlayback = false;
-export async function nativePlaying(on, title) {
+export async function nativePlaying(on, title, artist) {
   if (!NATIVE) return; await ready;
   if (on && !askedForPlayback) { askedForPlayback = true; try { await notes.requestPermissions(); } catch (e) {} }
-  try { await (on ? plugin.startPlayback({ title: title || 'Playing' }) : plugin.stopPlayback()); } catch (e) { note('playback service: ' + (e && e.message)); }
+  try { await plugin.startPlayback({ title: title || 'Slow Windows', artist: artist || '', playing: on }); } catch (e) { note('playback service: ' + (e && e.message)); }
+}
+// Presses on the notification, the lock screen and headphone buttons: f('play' | 'pause' | 'next' | 'prev').
+export async function onNativeMedia(f) {
+  if (!NATIVE) return; await ready;
+  try { await plugin.addListener('media', e => f(e.action)); } catch (e) {}
 }
 export async function nativeKeepAwake(on) { if (!NATIVE) return; await ready; try { await plugin.keepAwake({ on }); } catch (e) {} }
 // The sunrise alarm: at (ms since 1970) Android opens the app; null cancels it.
 export async function nativeAlarm(at) { if (!NATIVE) return; await ready; try { await (at ? plugin.setAlarm({ at }) : plugin.cancelAlarm()); } catch (e) {} }
-// Calls f when the app was opened by the alarm, now or later while it is running.
-export async function onNativeSunrise(f) {
-  if (!NATIVE) return; await ready;
+// Why Android opened the app: 'sunrise' (the alarm), 'focus' or 'bedtime' (the Quick Settings tiles). Handlers are
+// registered as modules load; the reason the app started with is handed out once to all of them, then any later ones.
+const launchers = [];
+export const onNativeLaunch = f => { if (NATIVE) launchers.push(f); };
+export const onNativeSunrise = f => onNativeLaunch(r => { if (r === 'sunrise') f(); });
+if (NATIVE) ready.then(async () => {
+  const fire = r => { if (r) launchers.forEach(f => { try { f(r); } catch (e) {} }); };
+  try { await plugin.addListener('launch', e => fire(e.reason)); fire((await plugin.launchReason()).reason); } catch (e) {}
+});
+// Saves a picture (a Blob) to the phone's photos, in a Slow Windows album. True when it worked.
+export async function nativeSavePicture(blob, name) {
+  if (!NATIVE) return false; await ready;
   try {
-    await plugin.addListener('sunrise', () => f());
-    const { reason } = await plugin.launchReason(); if (reason === 'sunrise') f();
-  } catch (e) {}
+    const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+    await plugin.savePicture({ data, name }); return true;
+  } catch (e) { note('save picture: ' + (e && e.message)); return false; }
 }

@@ -45,7 +45,7 @@ npm run apk     # builds the web app in native mode into dist-native/, copies it
                 # → android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-What the app adds over the web app is in `src/native.js` and `android/app/src/main/java/…/`: music keeps playing with the screen off (a media foreground service), the sunrise alarm is a real alarm clock that opens the app over the lock screen, and timer notifications use Android's own. The bundled music is left out of the app to stay under Google Play's 200 MB limit and streams from the live site instead; the scenes are inside the app. Every web change reaches the app on its next build. To release both at once:
+What the app adds over the web app is in `src/native.js`, `src/native-ui.js` and `android/app/src/main/java/…/`: music keeps playing with the screen off, with the track and its controls on the notification, the lock screen and headphone buttons (a media session in a foreground service); the bundled music can be downloaded into the app; the sunrise alarm is a real alarm clock that opens the app over the lock screen; Quick Settings tiles start a focus block or Bedtime; pictures of scenes save to the phone's photos; and timer notifications use Android's own. The bundled music is left out of the app to stay under Google Play's 200 MB limit and streams from the live site instead; the scenes are inside the app. Every web change reaches the app on its next build. To release both at once:
 
 ```sh
 npm run release -- "What changed, in a line"
@@ -53,7 +53,7 @@ npm run release -- "What changed, in a line"
 
 That raises the Android version, builds the web app and the APK, commits and pushes the version change, and publishes both to GitHub Pages, the APK beside an `app-version.json` that the installed app checks: phones with the app then offer the update, with that line as its note. A plain `scripts/deploy-pages.sh` keeps the published APK in place.
 
-For Google Play, build a signed bundle (`./gradlew bundleRelease` with a signing config). Keep the upload keystore and its passwords out of git, and backed up.
+For Google Play, `npm run bundle` builds a signed bundle with the upload key in `~/.android-keys/` (keep that folder backed up and out of git). The listing text, permission declarations and pictures are in `docs/play-store/`; `node scripts/store-art.mjs` regenerates the pictures.
 
 ## Add music
 
@@ -64,6 +64,8 @@ node scripts/find-music.mjs ambient piano     # Creative Commons tracks on archi
 Confirm each licence on the item page, then paste the entries into `src/data/tracks.json`. Tracks with a `file` name are bundled by `npm run fetch-music`; the rest stream.
 
 ## Check it
+
+`npm run unit` runs the fast tests of the app's logic (moon, seasons, weather, aurora, shuffle, look-back, updates) in a second; `npm test` runs them with lint, the data check, a build and the smoke test.
 
 ```sh
 npm run check   # scene and track data agree with each other and with the files on disk

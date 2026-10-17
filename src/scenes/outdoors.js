@@ -5,7 +5,7 @@ import { weather } from '../weather.js';
 import { daylight, skyMix } from '../daylight.js';
 import { bands, musicLevel } from '../music.js';
 import { moonPhase, drawMoon } from '../moon.js';
-import { isWinter } from '../season.js';
+import { isWinter, season, snowing, monthHere } from '../season.js';
 
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -113,7 +113,7 @@ export function bambooScene() {
         });
       });
       // The season: snow lying and falling in winter, yellow leaves drifting down in autumn.
-      const m = new Date().getMonth(); fall = m <= 1 || m === 11 ? 'snow' : m >= 8 && m <= 10 ? 'leaves' : null;
+      fall = isWinter() ? 'snow' : season() === 2 ? 'leaves' : null;
       if (fall === 'snow') { g = ground.getContext('2d'); const sg = g.createLinearGradient(0, H * .9, 0, H); sg.addColorStop(0, 'rgba(236,240,246,0)'); sg.addColorStop(.5, 'rgba(236,240,246,.85)'); sg.addColorStop(1, 'rgba(226,232,240,1)'); g.fillStyle = sg; g.fillRect(0, H * .9, W, H * .1); }
       bits = fall ? Array.from({ length: fall === 'snow' ? (lowPower ? 70 : 150) : 22 }, () => ({ x: rand(0, W), y: rand(0, H), z: rand(.4, 1), ph: rand(0, TAU) })) : [];
       flat = BAMBOO.map((D, l) => {
@@ -308,7 +308,7 @@ export function rooftopsScene() {
   return {
     init() {
       const s = S(), u = s / 10; let g;
-      const m = new Date().getMonth(); winter = m <= 1 || m === 11; roofs = [];
+      winter = isWinter(); roofs = [];
       [sky, g] = layer(W, H);
       const gr = g.createLinearGradient(0, 0, 0, H * .6);
       gr.addColorStop(0, '#0a0d18'); gr.addColorStop(.6, '#1d2234'); gr.addColorStop(1, '#3b3646');
@@ -383,7 +383,7 @@ export function rooftopsScene() {
       }
       fig(true);
       if (flue.near) puffs();
-      if (winter) {   // snow instead of rain in winter
+      if (snowing()) {   // snow instead of rain when it is snowing (or, without local weather, in winter)
         const n = Math.floor(drops.length * .5 * (.3 + .7 * weather));
         ctx.fillStyle = 'rgba(235,238,248,.75)'; ctx.beginPath();
         for (let i = 0; i < n; i++) {
@@ -440,7 +440,7 @@ export function harbourScene() {
   const api = {
     init() {
       const d = daylight(), s = S(); built = d; hy = H * .56; let g;
-      const m = new Date().getMonth(); winter = m <= 1 || m === 11;
+      winter = isWinter();
       wxP = Array.from({ length: lowPower ? 120 : 260 }, () => ({ x: rand(0, W), y: rand(0, H), z: rand(.3, 1) }));
       [sky, g] = layer(W, H);
       const gr = g.createLinearGradient(0, 0, 0, hy);
@@ -491,7 +491,7 @@ export function harbourScene() {
         const vg = ctx.createLinearGradient(0, 0, 0, H), vc = skyMix([16, 18, 26], [110, 104, 112], [170, 176, 184], d);
         vg.addColorStop(0, rgb(vc, .55 * wet)); vg.addColorStop(.56, rgb(vc, .35 * wet)); vg.addColorStop(1, rgb(vc, .2 * wet));
         ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-        if (!winter) {
+        if (!snowing()) {
           if (Math.random() < dt * 30 * wet) rings.push({ x: rand(0, W), y: hy + Math.pow(Math.random(), .7) * (H - hy), age: 0 });
           ctx.strokeStyle = rgb(skyMix([150, 160, 190], [240, 210, 190], [235, 242, 250], d)); ctx.lineWidth = 1;
           for (let i = rings.length - 1; i >= 0; i--) {
@@ -534,15 +534,16 @@ export function harbourScene() {
       }
       if (wet > 0) {
         const n = Math.floor(wxP.length * wet);
-        if (winter) { ctx.fillStyle = 'rgba(240,242,250,.8)'; ctx.beginPath(); }
+        const flakes = snowing();
+        if (flakes) { ctx.fillStyle = 'rgba(240,242,250,.8)'; ctx.beginPath(); }
         else { ctx.strokeStyle = 'rgba(205,214,232,.28)'; ctx.lineWidth = 1; ctx.beginPath(); }
         for (let i = 0; i < n; i++) {
           const p = wxP[i];
-          if (winter) { p.y += H * .05 * p.z * dt; p.x += Math.sin(t * .6 + i) * 9 * dt; } else { p.y += H * 1.1 * p.z * dt; p.x -= H * .12 * p.z * dt; }
+          if (flakes) { p.y += H * .05 * p.z * dt; p.x += Math.sin(t * .6 + i) * 9 * dt; } else { p.y += H * 1.1 * p.z * dt; p.x -= H * .12 * p.z * dt; }
           if (p.y > H) { p.y -= H + 20; p.x = rand(0, W * 1.1); } if (p.x < -20) p.x += W + 40;
-          if (winter) { const r = s * .003 * p.z; ctx.moveTo(p.x + r, p.y); ctx.arc(p.x, p.y, r, 0, TAU); } else { const len = s * .03 * p.z; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + len * .11, p.y - len); }
+          if (flakes) { const r = s * .003 * p.z; ctx.moveTo(p.x + r, p.y); ctx.arc(p.x, p.y, r, 0, TAU); } else { const len = s * .03 * p.z; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + len * .11, p.y - len); }
         }
-        if (winter) ctx.fill(); else ctx.stroke();
+        if (flakes) ctx.fill(); else ctx.stroke();
       }
     }
   };
@@ -585,7 +586,7 @@ export function firefliesScene() {
       [grass, g] = layer(W, H);
       g.fillStyle = '#0f1424'; g.fillRect(0, hy - s * .02, W, H);
       for (let x = -20; x < W + 20; x += s * rand(.015, .035)) { const r = s * rand(.02, .045) * (.6 + .6 * Math.abs(Math.sin(x * .004))); g.beginPath(); g.arc(x, hy - s * .02 - r * .4, r, 0, TAU); g.fill(); }
-      const month = new Date().getMonth(), winter = month <= 1 || month === 11, frost = winter ? 1 : 0;
+      const month = monthHere(), winter = isWinter(), frost = winter ? 1 : 0;
       const gc = (c, f) => c.map(v => Math.round(v + (150 - v) * f));
       grass = [grass, grassLayer(H * .9, H * .32, gc([22, 28, 40], frost * .35), W / 2, false), grassLayer(H * .95, H * .42, gc([13, 17, 24], frost * .22), W / 3, true), grassLayer(H, H * .5, gc([5, 7, 10], frost * .1), W / 9, true)];
       const n = Math.round((lowPower ? 150 : 320) * FIREFLY_MONTHS[month]);

@@ -12,7 +12,7 @@ import com.getcapacitor.BridgeActivity;
 // The app's one screen: the web app full screen, with the system bars hidden (a swipe brings them back for a moment).
 // When the sunrise alarm opens it, it shows over the lock screen and turns the screen on.
 public class MainActivity extends BridgeActivity {
-    public static final String EXTRA_SUNRISE = "sunrise";
+    public static final String EXTRA_SUNRISE = "sunrise", EXTRA_LAUNCH = "launch";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,11 +50,15 @@ public class MainActivity extends BridgeActivity {
         handleSunrise(intent);
     }
 
+    // Opened by the sunrise alarm (over the lock screen, screen on) or by a Quick Settings tile (focus, bedtime).
     private void handleSunrise(Intent intent) {
-        if (intent == null || !intent.getBooleanExtra(EXTRA_SUNRISE, false)) return;
+        if (intent == null) return;
+        String launch = intent.getStringExtra(EXTRA_LAUNCH);
+        if (launch != null) { intent.removeExtra(EXTRA_LAUNCH); SlowWindowsPlugin.launch(launch); }
+        if (!intent.getBooleanExtra(EXTRA_SUNRISE, false)) return;
         intent.removeExtra(EXTRA_SUNRISE);
         if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(true); setTurnScreenOn(true); }
         AlarmReceiver.clearNotification(this);
-        SlowWindowsPlugin.sunrise();
+        SlowWindowsPlugin.launch("sunrise");
     }
 }

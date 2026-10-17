@@ -2,7 +2,8 @@
 // tide, light shafts in a wood and a lighthouse beam turning through sea fog. All follow the viewer's clock (uA is the
 // daylight, 0 night to 1 day) and some the weather (uB). The music moves them gently: nothing here flashes.
 import { shaderScene } from './trip.js';
-import { season } from '../season.js';
+import { season, seasonName } from '../season.js';
+import { auroraStrength, watchAurora } from '../aurora.js';
 import { daylight } from '../daylight.js';
 import { weather } from '../weather.js';
 import { lowPower } from '../view.js';
@@ -34,7 +35,7 @@ float stars(vec2 p, float t, float day){
 
 const build = (fs, o) => shaderScene(NOISE3 + COMMON + fs, { res: .75, ...o });
 const byClock = (extra = {}) => ({
-  before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather); if (extra.before) extra.before(t, dt, gl, u); },
+  before(t, dt, gl, u) { gl.uniform1f(u.uA, daylight()); gl.uniform1f(u.uB, weather); gl.uniform1f(u.uC, auroraStrength); if (extra.before) extra.before(t, dt, gl, u); },
   ...extra,
 });
 
@@ -70,7 +71,7 @@ vec3 scene(vec2 uv, float t, float day, bool refl){
   vec3 col = mix(low, sky, smoothstep(-.1, .45, el));
   col += stars(uv * 140., t, day) * vec3(.9, .95, 1.) * (refl ? .4 : 1.);
   float night = 1. - day;
-  col += aurora(rd, t) * (.04 + .96 * night) * (1. + .35 * uBass);
+  col += aurora(rd, t) * (.04 + .96 * night) * (1. + .35 * uBass) * (.35 + 1.3 * uC);   // uC: tonight's real aurora strength
   // Two ridges: a hazy far one and a black near one with a treeline.
   float far = -.03 + .07 * ridge(uv.x, 1.3);
   vec3 farC = dmix(vec3(.03, .07, .1), vec3(.2, .16, .26), vec3(.4, .5, .6), day);
@@ -101,7 +102,7 @@ void main(){
   col += (h21(gl_FragCoord.xy + fract(uT)) - .5) / 160.;        // a little dither keeps the gradients smooth
   gl_FragColor = vec4(col, 1.);
 }`;
-export const auroraScene = () => build(AURORA, byClock({ speed: 1 }));
+export const auroraScene = () => { watchAurora(); return build(AURORA, byClock({ speed: 1 })); };
 
 /* Above the Clouds: a window seat. The cloud deck below is ray-marched and lit by the sun (or the moon), the sky and the
    sun follow the clock, and the wing's tip light keeps time. */
@@ -336,7 +337,7 @@ void main(){
 }`;
 // The wood follows the season: fresh in spring, deep in summer, gold in autumn, bare and grey in winter.
 function seasonal(fs) {
-  const m = new Date().getMonth(), season = m <= 1 || m === 11 ? 'winter' : m <= 4 ? 'spring' : m <= 7 ? 'summer' : 'autumn';
+  const season = seasonName();
   const LC = {
     spring: 'lc[0] = vec3(.5, .62, .32); lc[1] = vec3(.26, .4, .16); lc[2] = vec3(.09, .16, .06); lc[3] = vec3(.02, .035, .015);',
     summer: 'lc[0] = vec3(.42, .52, .3); lc[1] = vec3(.2, .3, .14); lc[2] = vec3(.07, .12, .055); lc[3] = vec3(.015, .028, .015);',

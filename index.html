@@ -52,7 +52,7 @@
       <div class="pane">
         <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span><input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Position in track" hidden></div>
         <p class="note upnext" id="upNext" hidden></p>
-        <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button></div>
+        <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button><button type="button" id="listenBtn" title="A dark screen with a clock; the music carries on (B)">Listen only</button></div>
         <label class="slider"><span>Music</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume"></label>
         <span class="lbl">Volume limit</span>
         <div class="seg" id="capSeg" role="group" aria-label="Volume limit"><button type="button" data-cap="1">None</button><button type="button" data-cap="0.8">80%</button><button type="button" data-cap="0.6">60%</button></div>
@@ -76,6 +76,7 @@
         <span class="lbl">Between tracks</span>
         <div class="seg" id="xfadeSeg" role="group" aria-label="Crossfade between tracks"><button type="button" data-x="0">No gap</button><button type="button" data-x="3">3 s</button><button type="button" data-x="8">8 s</button><button type="button" data-x="12">12 s</button></div>
         <span class="lbl">Offline</span>
+        <div class="row wrap" id="dlRow" hidden><button type="button" id="dlBtn">Download music to this phone</button><button type="button" id="dlRemove" hidden>Remove downloaded music</button><span class="note" id="dlNote"></span></div>
         <div class="row wrap"><button type="button" id="offlineScenesBtn">Save every scene for offline use (35 MB)</button><button type="button" id="offlineBtn">Save the free tracks for offline use (250 MB)</button><button type="button" class="tog" id="keepStreamsBtn" aria-pressed="false" title="Streamed tracks you stay with are kept on this device, up to 300 MB, oldest out first">Keep streams I've heard</button></div>
       </div>
     </details>
@@ -132,6 +133,7 @@
           <button type="button" data-tod="auto" aria-pressed="true">Auto</button><button type="button" data-tod="night" aria-pressed="false">Night</button><button type="button" data-tod="dusk" aria-pressed="false">Dusk</button><button type="button" data-tod="day" aria-pressed="false">Day</button>
         </div>
         <div class="row"><button type="button" class="tog" id="localBtn" aria-pressed="false">Use my location</button><span class="note" id="localNote">Rain outside means rain on the glass; sunrise and sunset follow your sky.</span></div>
+        <div class="row wrap"><button type="button" id="postcardBtn" title="Save the scene as it is now as a picture (C)">Save as a picture</button></div>
         <span class="lbl">Scenes included</span>
         <div class="row wrap"><button type="button" id="chooseBtn">Choose scenes…</button><span class="note" id="chooseSum"></span></div>
         <span class="lbl">Scene sets</span>
@@ -152,6 +154,7 @@
           <button type="button" class="tog" id="lowBtn" aria-pressed="false">Low power</button>
           <button type="button" id="shareBtn" title="Copy a link that opens on this scene">Share this scene</button>
         </div>
+        <div class="row wrap"><button type="button" id="benchBtn" title="Runs every scene for a few seconds and lists the ones that are slow on this device">Test every scene on this device</button><span class="note" id="benchNote">About seven minutes. Keep the screen on.</span></div>
         <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="tourBtn">Take the tour</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
         <span class="note">Free forever. Your own music never leaves this device.</span>
       </div>
@@ -172,6 +175,8 @@
 <div class="intent" id="intent" hidden><label for="intentIn">What are you working on?</label><div class="row"><input type="text" id="intentIn" maxlength="60" placeholder="Optional" autocomplete="off"><button type="button" class="pbtn primary" id="intentOk">Go</button></div></div>
 <div class="info-card" id="trackInfo" hidden role="dialog" aria-label="About this track"><header><b id="tiTitle"></b><button type="button" class="pbtn" id="tiClose">Close</button></header><span id="tiArtist"></span><span class="muted" id="tiKind"></span><ul id="tiLines"></ul><div id="tiMore"></div></div>
 <div class="tour" id="tour" hidden role="dialog" aria-label="Tour"><p id="tourText"></p><div class="row"><span class="muted" id="tourStep"></span><button type="button" class="pbtn" id="tourSkip">Skip</button><button type="button" class="pbtn primary" id="tourNext">Next</button></div></div>
+<div class="listen" id="listen" hidden aria-label="Listening. Tap to bring the scene back."><div class="lc"><b id="listenClock"></b><span id="listenTrack"></span></div></div>
+<div class="bench" id="bench" hidden role="status"><p id="benchText"></p><ol id="benchList"></ol><div class="row"><button type="button" class="pbtn primary" id="benchOut" hidden>Leave these out</button><button type="button" class="pbtn" id="benchStop">Stop</button></div></div>
 <div class="update" id="updateBar" hidden role="status"><span id="updateText"></span><div class="row"><a class="pbtn primary" id="updateGet" href="#">Download</a><button type="button" class="pbtn" id="updateLater">Later</button></div></div>
 <div class="summary" id="summary" hidden role="status"><b id="sumHead"></b><span id="sumBody"></span><ol id="sumTracks"></ol><button type="button" class="pbtn" id="sumClose">Close</button></div>
 <div class="level" id="level" hidden aria-hidden="true"><span class="track"><span class="bar" id="levelBar"></span></span><span class="lbl" id="levelLbl"></span></div>
@@ -205,6 +210,8 @@
     <dt>H</dt><dd>Love the playing track</dd>
     <dt>I</dt><dd>About the playing track</dd>
     <dt>D</dt><dd>Drift between favourites</dd>
+    <dt>B</dt><dd>Listen only: a dark screen, the music carries on</dd>
+    <dt>C</dt><dd>Save the scene as a picture</dd>
     <dt>V</dt><dd>Lively</dd>
     <dt>T</dt><dd>Start or pause the focus timer</dd>
     <dt>L</dt><dd>Music library</dd>
