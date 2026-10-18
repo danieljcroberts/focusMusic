@@ -141,7 +141,7 @@ export function onSceneChange() {
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 export const currentTrack = () => curTrack;
 
-const ui = { play: el('play'), next: el('next'), title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
+const ui = { play: el('play'), next: el('next'), prog: el('barProg'), title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -572,10 +572,12 @@ setInterval(() => {
   const ok = hasSrc && audio.duration > 0 && isFinite(audio.duration);
   ui.seek.hidden = !ok;
   if (ok && !scrubbing) ui.seek.value = Math.round(audio.currentTime / audio.duration * 1000);
+  ui.prog.style.width = ok ? `${(audio.currentTime / audio.duration * 100).toFixed(2)}%` : '0';
 }, 250);
 for (const p of players) {
-  p.addEventListener('play', () => { if (p === audio) { ui.play.textContent = 'Pause'; if (ms) ms.playbackState = 'playing'; } });
-  p.addEventListener('pause', () => { if (p === audio) { ui.play.textContent = 'Play'; if (ms) ms.playbackState = 'paused'; } });
+  const shown = on => { ui.play.setAttribute('aria-pressed', String(on)); ui.play.setAttribute('aria-label', on ? 'Pause' : 'Play'); window.dispatchEvent(new CustomEvent('sw-playstate', { detail: on })); };
+  p.addEventListener('play', () => { if (p === audio) { shown(true); if (ms) ms.playbackState = 'playing'; } });
+  p.addEventListener('pause', () => { if (p === audio) { shown(false); if (ms) ms.playbackState = 'paused'; } });
   p.addEventListener('playing', () => { if (p === audio) errors = 0; });
   p.addEventListener('ended', () => { if (p !== audio) return; if (stopAtEnd) { stopAtEnd = false; window.dispatchEvent(new CustomEvent('sw-track-ended-stop')); return; } nextTrack(); });
   p.addEventListener('error', () => {

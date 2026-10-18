@@ -183,8 +183,6 @@ nav .star { position: absolute; top: 9px; right: 11px; font-size: 11px; color: v
   .bottom { gap: 10px; }
   .pbtn.scene b { font-size: 15px; }
   .pbtn.scene .eyebrow { display: none; }
-  .bar #next { display: none; }
-  .pbtn.st #stName { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   nav button.card { width: 88px; padding: 5px 5px 7px; }
   nav .thumb { width: 78px; height: 44px; }
   nav .lbl { font-size: 10px; }
@@ -449,4 +447,56 @@ body.sheet-open .chrome, body.sheet-open .shade { opacity: 1 !important; visibil
 .bench .row { display: flex; gap: 8px; }
 /* Picture-in-picture (the Android app): only the scene shows in the small window. */
 body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip #toast { display: none !important; }
+/* The player bar (one translucent strip): album art, previous, play or pause, next, love and more, all icons. A thin
+   line along its top edge is the track's progress. The scene's name sits at the top, by the clock. */
+.bar { position: relative; display: flex; align-items: center; gap: 4px; padding: 6px; max-width: 520px; width: 100%;
+  background: rgba(10, 11, 16, .55); border: 1px solid rgba(236, 230, 218, .1); border-radius: 22px; overflow: visible;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.bar .prog { position: absolute; left: 18px; right: 18px; top: 0; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(236, 230, 218, .08); }
+.bar .prog i { display: block; height: 100%; width: 0; background: var(--accent); opacity: .8; transition: width .25s linear; }
+.bar .gap { flex: 1; }
+.bar .ib { flex: none; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text);
+  -webkit-backdrop-filter: none; backdrop-filter: none; transition: background .2s, transform .15s; }
+.bar .ib:hover { background: rgba(236, 230, 218, .08); }
+.bar .ib:active { transform: scale(.92); }
+.bar .ib svg { width: 22px; height: 22px; }
+.bar .ib.main { width: 50px; height: 50px; background: var(--chip-on-bg); color: var(--chip-on-text); }
+.bar .ib.main svg { width: 24px; height: 24px; }
+.bar .ib.main:hover { background: var(--chip-on-bg); filter: brightness(1.05); }
+.bar svg .f { fill: currentColor; }
+.bar svg .s { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bar #play .i-pause, .bar #play[aria-pressed="true"] .i-play { display: none; }
+.bar #play[aria-pressed="true"] .i-pause { display: block; }
+.bar .love[aria-pressed="true"] { color: #e85a7a; }
+.bar .love[aria-pressed="true"] svg .s { fill: currentColor; }
+.bar #menuBtn[aria-expanded="true"] { background: rgba(236, 230, 218, .14); }
+.bar .art { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; overflow: hidden; display: grid; place-items: center; margin-right: 6px;
+  background: rgba(236, 230, 218, .08); color: var(--muted); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.bar .art img { width: 100%; height: 100%; object-fit: cover; grid-area: 1 / 1; }
+.bar .art svg { width: 20px; height: 20px; grid-area: 1 / 1; }
+.bar .art img:not([hidden]) + svg { display: none; }
+.bar .art[aria-expanded="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bar .stwrap { position: relative; flex: none; }
+.bar .stmenu { top: auto; bottom: calc(100% + 12px); left: -6px; right: auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* The scene's name, top left, small and quiet; a tap opens the picker. */
+.top .scenename { display: grid; gap: 1px; text-align: left; padding: 0; background: none; border: 0; border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none;
+  min-width: 0; max-width: 60vw; text-transform: none; letter-spacing: 0; }
+.top .scenename .eyebrow { font-size: 9px; }
+.top .scenename b { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 18px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 10px rgba(0, 0, 0, .6); }
+.top .scenename:hover b { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+/* Status messages: a short note above the bar that fades away by itself. */
+.bottom { justify-items: center; }
+.bottom .status { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); width: max-content; max-width: min(90vw, 520px); text-align: center;
+  padding: 6px 12px; border-radius: 12px; background: rgba(10, 11, 16, .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  opacity: 0; transition: opacity .4s; pointer-events: none; }
+.bottom .status.on { opacity: 1; }
+.bottom { position: relative; }
+.bottom .status:empty { display: none; }
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
+  .top .scenename b { font-size: 15px; }
+  .top .scenename .eyebrow { display: none; }
+  .bar .ib { width: 42px; height: 42px; }
+}
+@media (orientation: landscape) and (max-height: 520px) { .bottom { justify-items: start; } .bottom .status { left: 0; transform: none; max-width: min(90vw, 520px); } }
 

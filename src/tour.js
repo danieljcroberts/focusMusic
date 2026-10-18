@@ -1,8 +1,8 @@
 // A short guided tour: six steps, each pointing at one control, offered on the first visit and under App.
 const el = id => document.getElementById(id);
 const STEPS = [
-  ['#play', 'Play and pause the music. A double-tap in the middle of the scene does the same.'],
-  ['#stBtn', 'Your soundtrack: Ambient, Jazz, Loved, your own music and more. Tap to switch; tap ♥ in the mini player to love a track.'],
+  ['#play', 'Play and pause, with the previous and next track either side. A double-tap in the middle of the scene does the same.'],
+  ['#stBtn', 'The cover of the playing track. Tap it to switch soundtrack (Ambient, Lo-fi, Loved, your own music and more) or open the library. The heart on the right loves the track.'],
   ['#sceneBtn', "The scene's name. Tap it for the scene's story and all the others. Swipe sideways on the scene to change it."],
   ['#menuBtn', 'Everything else lives here: moods to start with, the timer and alarm, sounds, scene sets, your photos, backups. There is a search at the top.'],
   ['#tStart', 'The focus timer. Tap to start a block; the controls stay out of the way while it runs, and a card sums it up at the end.'],

@@ -23,7 +23,7 @@
 <div class="shade"></div>
 <main class="chrome">
   <div class="top">
-    <div class="brand"><b>Slow Windows</b> · focus scenes</div>
+    <button type="button" class="scenename" id="sceneBtn" title="This scene, and all the others"><span class="eyebrow" id="eyebrow">Scene 1</span><b id="title">Rain on Glass</b></button>
     <div class="top-right">
       <span class="clock" id="clock">--:--</span>
       <span class="intentline" id="intentLine" hidden></span>
@@ -32,12 +32,15 @@
   </div>
   <div class="bottom">
     <p class="status" id="status" role="status" aria-live="polite"></p>
-    <div class="bar">
-      <button type="button" class="pbtn primary" id="play">Play</button>
-      <button type="button" class="pbtn" id="next">Next</button>
-      <div class="stwrap"><button type="button" class="pbtn st" id="stBtn" aria-expanded="false" aria-haspopup="true"><i id="stDot"></i><span id="stName">Ambient</span> ▾</button><div class="tmenu stmenu" id="stMenu" hidden></div></div>
-      <button type="button" class="pbtn scene" id="sceneBtn" title="This scene, and all the others"><span class="eyebrow" id="eyebrow">Scene 1</span><b id="title">Rain on Glass</b></button>
-      <button type="button" class="pbtn more" id="menuBtn" aria-expanded="false" aria-controls="sheet" aria-label="Everything else">⋯</button>
+    <div class="bar" role="group" aria-label="Player">
+      <span class="prog" aria-hidden="true"><i id="barProg"></i></span>
+      <div class="stwrap"><button type="button" class="art" id="stBtn" aria-expanded="false" aria-haspopup="true"><img id="barArt" alt="" hidden><svg viewBox="0 0 24 24" aria-hidden="true" class="i-note"><path d="M9 18V6.5l10-2V16" class="s"/><circle cx="6.8" cy="18" r="2.2" class="s"/><circle cx="16.8" cy="16" r="2.2" class="s"/></svg><i id="stDot" hidden></i><span class="sr" id="stName">Ambient</span></button><div class="tmenu stmenu" id="stMenu" hidden></div></div>
+      <button type="button" class="ib" id="prev" aria-label="Previous track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14" class="s"/><path d="M19 5.5v13a.6.6 0 0 1-.9.5L8.6 12.5a.6.6 0 0 1 0-1L18.1 5a.6.6 0 0 1 .9.5z" class="f"/></svg></button>
+      <button type="button" class="ib main" id="play" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true" class="i-play"><path d="M8 5.2v13.6a.7.7 0 0 0 1.05.6l11-6.8a.7.7 0 0 0 0-1.2l-11-6.8A.7.7 0 0 0 8 5.2z" class="f"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="i-pause"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2" class="f"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2" class="f"/></svg></button>
+      <button type="button" class="ib" id="next" aria-label="Next track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5v14" class="s"/><path d="M5 5.5v13a.6.6 0 0 0 .9.5l9.5-6.5a.6.6 0 0 0 0-1L5.9 5a.6.6 0 0 0-.9.5z" class="f"/></svg></button>
+      <span class="gap"></span>
+      <button type="button" class="ib love" id="barLove" aria-label="Love this track" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z" class="s"/></svg></button>
+      <button type="button" class="ib" id="menuBtn" aria-expanded="false" aria-controls="sheet" aria-label="Everything else"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" class="f"/><circle cx="12" cy="12" r="1.6" class="f"/><circle cx="18.5" cy="12" r="1.6" class="f"/></svg></button>
     </div>
     <div class="groups" id="groups" role="tablist" aria-label="Scene groups" hidden></div>
     <nav id="nav" aria-label="Scenes" hidden></nav>

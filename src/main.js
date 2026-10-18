@@ -356,7 +356,7 @@ function watchFps(real) {
   if (fpsAcc < 1) return;
   const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; lastFps = fps;
   if (fps < 22 && !lowPower && !autoLow && !document.hidden) {
-    if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off in the top bar.'); }
+    if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off under App in the ⋯ menu.'); }
   } else slowFor = 0;
 }
 function drawDiag() { setDiag(diagLines()); }
@@ -688,7 +688,7 @@ function syncMini() {
   const [name, artist] = el('npTitle').textContent.split(' — ');
   el('miniName').textContent = name || 'Nothing playing';
   el('miniArtist').textContent = artist || 'Tap play for music';
-  const playing = el('play').textContent === 'Pause';
+  const playing = el('play').getAttribute('aria-pressed') === 'true';
   miniPlay.textContent = playing ? 'Pause' : 'Play'; miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
   drawLove();
   const art = currentArt(), im = el('miniArt');            // a small cover, when the track carries one
@@ -697,7 +697,20 @@ function syncMini() {
 function drawLove() {
   const on = currentLoved();
   for (const b of [el('miniLove'), el('loveBtn')]) { b.setAttribute('aria-pressed', String(on)); b.textContent = (on ? '♥' : '♡') + (b.id === 'loveBtn' ? ' Love' : ''); }
+  el('barLove').setAttribute('aria-pressed', String(on)); el('barLove').setAttribute('aria-label', on ? 'Loved. Tap to unlove' : 'Love this track');
 }
+// The player bar: previous and love here (play and next are wired in music.js); the art follows the track, as does the
+// love state, on every track change and play or pause.
+el('prev').addEventListener('click', () => prevTrack());
+el('barLove').addEventListener('click', () => love());
+function syncBar() {
+  drawLove();
+  const art = currentArt(), im = el('barArt');
+  if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
+  const ct = currentTrack(); el('stBtn').setAttribute('aria-label', `${ct ? `${ct.t} by ${ct.a}. ` : ''}Soundtrack: ${el('stName').textContent}. Tap to change it or open the library.`);
+}
+window.addEventListener('sw-playstate', syncBar); window.addEventListener('sw-loved', syncBar);
+new MutationObserver(syncBar).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
 function love() { const on = toggleLove(); if (on === null) return; drawLove(); caption(on ? '♥ Loved' : 'Not loved'); haptic(); }
 el('miniLove').addEventListener('click', () => { love(); bumpMini(); });
 el('loveBtn').addEventListener('click', love);

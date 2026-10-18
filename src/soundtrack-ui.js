@@ -4,7 +4,7 @@
 import * as ST from './soundtracks.js';
 import { addOwn, ownTracks, isAudio, durations, fmtDur, rereadTags } from './mine.js';
 import { measure } from './measure.js';
-import { musicPlaying, nextTrack, nextTrackSlowly, previewOwn, togglePlay, follow } from './music.js';
+import { musicPlaying, nextTrack, nextTrackSlowly, previewOwn, togglePlay, follow, openLib } from './music.js';
 import { kvGet, kvSet } from './store.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
@@ -48,7 +48,7 @@ function fillMenu() {
     b.addEventListener('click', () => choose(s.id));
     stMenu.append(b);
   }
-  stMenu.append(h('hr'), btn('+ New soundtrack', () => { closeMenus(); openEditor({ create: true }); }, ''), btn('Edit soundtracks', () => { closeMenus(); openEditor(); }, ''), btn('Add your music…', () => { closeMenus(); openWizard(); }, ''));
+  stMenu.append(h('hr'), btn('Music library', () => { closeMenus(); openLib(true); }, ''), btn('+ New soundtrack', () => { closeMenus(); openEditor({ create: true }); }, ''), btn('Edit soundtracks', () => { closeMenus(); openEditor(); }, ''), btn('Add your music…', () => { closeMenus(); openWizard(); }, ''));
 }
 registerMenu(stBtn, stMenu, fillMenu);
 ST.onChange(drawChip);
