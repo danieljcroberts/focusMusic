@@ -9,6 +9,7 @@ import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps, fmtDu
 import * as ST from './soundtracks.js';
 import { trackWeight, pickWeighted, withSceneLove } from './shuffle.js';
 import { localTrack } from './downloads.js';
+import { drawCover } from './covers.js';
 
 const el = id => document.getElementById(id);
 export { TRACKS };
@@ -225,17 +226,15 @@ let artwork = () => null;   // main.js supplies the current scene's thumbnail
 // A cover for a free track: a small square in its genre's colour with the artist's initials, drawn once and kept.
 const covers = new Map();
 export function coverFor(t) {
-  if (t.own) return t.art || null;
-  const k = key(t); if (covers.has(k)) return covers.get(k);
+  if (t.own && t.art) return t.art;   // your own track's embedded cover wins
+  const k = t.own ? 'own:' + t.id : key(t); if (covers.has(k)) return covers.get(k);
   let url = null;
   try {
-    const g = (ST.BUILT_IN.find(b => b.id === t.genre) || {}).color || '#6f8fd8', s = 128, c = document.createElement('canvas'); c.width = c.height = s;
-    const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, s, s); gr.addColorStop(0, g); gr.addColorStop(1, '#0b0c10');
-    x.fillStyle = gr; x.fillRect(0, 0, s, s);
-    x.fillStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < 5; i++) { x.beginPath(); x.arc(s * .7, s * .3, s * (.15 + i * .12), 0, Math.PI * 2); x.fill(); }
-    const ini = t.a.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-    x.fillStyle = 'rgba(255,255,255,.92)'; x.font = `500 ${s * .34}px "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ini, s / 2, s * .54);
-    url = c.toDataURL('image/jpeg', .8);
+    const own = t.own ? ownTracks().find(e => e.id === t.id) : null;
+    const gid = t.own ? (ST.memberOf(t.id).find(s => s.builtIn) || {}).id || 'misc' : t.live ? 'ambient' : t.genre;
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    drawCover(c, { title: t.t, artist: t.a, genre: gid, color: (ST.BUILT_IN.find(b => b.id === gid) || {}).color || (own && '#8fa0a8') || '#6f8fd8' });
+    url = c.toDataURL('image/jpeg', .86);
   } catch (e) {}
   covers.set(k, url); return url;
 }
@@ -253,12 +252,12 @@ export function trackInfo() {
     lines: [genre && `Soundtrack: ${genre}`, base.ep && base.ep.length && `Heard in Music For Programming episode${base.ep.length > 1 ? 's' : ''} ${base.ep.join(', ')}`, base.note].filter(Boolean),
     more: TRACKS.filter(x => x.a === t.a && key(x) !== key(t)) };
 }
-export const currentArt = () => curTrack && !curTrack.live ? coverFor(curTrack) : null;
+export const currentArt = () => curTrack ? coverFor(curTrack) : null;
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
-    const cover = t.live ? null : coverFor(t), art = artwork();
-    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: cover ? [{ src: cover, sizes: '128x128', type: 'image/jpeg' }] : art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
+    const cover = coverFor(t), art = artwork();
+    ms.metadata = new MediaMetadata({ title: t.t, artist: t.a, album: lockLine || (t.live ? 'Internet Archive · ' + t.lic : 'Music For Programming mixes · ' + t.lic), artwork: cover ? [{ src: cover, sizes: '256x256', type: 'image/jpeg' }] : art ? [{ src: art, sizes: '160x90', type: 'image/jpeg' }] : [] });
   } catch (e) {}
 }
 if (ms) {
