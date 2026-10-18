@@ -2,6 +2,7 @@
 import { W, H, ctx, lowPower, lively } from '../view.js';
 import { rand, hash, mix, rgb, layer, glow, plain } from '../util.js';
 import { bands, musicLevel, spectrum, waveform, musicPlaying } from '../music.js';
+import { restK } from '../rest.js';
 
 const TAU = Math.PI * 2;
 const wrap = (v, n) => ((v % n) + n) % n;
@@ -25,10 +26,11 @@ function listener() {
       slow += (o.bass - slow) * Math.min(1, dt * 1.6);
       if (cool <= 0 && o.bass > .18 && o.bass - slow > .06) { o.beat = true; cool = .3; }
     } else {
+      // A pretend beat while the music is quiet, fading out entirely when nothing plays (restK).
       const bp = t * 1.45, ph = wrap(bp, 1), n = Math.floor(bp);
-      if (n !== idleBeat) { idleBeat = n; o.beat = true; }
-      o.bass = .2 + .2 * Math.exp(-ph * 6); o.mid = .3 + .12 * Math.sin(t * .7);
-      o.treble = .2 + .1 * Math.sin(t * 1.3 + 1); o.level = .3 + .08 * Math.sin(t * .4);
+      if (n !== idleBeat) { idleBeat = n; o.beat = restK > .5; }
+      o.bass = (.2 + .2 * Math.exp(-ph * 6)) * restK; o.mid = (.3 + .12 * Math.sin(t * .7)) * restK;
+      o.treble = (.2 + .1 * Math.sin(t * 1.3 + 1)) * restK; o.level = (.3 + .08 * Math.sin(t * .4)) * restK;
     }
     if (o.beat) { kick = 1; beats++; }
     kick *= Math.exp(-dt * 4.5);
@@ -49,7 +51,7 @@ function spec64(t, s) {
   if (sum > 0) return realSpec;
   for (let i = 0; i < 64; i++) {
     const v = (.6 - i / 64 * .35) * (.55 + .45 * Math.sin(t * (.9 + i * .07) + i * 1.7)) + (i < 10 ? s.bass * .5 : 0);
-    fakeSpec[i] = clamp(v, 0, 1);
+    fakeSpec[i] = clamp(v, 0, 1) * restK;
   }
   return fakeSpec;
 }
@@ -62,7 +64,7 @@ function wave256(t, s) {
   const a = .25 + .5 * s.bass;
   for (let i = 0; i < 256; i++) {
     const x = i / 256;
-    fakeWave[i] = a * (.6 * Math.sin(x * TAU * 3 + t * 2.1) + .3 * Math.sin(x * TAU * 7 - t * 3.3) + .15 * Math.sin(x * TAU * 13 + t * 5));
+    fakeWave[i] = restK * a * (.6 * Math.sin(x * TAU * 3 + t * 2.1) + .3 * Math.sin(x * TAU * 7 - t * 3.3) + .15 * Math.sin(x * TAU * 13 + t * 5));
   }
   return fakeWave;
 }

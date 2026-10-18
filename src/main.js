@@ -9,7 +9,7 @@ import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
-import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug } from './music.js';
+import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
 import { report, gpuName, diagOn, setDiag, diagText } from './diag.js';
@@ -20,6 +20,7 @@ import { initTimer, toggleTimer, focusRunning, setIntention } from './timer.js';
 import { initWake } from './wake.js';
 import { initMoods, applyMood } from './moods.js';
 import { listening, setListening } from './listen.js';
+import { setRestK } from './rest.js';
 import './summary.js';
 import { tickGrade, drawWx } from './overlays.js';
 import { initBench, benching } from './bench.js';
@@ -146,7 +147,7 @@ function resize() {
   const dpr = lowPower ? 1 : Math.min(window.devicePixelRatio || 1, 2);
   setSize(window.innerWidth, window.innerHeight, dpr);
   cv.width = fadeCv.width = Math.round(W * DPR); cv.height = fadeCv.height = Math.round(H * DPR);
-  ready.fill(false);
+  ready.fill(false); restKey = '';   // a resize clears the canvas: a resting scene wakes for a moment to draw itself again
   ensure(cur);
   show(cur);   // a GPU scene creates its canvas in init, so pick the visible stage after it
   if (still) render(0);
@@ -298,14 +299,31 @@ function render(dt) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
+  // Music-reacting scenes come to rest when nothing plays: their clock slows to a stop over a second or two and then
+  // they stop drawing (the last frame stays). Entering one starts it awake, so it settles in front of you.
+  let st = t, sdt = dt, draw = true;
+  const rk = SCENES[cur].key;
+  if (RESTS.has(rk)) {
+    if (restKey !== rk) { restKey = rk; restLin = 1; }
+    restLin = Math.max(0, Math.min(1, restLin + (playingNow() ? dt : -dt) / 1.5));   // a second and a half either way
+    restAct = restLin * restLin * (3 - 2 * restLin);
+    setRestK(restAct);
+    sdt = dt * restAct; restClock[rk] = (restClock[rk] ?? t) + sdt; st = restClock[rk];
+    // Bars that fall under their own weight get real time and two seconds more, so they settle on the floor.
+    if (REST_FALL.has(rk)) { restTail = restLin > 0 ? 2 : Math.max(0, restTail - dt); if (restLin < 1) sdt = dt; }
+    draw = restLin > 0 || (REST_FALL.has(rk) && restTail > 0);
+  } else setRestK(1);
   const d0 = performance.now();
-  try { inst.draw(t, dt); }
+  try { if (draw) inst.draw(st, sdt); }
   catch (e) { fail(cur, e); show(cur); setStatus(`${SCENES[cur].name} stopped with an error; the diagnostics overlay (\`) has the details.`); }
   drawMs += (performance.now() - d0 - drawMs) * .05;
   // The old scene dissolves into the new one; while the new one's code is still loading, the old picture holds.
   if (fade > 0) { if (inst.loaded === false) fadeAt = performance.now(); fade = Math.max(0, 1 - (performance.now() - fadeAt) / 2200); fadeCv.style.opacity = fade; }
 }
 let drawMs = 0;
+const RESTS = new Set(['synthwave', 'neonhighway', 'vector', 'lasers', 'memphis', 'spectrumBars', 'feedback', 'superscope', 'beatstars', 'dancingscope', 'scope', 'spectrum', 'inkBeat']);
+let restKey = '', restAct = 1, restLin = 1, restTail = 0; const restClock = {};
+const REST_FALL = new Set(['spectrumBars']);
 
 /* Share builds a link with the scene, the track and the ambience level; Previous lives in the sheet */
 el('prevBtn').addEventListener('click', () => prevTrack());
@@ -702,6 +720,29 @@ function drawLove() {
 // The player bar: previous and love here (play and next are wired in music.js); the art follows the track, as does the
 // love state, on every track change and play or pause.
 el('prev').addEventListener('click', () => prevTrack());
+// Holding the cover opens the track card (licence, source, more by the artist); a tap still opens the soundtracks.
+{
+  const art = el('stBtn'); let hold = null, held = false;
+  art.addEventListener('pointerdown', () => { held = false; clearTimeout(hold); hold = setTimeout(() => { held = true; haptic(); openInfo(); }, 480); });
+  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) art.addEventListener(ev, () => clearTimeout(hold));
+  art.addEventListener('click', e => { if (held) { held = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  art.addEventListener('contextmenu', e => e.preventDefault());
+}
+// Swiping the bar sideways skips: left for the next track, right for the previous one. The bar follows the finger a
+// little, and a swipe never also presses the button it started on.
+{
+  const bar = el('playerBar'); let x0 = null, y0 = 0, swiped = false;
+  bar.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; swiped = false; bar.style.transition = 'none'; });
+  bar.addEventListener('pointermove', e => { if (x0 === null) return; const dx = e.clientX - x0; if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - y0)) bar.style.transform = `translateX(${Math.max(-40, Math.min(40, dx * .35))}px)`; });
+  const end = e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
+    bar.style.transition = 'transform .25s ease'; bar.style.transform = '';
+    if (e.type === 'pointerup' && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped = true; haptic(); if (dx < 0) { nextTrack(); trackCaption('→'); } else { prevTrack(); trackCaption('←'); } }
+  };
+  bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+  bar.addEventListener('click', e => { if (swiped) { swiped = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+}
 el('barLove').addEventListener('click', () => love());
 function syncBar() {
   drawLove();

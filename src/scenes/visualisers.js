@@ -3,6 +3,7 @@
 import { W, H, DPR, ctx, lowPower, lively } from '../view.js';
 import { rand, layer, plain } from '../util.js';
 import { bands, musicLevel, spectrum, waveform } from '../music.js';
+import { restK } from '../rest.js';
 
 const TAU = Math.PI * 2;
 const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
@@ -17,7 +18,8 @@ function signal(t, dt) {
   let sum = 0; for (let i = 0; i < 96; i += 3) sum += sp[i];
   const live = musicLevel > .02 && sum > 0;
   idle += ((live ? 0 : 1) - idle) * Math.min(1, dt * 1.5);
-  const f = idle, fb = .22 + .38 * Math.pow(.5 + .5 * Math.sin(t * 5.2), 8);
+  const f = idle * restK, fb =   // f: how much of the made-up signal shows; none once nothing plays
+    .22 + .38 * Math.pow(.5 + .5 * Math.sin(t * 5.2), 8);
   const kick = .7 + bands.bass * .45 + fb * .5;
   for (let i = 0; i < 256; i++) {
     const fake = Math.exp(-i / 70) * (.5 + .22 * Math.sin(t * 1.3 + i * .11) + .16 * Math.sin(t * 2.3 - i * .05) + .08 * Math.sin(t * 4.1 + i * .37)) * (i < 14 ? kick : .7 + bands.mid * .4);

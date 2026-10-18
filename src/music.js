@@ -225,15 +225,16 @@ const ms = 'mediaSession' in navigator ? navigator.mediaSession : null;
 let artwork = () => null;   // main.js supplies the current scene's thumbnail
 // A cover for a free track: a small square in its genre's colour with the artist's initials, drawn once and kept.
 const covers = new Map();
-export function coverFor(t) {
+// plain: without the title and artist on it, for small places like the player bar (the lock screen keeps them).
+export function coverFor(t, plain = false) {
   if (t.own && t.art) return t.art;   // your own track's embedded cover wins
-  const k = t.own ? 'own:' + t.id : key(t); if (covers.has(k)) return covers.get(k);
+  const k = (t.own ? 'own:' + t.id : key(t)) + (plain ? '#plain' : ''); if (covers.has(k)) return covers.get(k);
   let url = null;
   try {
     const own = t.own ? ownTracks().find(e => e.id === t.id) : null;
     const gid = t.own ? (ST.memberOf(t.id).find(s => s.builtIn) || {}).id || 'misc' : t.live ? 'ambient' : t.genre;
     const c = document.createElement('canvas'); c.width = c.height = 256;
-    drawCover(c, { title: t.t, artist: t.a, genre: gid, color: (ST.BUILT_IN.find(b => b.id === gid) || {}).color || (own && '#8fa0a8') || '#6f8fd8' });
+    drawCover(c, { title: plain ? '' : t.t, artist: t.a, genre: gid, color: (ST.BUILT_IN.find(b => b.id === gid) || {}).color || (own && '#8fa0a8') || '#6f8fd8' });
     url = c.toDataURL('image/jpeg', .86);
   } catch (e) {}
   covers.set(k, url); return url;
@@ -252,7 +253,7 @@ export function trackInfo() {
     lines: [genre && `Soundtrack: ${genre}`, base.ep && base.ep.length && `Heard in Music For Programming episode${base.ep.length > 1 ? 's' : ''} ${base.ep.join(', ')}`, base.note].filter(Boolean),
     more: TRACKS.filter(x => x.a === t.a && key(x) !== key(t)) };
 }
-export const currentArt = () => curTrack ? coverFor(curTrack) : null;
+export const currentArt = (plain = true) => curTrack ? coverFor(curTrack, plain) : null;
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
