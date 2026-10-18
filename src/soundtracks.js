@@ -12,7 +12,7 @@ export const BUILT_IN = [
   { id: 'ambient', name: 'Ambient', color: '#6f8fd8', icon: 'M3 12c3-5 6-5 9 0s6 5 9 0' },
   { id: 'downtempo', name: 'Downtempo Electronic', color: '#e8823c', icon: 'M3 9c2-4 4-4 6 0s4 4 6 0 4-4 6 0M3 16c2-4 4-4 6 0s4 4 6 0 4-4 6 0' },
   { id: 'french', name: 'French language', color: '#5b8fd6', icon: 'M12 3l-3 18M12 3l3 18M7 21h10M9.5 13h5' },
-  { id: 'energy', name: 'High energy', color: '#f0503c', icon: 'M13 2L5 14h6l-1 8 9-13h-6z' },
+  { id: 'energy', name: 'Workout', color: '#f0503c', icon: 'M13 2L5 14h6l-1 8 9-13h-6z' },
   { id: 'jazz', name: 'Jazz', color: '#e0a040', icon: 'M9 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 15V4l6 2' },
   { id: 'lofi', name: 'Lo-fi', color: '#c08ad0', icon: 'M3 7h18v10H3zM8 12h.01M16 12h.01M8 17l-1 3M16 17l1 3' },
   { id: 'minimalist', name: 'Minimalist', color: '#9aa8ff', icon: 'M4 12h9M19 12h.01' },

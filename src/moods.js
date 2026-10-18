@@ -9,6 +9,7 @@ const el = id => document.getElementById(id);
 const MOODS = {
   study: { name: 'Study', note: 'Ambient music, the library window in the rain, a 50-minute focus timer', soundtrack: 'ambient', scene: 'library', ambience: .3, timer: '50' },
   relax: { name: 'Relax', note: 'Downtempo electronic over the fjord at Holmestrand, a little wind', soundtrack: 'downtempo', scene: 'holmestrand', ambience: .25 },
+  workout: { name: 'Workout', note: 'Driving beats on a run through the woods, 25-minute rounds with short breaks', soundtrack: 'energy', scene: 'trailRun', ambience: .15, timer: '25' },
   sleep: { name: 'Sleep', note: 'Calm music, the night sky, the screen dimmed, stopping in 30 minutes', bedtime: true },
 };
 let go = () => {}, find = () => -1, syncAmb = () => {};

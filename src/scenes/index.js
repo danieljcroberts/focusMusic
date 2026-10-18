@@ -29,6 +29,7 @@ const MODS = {
   cozy: () => import('./cozy.js'),
   shaded3: () => import('./shaded3.js'),
   shaded4: () => import('./shaded4.js'),
+  shaded5: () => import('./shaded5.js'),
 };
 const L = (mod, make) => ({ mod, make });
 
@@ -139,6 +140,10 @@ const FACTORIES = {
   midnightSun: L('shaded3', m => m.midnightSunScene()),
   dayTrain: L('shaded3', m => m.dayTrainScene()),
   tent: L('shaded3', m => m.tentScene()),
+  trailRun: L('shaded5', m => m.trailRunScene()),
+  nightRide: L('shaded5', m => m.nightRideScene()),
+  rowing: L('shaded5', m => m.rowingScene()),
+  track: L('shaded5', m => m.trackScene()),
   hut: L('shaded4', m => m.hutScene()),
   onsen: L('shaded4', m => m.onsenScene()),
   noonDesert: L('shaded4', m => m.noonDesertScene()),
