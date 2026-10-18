@@ -142,7 +142,7 @@ export function onSceneChange() {
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 export const currentTrack = () => curTrack;
 
-const ui = { play: el('play'), next: el('next'), prog: el('barProg'), title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
+const ui = { play: el('play'), next: el('next'), progs: [el('barSeek'), el('miniSeek')], title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -566,13 +566,18 @@ export function togglePlay() {
 }
 // The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
 let scrubbing = false;
+// Where the playing track is, and moving within it: for the seek lines on the player bar and the mini player.
+const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+export const trackClock = clock;
+export const trackPos = () => (hasSrc && audio.duration > 0 && isFinite(audio.duration)) ? { at: audio.currentTime, dur: audio.duration } : null;
+export function seekFraction(f) { const p = trackPos(); if (!p) return false; audio.currentTime = Math.max(0, Math.min(.999, f)) * p.dur; return true; }
 ui.seek.addEventListener('pointerdown', () => { scrubbing = true; });
 ui.seek.addEventListener('change', () => { if (hasSrc && audio.duration) audio.currentTime = audio.duration * ui.seek.value / 1000; scrubbing = false; });
 setInterval(() => {
   const ok = hasSrc && audio.duration > 0 && isFinite(audio.duration);
   ui.seek.hidden = !ok;
   if (ok && !scrubbing) ui.seek.value = Math.round(audio.currentTime / audio.duration * 1000);
-  ui.prog.style.width = ok ? `${(audio.currentTime / audio.duration * 100).toFixed(2)}%` : '0';
+  for (const pg of ui.progs) if (!pg.classList.contains('drag')) { const f = ok ? audio.currentTime / audio.duration : 0; pg.firstChild.style.width = `${(f * 100).toFixed(2)}%`; pg.setAttribute('aria-valuenow', String(Math.round(f * 100))); pg.setAttribute('aria-valuetext', ok ? `${clock(audio.currentTime)} of ${clock(audio.duration)}` : 'Nothing playing'); }
 }, 250);
 for (const p of players) {
   const shown = on => { ui.play.setAttribute('aria-pressed', String(on)); ui.play.setAttribute('aria-label', on ? 'Pause' : 'Play'); window.dispatchEvent(new CustomEvent('sw-playstate', { detail: on })); };

@@ -9,7 +9,7 @@ import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
-import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow } from './music.js';
+import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow, trackPos, trackClock, seekFraction } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
 import { report, gpuName, diagOn, setDiag, diagText } from './diag.js';
@@ -389,6 +389,9 @@ function diagLines() {
     `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
   ];
 }
+// The version, under App: the Android app checks for a newer one on demand (native-ui.js); the website is always current.
+el('verNote').textContent = NATIVE ? `Version 1.0.${import.meta.env.VITE_APP_VERSION}` : `Web app, always the latest (1.0.${import.meta.env.VITE_APP_VERSION})`;
+el('updBtn').hidden = !NATIVE;
 el('copyDiagBtn').addEventListener('click', async () => {
   const text = [`Slow Windows · ${new Date().toISOString()} · ${navigator.userAgent}`, `installed ${window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches} · track ${el('npTitle').textContent}`, '', diagText(diagLines())].join('\n');
   try { await navigator.clipboard.writeText(text); setStatus('Diagnostics copied. Paste them into a message.'); } catch (e) { setStatus("Couldn't copy: the browser refused. Turn on Diagnostics and take a screenshot instead."); }
@@ -707,19 +710,38 @@ function syncMini() {
   el('miniName').textContent = name || 'Nothing playing';
   el('miniArtist').textContent = artist || 'Tap play for music';
   const playing = el('play').getAttribute('aria-pressed') === 'true';
-  miniPlay.textContent = playing ? 'Pause' : 'Play'; miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  miniPlay.setAttribute('aria-pressed', String(playing)); miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
   drawLove();
-  const art = currentArt(), im = el('miniArt');            // a small cover, when the track carries one
+  const art = currentArt(), im = el('miniArt');            // the same cover as the bar
   if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
 }
 function drawLove() {
   const on = currentLoved();
-  for (const b of [el('miniLove'), el('loveBtn')]) { b.setAttribute('aria-pressed', String(on)); b.textContent = (on ? '♥' : '♡') + (b.id === 'loveBtn' ? ' Love' : ''); }
-  el('barLove').setAttribute('aria-pressed', String(on)); el('barLove').setAttribute('aria-label', on ? 'Loved. Tap to unlove' : 'Love this track');
+  el('loveBtn').setAttribute('aria-pressed', String(on)); el('loveBtn').textContent = (on ? '♥' : '♡') + ' Love';
+  for (const b of [el('barLove'), el('miniLove')]) { b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Loved. Tap to unlove' : 'Love this track'); }
 }
 // The player bar: previous and love here (play and next are wired in music.js); the art follows the track, as does the
 // love state, on every track change and play or pause.
 el('prev').addEventListener('click', () => prevTrack());
+el('barTitle').addEventListener('click', () => openInfo());
+// The seek lines (bar and mini player): tap to jump, or drag with the time shown above the finger; arrow keys step 10 s.
+for (const pg of [el('barSeek'), el('miniSeek')]) {
+  const bubble = pg.querySelector('.when'), fill = pg.firstChild;
+  const fracAt = e => { const r = pg.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+  const show = f => { const p = trackPos(); fill.style.width = `${(f * 100).toFixed(2)}%`; if (p) { bubble.hidden = false; bubble.style.left = `${f * 100}%`; bubble.textContent = `${trackClock(f * p.dur)} / ${trackClock(p.dur)}`; } };
+  pg.addEventListener('pointerdown', e => {
+    e.stopPropagation(); if (!trackPos()) return;
+    pg.setPointerCapture(e.pointerId); pg.classList.add('drag'); show(fracAt(e)); if (pg.id === 'miniSeek') bumpMini();
+  });
+  pg.addEventListener('pointermove', e => { if (pg.classList.contains('drag')) show(fracAt(e)); });
+  const done = e => { if (!pg.classList.contains('drag')) return; pg.classList.remove('drag'); bubble.hidden = true; if (e.type === 'pointerup') { seekFraction(fracAt(e)); haptic(); } };
+  pg.addEventListener('pointerup', done); pg.addEventListener('pointercancel', done);
+  pg.addEventListener('click', e => e.stopPropagation());
+  pg.addEventListener('keydown', e => {
+    const p = trackPos(); if (!p || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    e.preventDefault(); e.stopPropagation(); seekFraction((p.at + (e.key === 'ArrowRight' ? 10 : -10)) / p.dur);
+  });
+}
 // Holding the cover opens the track card (licence, source, more by the artist); a tap still opens the soundtracks.
 {
   const art = el('stBtn'); let hold = null, held = false;
@@ -730,8 +752,8 @@ el('prev').addEventListener('click', () => prevTrack());
 }
 // Swiping the bar sideways skips: left for the next track, right for the previous one. The bar follows the finger a
 // little, and a swipe never also presses the button it started on.
-{
-  const bar = el('playerBar'); let x0 = null, y0 = 0, swiped = false;
+for (const bar of [el('playerBar'), el('mini')]) {
+  let x0 = null, y0 = 0, swiped = false;
   bar.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; swiped = false; bar.style.transition = 'none'; });
   bar.addEventListener('pointermove', e => { if (x0 === null) return; const dx = e.clientX - x0; if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - y0)) bar.style.transform = `translateX(${Math.max(-40, Math.min(40, dx * .35))}px)`; });
   const end = e => {
@@ -748,6 +770,9 @@ function syncBar() {
   drawLove();
   const art = currentArt(), im = el('barArt');
   if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
+  const [name, artist] = el('npTitle').textContent.split(' — ');
+  el('barName').textContent = name || 'Nothing playing'; el('barArtist').textContent = artist || 'Tap play for music';
+  if (!mini.hidden) syncMini();
   const ct = currentTrack(); el('stBtn').setAttribute('aria-label', `${ct ? `${ct.t} by ${ct.a}. ` : ''}Soundtrack: ${el('stName').textContent}. Tap to change it or open the library.`);
 }
 window.addEventListener('sw-playstate', syncBar); window.addEventListener('sw-loved', syncBar);

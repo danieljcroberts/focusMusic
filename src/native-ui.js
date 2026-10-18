@@ -97,14 +97,17 @@ export function initNativeUi({ caption, frame, go, current, find, sceneName }) {
   // version than this one, offer the download; "Later" waits for the release after that. Checked at start and every
   // six hours. The download opens in the phone's browser, which hands the APK to Android's installer.
   const mine = Number(import.meta.env.VITE_APP_VERSION) || 0;
-  const checkUpdate = async () => {
+  // manual: from the "Check for updates" button, which also says when there is nothing new, and ignores "Later".
+  const checkUpdate = async (manual = false) => {
     try {
       const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json();
-      if (!shouldOffer(v, mine, state.skipVersion)) return;
+      if (manual && !(v.code > mine)) { setStatus(`You have the latest version (1.0.${mine}).`); return; }
+      if (!shouldOffer(v, mine, manual ? null : state.skipVersion)) return;
       el('updateText').textContent = `A new version of the app is ready (${v.name}).${v.notes ? ' ' + v.notes : ''}`;
       el('updateGet').href = SITE + v.apk; el('updateBar').hidden = false;
-    } catch (e) { /* offline, or nothing published yet */ }
+    } catch (e) { if (manual) setStatus("Couldn't check for updates. Check the connection and try again."); }
   };
+  el('updBtn').addEventListener('click', () => { el('sheetClose').click(); setStatus('Checking for updates…'); checkUpdate(true); });
   el('updateGet').addEventListener('click', () => { el('updateBar').hidden = true; setStatus('Downloading the update. Open it when it finishes to install.'); });
   el('updateLater').addEventListener('click', async () => {
     el('updateBar').hidden = true;
