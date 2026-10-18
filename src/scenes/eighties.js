@@ -1,7 +1,7 @@
 // 80s: music visualisers after 1984 album covers, neon night drives, vector monitors, laser shows and Memphis prints.
 import { W, H, ctx, lowPower, lively } from '../view.js';
 import { rand, hash, mix, rgb, layer, glow, plain } from '../util.js';
-import { bands, musicLevel, spectrum, waveform } from '../music.js';
+import { bands, musicLevel, spectrum, waveform, musicPlaying } from '../music.js';
 
 const TAU = Math.PI * 2;
 const wrap = (v, n) => ((v % n) + n) % n;
@@ -378,6 +378,9 @@ const tesseract = () => {
 export function vectorScene() {
   const hear = listener();
   let buf, bg, bloom, blg, vign, k = .5, ax = .4, ay = 0, az = 0, dust = [], webZ = 0, proj = new Float32Array(0);
+  // With no music the scene comes to rest: act eases to 0 over a second or two, its own clock stops, and the trace lies flat.
+  let act = 0, clock = 6;   // the clock starts mid-cycle, so a shape is fully in view while all is still
+  const still = { bass: 0, mid: 0, treble: 0, level: 0, kick: 0, beat: false, live: false };
   const COLS = [[70, 255, 120], [80, 225, 255], null, [255, 90, 220], [70, 255, 120]];
   const shapes = [box(), octa(), torus(18, 8), tesseract(), { web: true }];
   const PERIOD = 15;
@@ -394,8 +397,11 @@ export function vectorScene() {
       dust = Array.from({ length: lowPower ? 30 : 60 }, () => ({ x: rand(-5, 5), y: rand(-5, 5), z: rand(.5, 12) }));
       proj = new Float32Array(64);
     },
-    draw(t, dt) {
-      const s = hear(t, dt), m = Math.min(W, H), cx = W / 2, cy = H * (W > H ? .45 : .43);
+    draw(t0, dt0) {
+      const heard = hear(t0, dt0), on = musicPlaying ? 1 : 0;
+      act += (on - act) * Math.min(1, dt0 * 1.5);
+      const dt = dt0 * act; clock += dt; const t = clock;
+      const s = musicPlaying ? heard : still, m = Math.min(W, H), cx = W / 2, cy = H * (W > H ? .45 : .43);
       const spin = (.25 + 1.1 * s.mid) * (lively ? 1.6 : 1);
       ay += dt * spin; ax += dt * spin * .43; az += dt * spin * .17;
       const idx = wrap(Math.floor(t / PERIOD), shapes.length), local = wrap(t, PERIOD);
@@ -468,7 +474,7 @@ export function vectorScene() {
         const r = clamp(2.2 / d.z, .4, 1.6);
         bg.fillRect(x - r / 2, y - r / 2, r, r);
       }
-      const w = wave256(t, s), oy = H * .9, ow = W * .76, ox = (W - ow) / 2, oa = H * .035;
+      const w = wave256(t, s).map(x => x * act), oy = H * .9, ow = W * .76, ox = (W - ow) / 2, oa = H * .035;
       bg.strokeStyle = rgb(dc, .45); bg.lineWidth = 1.2; bg.beginPath();
       for (let i = 0; i < 256; i += 2) { const x = (ox + i / 255 * ow) * k, y = (oy + w[i] * oa) * k; if (i) bg.lineTo(x, y); else bg.moveTo(x, y); }
       bg.stroke();
