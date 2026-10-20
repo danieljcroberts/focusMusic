@@ -5,7 +5,7 @@
 //   Rowing at Dawn: facing the stern of a rowing shell on a still lake, the oars driving, puddles left behind.
 //   Floodlit Track: running a lane of an athletics track at night under the floodlights.
 import { shaderScene } from './trip.js';
-import { bands, musicLevel } from '../music.js';
+import { bands, musicLevel, currentBpm } from '../music.js';
 import { lively } from '../view.js';
 
 const H = `
@@ -15,14 +15,19 @@ float px(){ return 1.5 / uRes.y; }
 // The route: gentle bends either way, x as a function of distance along it.
 float route(float z){ return 3. * sin(z * .045) + 1.2 * sin(z * .11 + 1.); }
 `;
-// Speed: a steady pace, quicker with the music. pace: metres per second at rest; push: how much the music adds.
-function moving(pace, push, extra = {}) {
-  let dist = 0;
+// In step with the music: uB counts the playing track's beats (from its measured tempo; 150 a minute when unknown), so a
+// stride, a pedal stroke or an oar stroke can land on them, and the pace follows the tempo too.
+// pace: metres per second at 140 BPM; push: how much the music's energy adds; per: beats per stroke, or a function of BPM.
+function moving(pace, push, extra = {}, per = 1) {
+  let dist = 0, beats = 0, bpm = 150;
   return {
     res: .8, ...extra,
     before(t, dt, gl, u) {
-      dist += dt * pace * (1 + push * (bands.bass * .7 + musicLevel * .6)) * (lively ? 1.4 : 1);
-      gl.uniform1f(u.uC, dist);
+      const want = currentBpm() || 150; bpm += (want - bpm) * Math.min(1, dt * .8);   // ease between tracks' tempos
+      const k = typeof per === 'function' ? per(bpm) : per;
+      beats += dt * bpm / 60 / k * (lively ? 1.25 : 1);
+      dist += dt * pace * (bpm / 140) * (1 + push * (bands.bass * .7 + musicLevel * .6) * .5) * (lively ? 1.4 : 1);
+      gl.uniform1f(u.uC, dist); gl.uniform1f(u.uB, beats);
       if (extra.before) extra.before(t, dt, gl, u);
     },
   };
@@ -33,7 +38,7 @@ const build = (fs, o) => shaderScene(H + fs, o);
 const TRAIL = `
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
-  float stride = cz * 1.25;                                             // about one stride every 0.8 m
+  float stride = uB;                                                    // one stride per beat of the music
   float bob = abs(sin(stride * 3.1416)) * (.035 + .02 * uBass), roll = sin(stride * 3.1416) * .012;
   float camY = 1.65 + bob, camX = route(cz);
   float yaw = (route(cz + 8.) - camX) / 8.;
@@ -91,7 +96,7 @@ export const trailRunScene = () => build(TRAIL, moving(3.2, .6, { res: .75 }));
 const RIDE = `
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
-  float sway = sin(cz * .9) * .006;
+  float sway = sin(uB * 3.1416) * .006;                                  // a pedal stroke on every beat
   float camY = 1.3, camX = route(cz * .5) * .6;
   float yaw = (route((cz + 10.) * .5) * .6 - camX) / 10.;
   vec3 rd = normalize(vec3(uv.x + sway, uv.y - .02, 1.3)); rd.xz = vec2(rd.x + rd.z * yaw, rd.z - rd.x * yaw);
@@ -109,6 +114,7 @@ void main(){
     vec3 asph = vec3(.035, .035, .045) * (.8 + .4 * noise(vec2(wx * 8., wz * 8.)));
     vec3 verge = vec3(.03, .045, .03);
     col = mix(verge, asph, road);
+    col = mix(col, mix(vec3(.3, .48, .25) * (.75 + .5 * noise(vec2(wx, wz) * .15)), vec3(.6, .7, .8), 1. - exp(-tg * .06)), step(3.6, wx));      // beyond the rail, the valley far below
     col = mix(col, vec3(.8, .8, .7), step(abs(abs(off) - 3.3), .06) * road * .8);                 // edge lines
     col = mix(col, vec3(.9, .85, .6), step(abs(off), .07) * step(.5, fract(wz * .12)) * .9);       // centre dashes
     // Lamps every 18 m on the right: pools of light on the road, and their streaks in the wet.
@@ -144,7 +150,7 @@ export const nightRideScene = () => build(RIDE, moving(7., .5, { res: .8 }));
 const ROW = `
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
-  float ph = fract(cz * .22), drive = smoothstep(.0, .35, ph) * smoothstep(1., .45, ph);   // the stroke: catch, drive, recovery
+  float ph = fract(uB), drive = smoothstep(.0, .35, ph) * smoothstep(1., .45, ph);   // the stroke: catch, drive, recovery
   float lean = (drive - .5) * .02;
   vec3 rd = normalize(vec3(uv.x, uv.y - .02 + lean, 1.4));
   vec3 sky = mix(vec3(1., .78, .62), vec3(.55, .65, .85), smoothstep(-.02, .4, rd.y));
@@ -165,7 +171,7 @@ void main(){
     col = mix(refl * .85, vec3(.2, .28, .38), smoothstep(0., .5, d) * .5);
     // Puddles left by the blades: swirl pairs every stroke, either side, drifting away behind the boat.
     for (int i = 0; i < 8; i++) {
-      float k = float(i), sz = (floor(cz * .22) - k) / .22 + .3, rel = cz - sz + 1.5;
+      float k = float(i), rel = (fract(uB) + k) * 4.5 + 1.5;   // one swirl pair per stroke, falling behind at the boat's pace
       float vis = step(1.6, rel); rel = max(rel, 1.6);
       for (int s = 0; s < 2; s++) {
         float side = s == 0 ? -1. : 1.;
@@ -201,13 +207,13 @@ void main(){
   col = 1. - exp(-col * 1.3);
   gl_FragColor = vec4(col + dither(t), 1.);
 }`;
-export const rowingScene = () => build(ROW, moving(1.6, .5, { res: .8 }));
+export const rowingScene = () => build(ROW, moving(1.6, .5, { res: .8 }, bpm => bpm > 150 ? 6 : 4));   // a stroke every four beats (six when fast)
 
 /* Floodlit Track */
 const TRACK = `
 void main(){
   vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
-  float stride = cz * .7, bob = abs(sin(stride * 3.1416)) * .03 * (1. + uBass * .5);
+  float stride = uB, bob = abs(sin(stride * 3.1416)) * .03 * (1. + uBass * .5);   // a footfall on every beat
   float camY = 1.6 + bob;
   // The oval: 100 m straights and 100 m bends; on a bend the view turns steadily.
   float lap = mod(cz, 400.), onBend = step(100., mod(lap, 200.)), bendK = onBend * 3.1416 / 100.;
@@ -249,3 +255,207 @@ const HSL = `
 vec3 hsl2(vec3 c){ vec3 rgb = clamp(abs(mod(c.x * 6. + vec3(0., 4., 2.), 6.) - 3.) - 1., 0., 1.); return c.z + c.y * (rgb - .5) * (1. - abs(2. * c.z - 1.)); }
 `;
 export const trackScene = () => build(HSL + TRACK, moving(6.5, .6, { res: .8 }));
+
+/* Pool Lane: swimming freestyle down a lane, seen under the water: the black line on the tiles below, caustics
+   rippling over them, the lane ropes either side, bubbles from each stroke. A stroke every two beats. */
+const POOL = `
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
+  float st = uB, roll = sin(st * 3.1416) * .05;                                          // the body rolls with each stroke
+  vec2 q = vec2(uv.x * cos(roll) - uv.y * sin(roll), uv.x * sin(roll) + uv.y * cos(roll));
+  vec3 rd = normalize(vec3(q.x, q.y - .2, 1.));                                           // looking ahead and down the lane
+  vec3 col = vec3(.05, .35, .5);
+  float camY = 1.1;
+  if (rd.y < 0.) {
+    float tg = camY / -rd.y; vec3 p = rd * tg; float wz = cz + p.z, wx = p.x;
+    vec2 tile = fract(vec2(wx, wz) * 4.) - .5;
+    float grout = smoothstep(.46, .5, max(abs(tile.x), abs(tile.y)));
+    vec3 floorC = mix(vec3(.75, .9, .95), vec3(.5, .7, .8), grout);
+    floorC = mix(floorC, vec3(.05, .07, .12), smoothstep(.11, .09, abs(wx)) * (1. - step(.5, fract(wz / 25.)) * step(fract(wz / 25.), .52)));   // the black line, with the T at each end
+    floorC = mix(floorC, vec3(.05, .07, .12), smoothstep(.62, .6, abs(wx)) * step(fract(wz / 25.), .03) );
+    float ca = pow(abs(sin(noise(vec2(wx, wz) * 1.5 + t * .3) * 6.28 + noise(vec2(wx, wz) * 2.3 - t * .2) * 5.)), 8.);
+    floorC += vec3(.6, .85, .9) * ca * .5;
+    col = mix(floorC * .9, vec3(.05, .3, .45), 1. - exp(-tg * .09));
+  }
+  // The lane ropes: chains of floats along the surface either side, coloured in bands.
+  for (int s2 = 0; s2 < 2; s2++) {
+    float side = s2 == 0 ? -1. : 1.;
+    for (int i = 0; i < 26; i++) {
+      float wz = floor(cz / .45) * .45 + float(i) * .45 + .45, rel = wz - cz;
+      vec3 c = vec3(side * 1.1, .12, rel);
+      vec2 sp = vec2(c.x, c.y + .2 * c.z) / c.z;
+      float r = .07 / c.z, band = step(.5, fract(wz / 4.5));
+      float d = length((q - sp) * vec2(1., 1.6));
+      col = mix(col, mix(vec3(.9, .2, .15), vec3(.95, .95, .9), band) * (.6 + .4 * smoothstep(r, -r, q.y - sp.y)), smoothstep(r, r * .7, d) * exp(-rel * .03));
+    }
+  }
+  // The surface above: bright and broken, light through it.
+  float surf = smoothstep(.3, .5, q.y);
+  col = mix(col, vec3(.6, .85, .95) * (.8 + .4 * noise(vec2(q.x * 6. + t * .4, q.y * 10.))), surf * .8);
+  // Bubbles streaming past from each stroke.
+  for (int i = 0; i < 14; i++) {
+    float fi = float(i), life = fract(st * .5 + fi * .13), side = mod(fi, 2.) * 2. - 1.;
+    vec2 bp = vec2(side * (.25 + .4 * life) + (h21(vec2(fi, 2.)) - .5) * .2, -.1 + life * .5 + (h21(vec2(fi, 4.)) - .5) * .2);
+    float r = .01 + .015 * h21(vec2(fi, 6.));
+    col += vec3(.85, .95, 1.) * smoothstep(px() * 2., 0., abs(length(q - bp) - r)) * (1. - life) * .8;
+  }
+  col *= 1. - .35 * smoothstep(.5, 1.2, length(uv));
+  col = 1. - exp(-col * 1.4);
+  gl_FragColor = vec4(col + dither(t), 1.);
+}`;
+export const poolScene = () => build(POOL, moving(1.6, .4, { res: .8 }, 2));   // a stroke every two beats
+
+/* Ski Descent: carving down a groomed piste, pines either side, gates flicking past, snow spraying at each turn,
+   peaks ahead. A turn every two beats. */
+const SKI = `
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
+  float turn = sin(uB * 3.1416), roll = turn * .07, camX = turn * .9;
+  vec2 q = vec2(uv.x * cos(roll) - uv.y * sin(roll), uv.x * sin(roll) + uv.y * cos(roll));
+  vec3 rd = normalize(vec3(q.x, q.y - .12, 1.3));
+  vec3 sky = mix(vec3(.75, .85, .95), vec3(.25, .5, .9), smoothstep(-.05, .45, rd.y));
+  vec3 col = sky;
+  // Peaks far ahead.
+  float pk = .03 + .14 * pow(abs(sin(rd.x * 2.2 + 1.)), 2.) + .04 * noise(vec2(rd.x * 8., 1.));
+  if (rd.y > 0. && rd.y < pk) col = mix(vec3(.92, .95, 1.), vec3(.55, .6, .72), smoothstep(.5, .9, noise(vec2(rd.x * 60., rd.y * 8.))) * .6 * smoothstep(pk, pk - .08, rd.y)) * mix(.75, 1., smoothstep(-.2, .3, rd.x));
+  float camY = 1.5;
+  if (rd.y < 0.) {
+    float tg = camY / -rd.y; vec3 p = rd * tg; float wz = cz + p.z, wx = camX + p.x;
+    vec3 snow = vec3(.9, .93, .98) * (.9 + .1 * noise(vec2(wx * 3., wz * 3.)));
+    snow *= .9 + .1 * sin(wx * 18.);                                                   // corduroy from the groomer
+    snow = mix(snow, snow * .8, smoothstep(.0, .1, sin(wx * .9 + wz * .2)) * .3);     // shadows of the rollers
+    snow *= 1. - .3 * smoothstep(6., 9., abs(wx));
+    col = mix(snow, sky, 1. - exp(-tg * .02));
+  }
+  // Pines along both edges, and gates (red, then blue) flicking past.
+  for (int i = 15; i >= 0; i--) {
+    float row = floor(cz / 5.) + float(i) + 1., wz = row * 5.;
+    for (int s2 = 0; s2 < 3; s2++) {
+      float side = s2 == 0 ? -1. : 1., h = h21(vec2(row, float(s2)));
+      bool gate = s2 == 2;
+      float wx = gate ? (mod(row, 2.) * 2. - 1.) * 2.2 : side * (8. + h * 6.);
+      vec2 rel = vec2(wx - camX, wz - cz);
+      float vis = step(.6, rel.y); rel.y = max(rel.y, .6);
+      float f = 1.3 / rel.y, sx = rel.x * f, by = -camY * f + .12, yq = q.y - by;
+      if (gate) {
+        float pole = step(abs(q.x - sx), max(px(), .04 * f)) * step(0., yq) * step(yq, 1.6 * f);
+        float flag = step(0., q.x - sx) * step(q.x - sx, .6 * f) * step(1.1 * f, yq) * step(yq, 1.55 * f);
+        vec3 fc = mod(row, 2.) < .5 ? vec3(.85, .15, .1) : vec3(.1, .3, .85);
+        col = mix(col, fc, max(pole, flag) * vis * step(mod(row, 3.), 1.5));
+      } else {
+        float th = (6. + 4. * h) * f, cw = th * .3 * (1. - clamp(yq / th, 0., 1.)) * (1. + .25 * abs(fract(yq / th * 5.) - .5));
+        float tree = step(abs(q.x - sx), cw) * step(th * .1, yq) * step(yq, th) * vis;
+        vec3 tc = mix(vec3(.04, .13, .07), vec3(.8, .86, .92), .45 * smoothstep(.62, .72, noise(vec2(q.x * 260., q.y * 90.))) * step(.5, fract(yq / th * 5.)));   // snow on the boughs
+        col = mix(col, mix(tc, sky, 1. - exp(-rel.y * .006)), tree);
+      }
+    }
+  }
+  // Snow spray at the turn, from the downhill edge of the skis.
+  float spray = smoothstep(.6, 1., abs(turn)) * fbm3o(vec2(uv.x * 8. - sign(turn) * t * 4., uv.y * 8. + t * 3.));
+  col = mix(col, vec3(1.), spray * smoothstep(-.1, -.5, uv.y) * step(abs(uv.x + sign(turn) * .3), .5) * .6);
+  // Ski tips at the bottom.
+  for (int s2 = 0; s2 < 2; s2++) {
+    float side = s2 == 0 ? -1. : 1., x = side * .12 + turn * .03;
+    col = mix(col, vec3(.85, .2, .15), step(abs(uv.x - x - (uv.y + .5) * turn * .1), .025) * step(uv.y, -.4));
+  }
+  col *= 1. - .25 * smoothstep(.5, 1.2, length(uv));
+  col = 1. - exp(-col * 1.25);
+  gl_FragColor = vec4(col + dither(t), 1.);
+}`;
+export const skiScene = () => build(SKI, moving(9., .5, { res: .8 }, 2));   // a turn every two beats
+
+/* Heavy Bag: a boxing gym, the heavy bag hanging in front of you. A punch lands on every beat, left and right in turn:
+   a glove comes in, the bag jolts and swings back on its chain. */
+const BAG = `
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT;
+  float beat = uB, n = floor(beat), ph = fract(beat), side = mod(n, 2.) * 2. - 1.;
+  float hit = exp(-ph * 5.) , swing = side * .05 * sin(ph * 6.) * exp(-ph * 2.5);
+  // The gym: a brick wall lit by a high window, a strip light, a rope and a ring post in the gloom.
+  vec2 b = uv * vec2(9., 18.); b.x += step(1., mod(floor(b.y), 2.)) * .5;
+  float mortar = max(smoothstep(.44, .47, abs(fract(b.x) - .5)), smoothstep(.4, .45, abs(fract(b.y) - .5)));
+  vec3 wall = mix(vec3(.32, .16, .1), vec3(.45, .24, .15), noise(floor(b) * .7)) * mix(1., .55, mortar);
+  wall *= .35 + .9 * exp(-length((uv - vec2(-.45, .35)) * vec2(1., 1.4)) * 1.6);          // light from the window
+  vec3 col = wall;
+  col = mix(col, vec3(.95, .9, .75), step(abs(uv.y - .46), .012) * step(abs(uv.x + .1), .35));   // the strip light
+  float floorY = -.38;
+  if (uv.y < floorY) col = vec3(.12, .1, .09) * (.8 + .3 * noise(uv * 30.)) * (1. - (floorY - uv.y) * .8);
+  col = mix(col, vec3(.1, .1, .12), step(abs(uv.x - .62), .02) * step(floorY, uv.y) * step(uv.y, .1));   // ring post
+  for (int i = 0; i < 3; i++) col = mix(col, vec3(.7, .15, .12), smoothstep(.006, .002, abs(uv.y - (-.02 - float(i) * .06) - (uv.x - .62) * .05)) * step(.62, uv.x));
+  // The bag: a long cylinder on a chain, swinging from a point above, shaded round, dented where it's hit.
+  vec2 pivot = vec2(0., .56); float ang = swing;
+  vec2 bq = uv - pivot; bq = vec2(bq.x * cos(ang) + bq.y * sin(ang), -bq.x * sin(ang) + bq.y * cos(ang));
+  float chain = step(abs(bq.x), .006) * step(-.12, bq.y) * step(bq.y, 0.) * step(.3, fract(bq.y * 60.));
+  col = mix(col, vec3(.55, .55, .58), chain);
+  float top = -.12, bot = -.78, w = .12;
+  float body = step(abs(bq.x), w) * step(bot, bq.y) * step(bq.y, top);
+  float round_ = sqrt(max(0., 1. - pow(bq.x / w, 2.)));
+  float dent = exp(-pow((bq.x - side * w * .6) / (w * .4), 2.) - pow((bq.y + .52) / .1, 2.)) * hit;
+  vec3 bagC = vec3(.55, .08, .06) * (.25 + .9 * round_ * (1. - dent * .6)) + vec3(.4) * pow(round_, 12.) * .15;
+  bagC = mix(bagC, vec3(.05), step(abs(bq.y - top + .03), .02) + step(abs(bq.y - bot - .03), .02));   // the end caps' bands
+  col = mix(col, bagC, body);
+  col = mix(col, vec3(.1), step(abs(bq.x), w * 1.05) * step(top, bq.y) * step(bq.y, top + .025));
+  // The glove: coming in from the side of the punch, at the bag on the beat, then back.
+  float reach = 1. - smoothstep(0., .35, ph);
+  vec2 gp = vec2(side * (.4 - .26 * reach), .04 + .02 * sin(ph * 3.)); float gr = .1 + .02 * reach;
+  vec2 gq = (uv - gp) / gr;
+  float glove = smoothstep(1., .95, length(gq * vec2(.85, 1.)));
+  float cuff = step(abs(gq.y + .2), .5) * step(.6, side * gq.x) * step(side * gq.x, 1.6);
+  vec3 gc = mix(vec3(.08, .1, .3), vec3(.2, .3, .7), smoothstep(-1., 1., gq.y)) + vec3(.4) * pow(max(0., 1. - length(gq - vec2(-.3, .4))), 4.);
+  col = mix(col, vec3(.9, .9, .85), cuff * .9);
+  col = mix(col, gc, glove);
+  col += vec3(1., .9, .7) * hit * exp(-length(uv - vec2(side * w * .9, .04)) * 14.) * .25 * step(ph, .2);   // a little dust off the bag
+  col *= 1. - .4 * smoothstep(.45, 1.2, length(uv));
+  col = 1. - exp(-col * 1.4);
+  gl_FragColor = vec4(col + dither(t), 1.);
+}`;
+export const bagScene = () => build(BAG, moving(1., 0, { res: .85 }, 1));   // a punch on every beat
+
+/* Mountain Climb: riding up a mountain pass in the sun, the road rising ahead between stone walls, the valley falling
+   away to the side, hairpins above. A pedal stroke every two beats, slower than on the flat. */
+const CLIMB = `
+float ridge(float x, float k){ return .5 * abs(sin(x * 1.3 + k)) + .3 * noise(vec2(x * 3., k)) + .15 * noise(vec2(x * 9., k)); }
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y; float t = uT, cz = uC;
+  float rock = sin(uB * 3.1416) * .01;                                                  // the bike rocks with each stroke
+  vec2 q = uv + vec2(rock, abs(rock) * .5);
+  vec3 col = mix(vec3(.7, .82, .95), vec3(.25, .48, .85), smoothstep(-.1, .5, q.y));
+  // Mountains: far snowy peaks and a nearer green flank on the right with the valley below.
+  float far = .16 + .28 * ridge(q.x * 1.5 + 2., 1.);
+  float cap = far - .015 - .035 * noise(vec2(q.x * 14., 3.));
+  col = mix(col, mix(vec3(.95, .97, 1.), vec3(.4, .45, .55) * (.8 + .3 * noise(q * vec2(40., 8.))), smoothstep(cap, cap - .01, q.y)), smoothstep(far + .003, far - .003, q.y));
+  float near = .1 + .3 * ridge(q.x * 2. - 1., 4.) * smoothstep(-.4, .4, q.x);
+  col = mix(col, vec3(.3, .45, .2) * (.8 + .3 * noise(q * 30.)), smoothstep(near + .003, near - .003, q.y) * step(-.05, q.x));
+  // The road: climbing at 8%, so the horizon of the road sits high; a stone wall on the left, a low rail on the right.
+  float grade = .08, camY = 1.3;
+  vec3 rd = normalize(vec3(q.x, q.y - .05, 1.3));
+  float den = grade * rd.z - rd.y;
+  if (den > 0.) {
+    float tg = camY / den; vec3 p = rd * tg; float wz = cz + p.z, wx = p.x - .8 * sin(wz * .03);
+    float road = step(abs(wx), 3.);
+    vec3 asph = vec3(.22, .22, .24) * (.85 + .3 * noise(vec2(wx * 6., wz * 6.)));
+    vec3 verge = vec3(.35, .5, .2) * (.8 + .3 * noise(vec2(wx * 3., wz * 3.)));
+    col = mix(verge, asph, road);
+    col = mix(col, mix(vec3(.3, .48, .25) * (.75 + .5 * noise(vec2(wx, wz) * .15)), vec3(.6, .7, .8), 1. - exp(-tg * .06)), step(3.6, wx));      // beyond the rail, the valley far below
+    col = mix(col, vec3(.95), step(abs(wx), .06) * step(.5, fract(wz * .15)) * road);
+    col = mix(col, vec3(.95), step(abs(abs(wx) - 2.8), .05) * road);
+    // Painted names on the tarmac now and then, as on the famous climbs.
+    col = mix(col, vec3(.95, .95, .9), step(abs(wx - 1.), .5) * step(abs(fract(wz / 60.) - .5), .01) * road * .8);
+    col = mix(col, vec3(.6, .6, .65), step(wx, -3.) * step(-3.6, wx) * .8);        // the wall's foot
+  }
+  // The stone wall on the left, rising off the road.
+  float wx0 = -.42 * min(uRes.x / uRes.y, 1.2);
+  float wallTop = .0 - (q.x - wx0) * .3;
+  float wall = step(q.x, wx0 - q.y * .3) * step(q.y, wallTop) * step(-.6, q.y);
+  vec2 sq = vec2(q.x * 30. / (1. - q.x), q.y * 26.); sq.x += step(1., mod(floor(sq.y), 2.)) * .5;
+  col = mix(col, vec3(.55, .5, .45) * (.75 + .3 * noise(floor(sq))) * (1. - .3 * smoothstep(.0, .06, min(abs(fract(sq.x) - .5) - .45, abs(fract(sq.y) - .5) - .42) + .06)), wall);
+  // Handlebars and hands, as on the night ride but in daylight.
+  float bar = smoothstep(.012, .006, abs(uv.y + .44 + uv.x * uv.x * .25)) * step(abs(uv.x), .55);
+  float stem = step(abs(uv.x), .025) * step(uv.y, -.43);
+  col = mix(col, vec3(.08, .08, .1), max(bar, stem));
+  for (int s2 = 0; s2 < 2; s2++) { float side = s2 == 0 ? -1. : 1.; col = mix(col, vec3(.15, .14, .16), smoothstep(.07, .06, length((uv - vec2(side * .5, -.47 - .005 * sin(uB * 3.1416 + float(s2) * 3.14))) * vec2(1., 1.4)))); }
+  col *= 1. - .2 * smoothstep(.5, 1.2, length(uv));
+  col = 1. - exp(-col * 1.3);
+  gl_FragColor = vec4(col + dither(t), 1.);
+}`;
+export const climbScene = () => build(CLIMB, moving(3.5, .4, { res: .8 }, 2));   // a pedal stroke every two beats

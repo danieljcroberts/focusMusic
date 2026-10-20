@@ -8,7 +8,7 @@ import { daylight } from './daylight.js';
 import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
-import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap } from './music.js';
+import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap, pace, setPace } from './music.js';
 import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow, trackPos, trackClock, seekFraction } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
@@ -24,6 +24,9 @@ import { setRestK } from './rest.js';
 import './summary.js';
 import { tickGrade, drawWx } from './overlays.js';
 import { initBench, benching } from './bench.js';
+import './intervals.js';
+import './tasks.js';
+import './sync.js';
 import { initNativeUi } from './native-ui.js';
 import { NATIVE, SITE, nativeKeepAwake, nativeSavePicture } from './native.js';
 import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
@@ -32,7 +35,7 @@ import './scenesets.js';
 import * as ST from './soundtracks.js';
 import { addPhotos, removePhoto, photos, loadPhotos, onPhotosChange } from './scenes/photos.js';
 import { EXTRA_KINDS, extraList, addExtra, removeExtra, setExtraLevel } from './ambience.js';
-import { tickSleep, wakeFromSleep, sleepPace } from './sleep.js';
+import { tickSleep, wakeFromSleep, sleepPace, setSleep } from './sleep.js';
 import { initDrift, toggleFav, drawFav, setDrift, drift, noteSceneChange, tickDrift } from './drift.js';
 import { initSettings, showHelp, helpOpen, setDiagOn } from './settings.js';
 import { openAbout, aboutOpen } from './about.js';
@@ -434,7 +437,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -677,8 +680,35 @@ el('photoGo').addEventListener('click', () => { if (photoScene >= 0) go(photoSce
 
 // Between tracks and the volume limit, under Music and Now playing.
 const xButtons = [...el('xfadeSeg').querySelectorAll('button')];
-const drawX = () => xButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.x === xfade)));
+const drawX = () => xButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.x === xfade)));   // -1 is Auto
 xButtons.forEach(b => b.addEventListener('click', () => { setCrossfade(+b.dataset.x); drawX(); })); drawX();
+// The Workout pace, under Music.
+const paceButtons = [...el('paceSeg').querySelectorAll('button')];
+const drawPace = () => paceButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === pace)));
+paceButtons.forEach(b => b.addEventListener('click', () => { setPace(b.dataset.p); drawPace(); setStatus(`Workout pace: ${b.textContent.toLowerCase()}.`); })); drawPace();
+// Holding play or pause (on the bar or the mini player) offers the sleep timer: 15, 30 or 60 minutes, or the end of the track.
+{
+  const pop = document.createElement('div'); pop.className = 'tmenu sleeppop'; pop.hidden = true; pop.setAttribute('role', 'menu');
+  const head = document.createElement('span'); head.className = 'lbl'; head.textContent = 'Stop playing';
+  pop.append(head);
+  for (const [label, v] of [['In 15 minutes', 15], ['In 30 minutes', 30], ['In 60 minutes', 60], ['At the end of this track', 'track'], ['Sleep timer off', 0]]) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.setAttribute('role', 'menuitem');
+    b.addEventListener('click', () => { pop.hidden = true; setSleep(v); if (!v) setStatus('Sleep timer off.'); });
+    pop.append(b);
+  }
+  document.body.append(pop);
+  for (const id of ['play', 'miniPlay']) {
+    const b = el(id); let hold = null, held = false;
+    b.addEventListener('pointerdown', () => { held = false; clearTimeout(hold); hold = setTimeout(() => {
+      held = true; haptic(); const r = b.getBoundingClientRect();
+      pop.hidden = false; pop.style.left = `${Math.max(10, Math.min(innerWidth - 240, r.left + r.width / 2 - 115))}px`; pop.style.bottom = `${innerHeight - r.top + 12}px`;
+    }, 480); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => clearTimeout(hold));
+    b.addEventListener('click', e => { if (held) { held = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  document.addEventListener('pointerdown', e => { if (!pop.hidden && !e.target.closest('.sleeppop')) pop.hidden = true; });
+}
 const capButtons = [...el('capSeg').querySelectorAll('button')];
 const drawCap = () => capButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.cap === volCap)));
 capButtons.forEach(b => b.addEventListener('click', () => { setVolCap(+b.dataset.cap); drawCap(); })); drawCap();
@@ -894,7 +924,7 @@ if (state.hidden && el('hint1').hidden) hide(); else wake();   // start as you l
 const q = new URLSearchParams(location.search);
 if (q.get('start') === 'focus' && !timerRunning()) { toggleTimer(); caption('Focus block started'); }
 // ?mood=study|relax|sleep: the long-press shortcuts on the app icon. Music may wait for a first tap where the browser insists.
-if (['study', 'relax', 'sleep'].includes(q.get('mood'))) { if (!el('hint1').hidden) el('hint1Ok').click(); applyMood(q.get('mood')); }
+if (['study', 'relax', 'workout', 'sleep'].includes(q.get('mood'))) { if (!el('hint1').hidden) el('hint1Ok').click(); applyMood(q.get('mood')); }
 if (location.search) history.replaceState(null, '', location.pathname + location.hash);
 scheduleThumb();
 // Once the app has settled, fetch the rest of the scenes' code quietly, so they open at once and work offline.

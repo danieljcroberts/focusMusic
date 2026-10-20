@@ -33,6 +33,7 @@
     "@capacitor/android": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/local-notifications": "^8.3.1",
+    "qrcode-generator": "^2.0.4",
     "three": "^0.169.0"
   }
 }

@@ -1,7 +1,7 @@
 // Sleep timer: over the last ten minutes the scene slows and dims a little; over the last two it goes down with the music
 // and the ambience as they fade; then it stays dark until the next tap or key.
 import { setStatus } from './status.js';
-import { fadeOutAll, setStopAtEnd } from './music.js';
+import { fadeOutAll, setStopAtEnd, setCalm } from './music.js';
 import { setAmbienceMute } from './ambience.js';
 
 let sleepAt = 0, winding = false;
@@ -10,7 +10,7 @@ const buttons = [...document.getElementById('sleepSeg').querySelectorAll('button
 export function setSleep(min) {
   const track = min === 'track';
   sleepAt = min && !track ? performance.now() + min * 60000 : 0; winding = false;
-  setStopAtEnd(track);
+  setStopAtEnd(track); setCalm(!!min);   // the shuffle leans toward the calmest tracks while a sleep timer is set
   buttons.forEach(b => b.setAttribute('aria-pressed', String(track ? b.dataset.sleep === 'track' : +b.dataset.sleep === min)));
   dim.style.opacity = '';
   if (!min) { setAmbienceMute(false); document.body.classList.remove('sleep'); }

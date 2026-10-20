@@ -35,7 +35,7 @@ export function moodButtons(onPick) {
 }
 export function initMoods(o) {
   go = o.go; find = o.find; syncAmb = o.syncAmb;
-  el('hint1Ok').before(moodButtons(() => el('hint1Ok').click()));
+  el('hint1Ok').parentElement.before(moodButtons(() => el('hint1Ok').click()));
   const sheetBody = document.querySelector('#sheet .body'), lbl = document.createElement('span');
   lbl.className = 'lbl startwith'; lbl.textContent = 'Start with';
   sheetBody.prepend(lbl, moodButtons(() => el('sheetClose').click()));

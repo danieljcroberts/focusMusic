@@ -1,12 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07080c"/><stop offset="1" stop-color="#101424"/></linearGradient>
-    <radialGradient id="w" cx=".6" cy=".75" r=".5"><stop offset="0" stop-color="#f2c27b" stop-opacity=".7"/><stop offset="1" stop-color="#f2c27b" stop-opacity="0"/></radialGradient>
-    <radialGradient id="c" cx=".3" cy=".65" r=".4"><stop offset="0" stop-color="#78b4ff" stop-opacity=".6"/><stop offset="1" stop-color="#78b4ff" stop-opacity="0"/></radialGradient>
-  </defs>
-  <rect x="56" y="56" width="400" height="400" rx="56" fill="url(#g)" stroke="#1e1e28" stroke-width="14"/>
-  <rect x="56" y="56" width="400" height="400" rx="56" fill="url(#w)"/>
-  <rect x="56" y="56" width="400" height="400" rx="56" fill="url(#c)"/>
-  <path d="M210 130c-34 44-56 80-56 110a56 56 0 0 0 112 0c0-30-22-66-56-110z" fill="#ece6da" fill-opacity=".85"/>
-  <ellipse cx="188" cy="214" rx="11" ry="7" fill="#fff" transform="rotate(-30 188 214)"/>
-</svg>
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0e1a"/><stop offset="1" stop-color="#151a30"/></linearGradient>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1530"/><stop offset="1" stop-color="#22305a"/></linearGradient>
+  <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22305a"/><stop offset="1" stop-color="#3a4470"/></linearGradient>
+  <radialGradient id="lit" cx=".4" cy=".45" r=".75"><stop offset="0" stop-color="#ffe2a8"/><stop offset=".6" stop-color="#f2b866"/><stop offset="1" stop-color="#d98a3a"/></radialGradient>
+  <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+</defs><rect x="2" y="2" width="96" height="96" rx="20" fill="url(#bg)"/>
+  <g transform="translate(50 50) scale(0.9) translate(-50 -50)">
+    <rect x="45" y="16" width="39" height="39" rx="6" fill="url(#lit)" opacity=".45" filter="url(#blur)"/>
+    <rect x="18" y="18" width="64" height="64" rx="7" fill="#d9cfbd"/>
+    <rect x="23" y="23" width="25" height="25" rx="2.5" fill="url(#sky)"/>
+    <rect x="23" y="52" width="25" height="25" rx="2.5" fill="url(#sky2)"/>
+    <rect x="52" y="52" width="25" height="25" rx="2.5" fill="url(#sky2)"/>
+    <rect x="52" y="23" width="25" height="25" rx="2.5" fill="url(#lit)"/>
+    <circle cx="30" cy="30" r=".9" fill="#fff" opacity=".85"/><circle cx="40" cy="27" r=".6" fill="#fff" opacity=".6"/>
+    <circle cx="36" cy="40" r=".7" fill="#fff" opacity=".5"/><circle cx="61" cy="60" r=".6" fill="#fff" opacity=".45"/>
+    <path d="M23 70 q8 -5 13 -2 t12 -3 v12 h-25z M52 66 q9 -4 14 -1 t11 -2 v14 h-25z" fill="#05070d" opacity=".9"/>
+  </g></svg>

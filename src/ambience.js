@@ -4,11 +4,11 @@ import { audioCtx } from './music.js';
 import { weather } from './weather.js';
 import { state, saveState } from './state.js';
 
-export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space', 'tent', 'underwater', 'shore'];
+export const KINDS = ['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space', 'tent', 'underwater', 'shore', 'crickets', 'forest'];
 
 let ctx = null, master = null, bus = null, buffers = {}, live = [], timers = [], kind = 'none';
 // Sounds you add on top of the scene's own, each at its own level. Brown noise and binaural tones are only here.
-export const EXTRA_KINDS = { rain: 'Rain', wind: 'Wind', sea: 'Sea', fire: 'Fire', cafe: 'Café', train: 'Train', storm: 'Storm', pond: 'Pond', road: 'Road', hum: 'Hum', space: 'Space', tent: 'Rain on a tent', underwater: 'Underwater', shore: 'Shore and gulls', brown: 'Brown noise', binaural: 'Binaural (headphones)' };
+export const EXTRA_KINDS = { rain: 'Rain', wind: 'Wind', sea: 'Sea', fire: 'Fire', cafe: 'Café', train: 'Train', storm: 'Storm', pond: 'Pond', road: 'Road', hum: 'Hum', space: 'Space', tent: 'Rain on a tent', underwater: 'Underwater', shore: 'Shore and gulls', crickets: 'Crickets', forest: 'Birdsong', brown: 'Brown noise', binaural: 'Binaural (headphones)' };
 const extras = new Map();   // kind -> { gain, layers, timers, v }
 export let level = typeof state.ambience === 'number' ? state.ambience : .35;
 
@@ -55,6 +55,25 @@ function blip(f0, f1, gain, dur) {
 function every(min, max, fn) {
   const run = () => { fn(); timers.push(setTimeout(run, (min + Math.random() * (max - min)) * 1000)); };
   timers.push(setTimeout(run, Math.random() * max * 1000));
+}
+
+// A quick tone that sweeps between two pitches, starting `delay` seconds from now: a cricket's pulse or a note of birdsong.
+function chirp(f0, f1, gain, dur, delay = 0, type = 'sine') {
+  const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + delay;
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + Math.min(.012, dur / 3)); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+}
+// A cricket: a train of three or four short pulses at one pitch.
+function cricket(f, gain) { const n = 3 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) chirp(f, f * .98, gain, .018, i * .034); }
+// A phrase of birdsong: a few quick whistled notes, each sliding, the pattern different every time.
+function songPhrase() {
+  const base = 2200 + Math.random() * 2200, n = 3 + Math.floor(Math.random() * 5), up = Math.random() < .5, g = .012 + Math.random() * .012;
+  let at = 0;
+  for (let i = 0; i < n; i++) {
+    const d = .06 + Math.random() * .1, f = base * (1 + (Math.random() - .5) * .35);
+    chirp(f, f * (up ? 1.3 : .72), g, d, at); at += d + .03 + Math.random() * .06;
+  }
 }
 
 const lfo = (t, rate, ph = 0) => .5 + .5 * Math.sin(t * rate * 6.283 + ph);
@@ -110,6 +129,17 @@ const RECIPES = {
   shore: () => {
     every(9, 28, () => { const n = 1 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) gull(i * (.5 + Math.random() * .3)); });
     return [noise('brown', 'lowpass', 600, .6, .45, t => [.3 + .7 * Math.pow(lfo(t, .16), 2), 350 + 400 * lfo(t, .16)]), noise('white', 'bandpass', 3000, .7, .06, t => [Math.pow(lfo(t, .16, .7), 3), 3000])];
+  },
+  // A warm night: crickets near and far, each with its own pitch and pace, over a faint breeze.
+  crickets: () => {
+    for (let i = 0; i < 4; i++) { const f = 3900 + Math.random() * 1100, g = .006 + Math.random() * .012, gap = .5 + Math.random() * .5; every(gap * .8, gap * 1.3, () => { if (Math.random() < .85) cricket(f, g); }); }
+    return [noise('brown', 'lowpass', 380, .6, .22, t => [.6 + .4 * lfo(t, .05), 300 + 150 * lfo(t, .03)])];
+  },
+  // Woodland by day: leaves in the wind and birds calling, near and far.
+  forest: () => {
+    every(1.2, 5, songPhrase);
+    every(6, 18, () => { const f = 1100 + Math.random() * 300; chirp(f, f * .8, .02, .35); chirp(f * .8, f * .78, .016, .5, .5); });   // a wood pigeon, far off
+    return [noise('white', 'bandpass', 1600, .5, .07, t => [.4 + .6 * Math.pow(lfo(t, .07), 2), 1300 + 600 * lfo(t, .05)]), noise('brown', 'lowpass', 300, .7, .2, t => [.6 + .4 * lfo(t, .04), 300])];
   },
   none: () => [],
 };

@@ -54,7 +54,7 @@
       <summary><span class="k">Now playing</span><span class="v" id="sumNow"></span></summary>
       <div class="pane">
         <div class="np" aria-live="polite"><b id="npTitle">Nothing playing</b><span id="npMeta">Pick a track, or press Play to start the scene's track</span><input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Position in track" hidden></div>
-        <p class="note upnext" id="upNext" hidden></p>
+        <div class="upnext" id="upNext" hidden><span class="lbl">Up next</span><ol id="upNextList"></ol></div>
         <div class="row wrap"><button type="button" id="prevBtn">Previous</button><button type="button" class="tog" id="loveBtn" aria-pressed="false">♡ Love</button><button type="button" id="libBtn">All tracks</button><button type="button" id="listenBtn" title="A dark screen with a clock; the music carries on (B)">Listen only</button></div>
         <label class="slider"><span>Music</span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Music volume"></label>
         <span class="lbl">Volume limit</span>
@@ -76,8 +76,11 @@
         <span class="lbl">Soundtracks</span>
         <div class="row wrap"><button type="button" id="stEditBtn">Edit soundtracks</button><button type="button" id="stWizBtn">Add your music…</button></div>
         <div class="row wrap" id="stRescanRow"></div>
+        <span class="lbl">Workout pace</span>
+        <div class="seg" id="paceSeg" role="group" aria-label="Workout pace"><button type="button" data-p="any">Any</button><button type="button" data-p="steady">Steady</button><button type="button" data-p="fast">Fast</button><button type="button" data-p="sprint">Sprint</button></div>
+        <span class="note">For the Workout soundtrack: steady is 115 to 140 beats a minute, fast 140 to 160, sprint 160 and up.</span>
         <span class="lbl">Between tracks</span>
-        <div class="seg" id="xfadeSeg" role="group" aria-label="Crossfade between tracks"><button type="button" data-x="0">No gap</button><button type="button" data-x="3">3 s</button><button type="button" data-x="8">8 s</button><button type="button" data-x="12">12 s</button></div>
+        <div class="seg" id="xfadeSeg" role="group" aria-label="Crossfade between tracks"><button type="button" data-x="-1" title="Short and tight between driving tracks, long and slow between gentle ones">Auto</button><button type="button" data-x="0">No gap</button><button type="button" data-x="3">3 s</button><button type="button" data-x="8">8 s</button><button type="button" data-x="12">12 s</button></div>
         <span class="lbl">Offline</span>
         <div class="row wrap" id="pipRow" hidden><button type="button" class="tog" id="pipBtn" aria-pressed="false" title="When you leave the app, the scene keeps playing in a small window over whatever you do next">Picture-in-picture when leaving</button></div>
         <div class="row wrap" id="dlRow" hidden><button type="button" id="dlBtn">Download music to this phone</button><button type="button" id="dlRemove" hidden>Remove downloaded music</button><span class="note" id="dlNote"></span></div>
@@ -106,6 +109,21 @@
         <div class="month" id="monthGrid" aria-label="Focus minutes, last five weeks"></div>
         <ul class="intents" id="weekIntents"></ul>
         <div class="row wrap"><button type="button" class="tog" id="quietBtn" aria-pressed="true" title="While a focus block runs, a tap on the scene leaves the controls hidden; swipe up or use the keyboard to bring them back">Quiet focus</button><button type="button" class="tog" id="breakSceneBtn" aria-pressed="false" title="A break moves to a light, calm scene, and the focus block brings your scene back">Breaks change the scene</button></div>
+        <span class="lbl">Today's tasks</span>
+        <ul class="tasks" id="taskList"></ul>
+        <form class="row" id="taskAdd"><input type="text" id="taskIn" maxlength="60" placeholder="Add a task" autocomplete="off" aria-label="Add a task"><button type="submit">Add</button></form>
+        <span class="note" id="taskNote"></span>
+        <span class="lbl">Intervals (workouts)</span>
+        <div class="seg" id="ivSeg" role="group" aria-label="Interval presets">
+          <button type="button" data-w="40" data-r="20" data-n="8">40 / 20 ×8</button><button type="button" data-w="30" data-r="30" data-n="10">30 / 30 ×10</button><button type="button" data-w="60" data-r="30" data-n="6">60 / 30 ×6</button><button type="button" data-w="20" data-r="10" data-n="8">20 / 10 ×8</button>
+        </div>
+        <div class="row nums">
+          <label>Work <input type="number" id="ivW" min="5" max="600" value="40"></label>
+          <label>Rest <input type="number" id="ivR" min="0" max="600" value="20"></label>
+          <label>Rounds <input type="number" id="ivN" min="1" max="50" value="8"></label>
+          <button type="button" id="ivApply">Apply</button>
+        </div>
+        <div class="row wrap"><button type="button" class="tog" id="ivGo" aria-pressed="false">Start intervals</button><span class="note">Seconds. A chime and a soft glow mark each change; the music drops in the rests.</span></div>
         <span class="lbl">Sunrise alarm</span>
         <div class="row wrap"><input type="time" id="alarmTime" value="07:00" aria-label="Alarm time"><button type="button" class="tog" id="alarmBtn" aria-pressed="false">Wake me</button><button type="button" id="bedBtn" title="Calm music, a dark scene, the sleep timer at 30 minutes and the screen dimmed">Bedtime</button></div>
         <span class="note">Leave the app open on the charger. Ten minutes before the time, a dawn scene brightens and soft music fades up.</span>
@@ -161,7 +179,7 @@
         </div>
         <div class="row wrap"><span class="note" id="verNote">Version</span><button type="button" id="updBtn">Check for updates</button></div>
         <div class="row wrap"><button type="button" id="benchBtn" title="Runs every scene for a few seconds and lists the ones that are slow on this device">Test every scene on this device</button><span class="note" id="benchNote">About seven minutes. Keep the screen on.</span></div>
-        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="tourBtn">Take the tour</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
+        <div class="row wrap"><button type="button" id="aboutBtn">About and credits</button><button type="button" id="helpBtn">Shortcuts</button><button type="button" class="tog" id="diagBtn" aria-pressed="false">Diagnostics</button><button type="button" id="tourBtn">Take the tour</button><button type="button" id="exportBtn" title="Your soundtracks, hearts, favourites, sets and focus history in one file">Back up settings</button><button type="button" id="importBtn">Restore…</button><button type="button" id="syncSendBtn" title="A link and QR code that carry your settings to your phone or another browser">Send settings to another device</button><button type="button" id="syncGetBtn">Receive settings</button><button type="button" id="copyDiagBtn" title="Copy what the app knows about this device and the last problems, to paste into a message">Copy diagnostics</button></div>
         <span class="note">Free forever. Your own music never leaves this device.</span>
       </div>
     </details>
@@ -180,12 +198,15 @@
 <div class="wiz" id="wiz" hidden role="dialog" aria-modal="true" aria-labelledby="wizTitle"><div class="box"><header><h2 id="wizTitle">Your music</h2><button type="button" class="pbtn" id="wizClose">Close</button></header><div class="body" id="wizBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
 <div class="intent" id="intent" hidden><label for="intentIn">What are you working on?</label><div class="row"><input type="text" id="intentIn" maxlength="60" placeholder="Optional" autocomplete="off"><button type="button" class="pbtn primary" id="intentOk">Go</button></div></div>
+<div class="wiz" id="syncDlg" hidden role="dialog" aria-modal="true" aria-labelledby="syncTitle"><div class="box"><header><h2 id="syncTitle">Send settings</h2><button type="button" class="pbtn" id="syncClose">Close</button></header><div class="body" id="syncBody"></div></div></div>
 <div class="info-card" id="trackInfo" hidden role="dialog" aria-label="About this track"><header><b id="tiTitle"></b><button type="button" class="pbtn" id="tiClose">Close</button></header><span id="tiArtist"></span><span class="muted" id="tiKind"></span><ul id="tiLines"></ul><div id="tiMore"></div></div>
 <div class="tour" id="tour" hidden role="dialog" aria-label="Tour"><p id="tourText"></p><div class="row"><span class="muted" id="tourStep"></span><button type="button" class="pbtn" id="tourSkip">Skip</button><button type="button" class="pbtn primary" id="tourNext">Next</button></div></div>
 <div class="listen" id="listen" hidden aria-label="Listening. Tap to bring the scene back."><div class="lc"><b id="listenClock"></b><span id="listenTrack"></span></div></div>
 <div class="bench" id="bench" hidden role="status"><p id="benchText"></p><ol id="benchList"></ol><div class="row"><button type="button" class="pbtn primary" id="benchOut" hidden>Leave these out</button><button type="button" class="pbtn" id="benchStop">Stop</button></div></div>
+<button type="button" class="ivpill" id="ivPill" hidden title="Tap to stop the intervals"></button>
+<div class="ivglow" id="ivGlow" hidden aria-hidden="true"></div>
 <div class="update" id="updateBar" hidden role="status"><span id="updateText"></span><div class="row"><a class="pbtn primary" id="updateGet" href="#">Download</a><button type="button" class="pbtn" id="updateLater">Later</button></div></div>
-<div class="summary" id="summary" hidden role="status"><b id="sumHead"></b><span id="sumBody"></span><ol id="sumTracks"></ol><button type="button" class="pbtn" id="sumClose">Close</button></div>
+<div class="summary" id="summary" hidden role="status"><b id="sumHead"></b><span id="sumBody"></span><ul class="tasks" id="sumTasks" hidden></ul><ol id="sumTracks"></ol><button type="button" class="pbtn" id="sumClose">Close</button></div>
 <div class="level" id="level" hidden aria-hidden="true"><span class="track"><span class="bar" id="levelBar"></span></span><span class="lbl" id="levelLbl"></span></div>
 <svg class="ring" id="ring" viewBox="0 0 40 40" hidden aria-hidden="true"><circle cx="20" cy="20" r="16" class="track"/><circle cx="20" cy="20" r="16" class="fill" id="ringFill" pathLength="100"/></svg>
 <div class="picker" id="picker" hidden role="dialog" aria-label="This scene and all the others">

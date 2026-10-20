@@ -11,7 +11,7 @@ const SCENE_DIR = join(root, 'public/assets/scenes');
 const MUSIC_DIR = join(root, 'public/assets/music');
 // Mirrors KINDS in src/ambience.js, which cannot be imported here because it touches the audio API.
 const TONES = new Set(['calm', 'warm', 'cold', 'dark', 'bright', 'pulse']);
-const SOUNDS = new Set(['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space', 'tent', 'underwater', 'shore']);
+const SOUNDS = new Set(['none', 'rain', 'wind', 'sea', 'fire', 'cafe', 'train', 'storm', 'pond', 'aquarium', 'road', 'hum', 'space', 'tent', 'underwater', 'shore', 'crickets', 'forest']);
 
 const errors = [], warnings = [];
 const err = m => errors.push(m);

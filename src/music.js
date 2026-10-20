@@ -98,7 +98,20 @@ let fades = [];
 // Breaks duck the music to a third; the change ramps over a second and a half.
 let duck = 1, duckTarget = 1;
 // The crossfade between tracks that run into each other, in seconds (0 joins them tightly), and a volume limit.
-export let xfade = [0, 3, 8, 12].includes(state.xfade) ? state.xfade : 8;
+export let xfade = [-1, 0, 3, 8, 12].includes(state.xfade) ? state.xfade : -1;   // -1: auto, from each track's energy
+// A track's energy from its measurement (scripts/analyse-music.mjs): 0 gentle to 1 loud and driving; .4 when unmeasured.
+export const energyOf = t => t && t.db !== undefined ? Math.max(0, Math.min(1, (t.db + 18) / 12 * .6 + (t.beat || 0) * .5)) : .4;
+// The crossfade for the playing track: auto makes it short between driving tracks and long between gentle ones.
+const fadeSecs = () => xfade >= 0 ? xfade : energyOf(curTrack) > .7 ? 2 : energyOf(curTrack) > .45 ? 5 : 10;
+// Bedtime and the sleep timer ask for calm: the shuffle then leans hard toward the quietest, slowest tracks.
+let calm = false;
+export function setCalm(v) { calm = !!v; }
+// The playing track's tempo, for scenes that keep in step with it (0 when unknown or nothing plays).
+export const currentBpm = () => (curTrack && curTrack.bpm && players.some(p => !p.paused)) ? curTrack.bpm : 0;
+// The Workout soundtrack's pace: any, steady (115 to 140 BPM), fast (140 to 160) or sprint (160 and up).
+export const PACES = { any: [0, 999], steady: [115, 140], fast: [140, 160], sprint: [160, 999] };
+export let pace = PACES[state.pace] ? state.pace : 'any';
+export function setPace(p) { pace = PACES[p] ? p : 'any'; saveState({ pace }); }
 export function setCrossfade(v) { xfade = v; saveState({ xfade: v }); }
 export let volCap = [1, .8, .6].includes(state.volCap) ? state.volCap : 1;
 export function setVolCap(v) { volCap = v; saveState({ volCap: v }); players.forEach(p => setGain(p, p._g)); }
@@ -163,7 +176,7 @@ const stats = state.trackStats || {};
 const keyOf = t => t ? (t.own ? 'own:' + t.id : key(t)) : null;
 let startedAt = 0;
 function tally(k, f) { if (!k) return; const e = stats[k] || (stats[k] = { p: 0, s: 0 }); e[f]++; saveState({ trackStats: stats }); }
-const weightOf = k => trackWeight(stats[k], ST.isLoved(k), (sceneLoves[sceneName] || []).includes(k));
+const weightOf = k => trackWeight(stats[k], ST.isLoved(k), (sceneLoves[sceneName] || []).includes(k)) * (calm ? Math.exp(-4 * energyOf(byKey[k])) * 3 : 1);
 const weighted = (list, k) => pickWeighted(list, list.map(x => weightOf(k(x))));
 // Tracks hearted while a scene was on come back more when that scene is on again.
 let sceneLoves = state.sceneLoves || {};
@@ -327,8 +340,9 @@ function start(url, tight = false) {
   hasSrc = true; queued = false; startedAt = performance.now();
   const cors = corsOk(url), prev = audio, seekTo = resumeAt; resumeAt = null;
   const slow = slowNext, auto = autoNext; slowNext = false; autoNext = false;
-  if (auto && xfade === 0) tight = true;
-  const join = auto && xfade > 0 ? xfade : null;
+  const xf = fadeSecs();
+  if (auto && xf === 0) tight = true;
+  const join = auto && xf > 0 ? xf : null;
   const fadeIn = tight ? .08 : seekTo != null ? 1.2 : slow ? 8 : join || FADE, fadeOut = tight ? .08 : slow ? 8 : join || FADE;
   const next = cors ? (players[0] === prev ? players[1] : players[0]) : players[2];
   if (cors) wireAnalyser();
@@ -428,7 +442,11 @@ function pickNext(relaxed = false) {
   const st = ST.current(), mine = new Set(st.own);
   const ok = k => !isCur(k) && (relaxed || (!recent.includes(k) && cycleOk(st.id, k)));
   const pools = [];
-  const free = [...TRACKS, ...(st.like === 'loved' ? found() : [])].filter(t => allowed(t) && ok(key(t)));
+  let free = [...TRACKS, ...(st.like === 'loved' ? found() : [])].filter(t => allowed(t) && ok(key(t)));
+  if (st.id === 'energy' && pace !== 'any') {   // the Workout pace: tracks in its tempo range, when there are any
+    const [lo, hi] = PACES[pace], fit = free.filter(t => t.bpm >= lo && t.bpm < hi);
+    if (fit.length) free = fit;
+  }
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
   // Your music gets the larger share once there is a fair amount of it; the free tracks fill in around it.
   if (own.length) pools.push([own.length >= 8 ? 2 : 1, () => playOwn(weighted(own, e => 'own:' + e.id))]);
@@ -472,10 +490,19 @@ const upNext = [];
 export const queue = () => upNext;
 export function playNext(item) { upNext.push(item); drawUpNext(); setStatus(`Up next: ${item.t} — ${item.a}.`); }
 export function clearQueue() { upNext.length = 0; drawUpNext(); }
+// The queue under Now playing: each track with up, down and remove.
 function drawUpNext() {
-  const box = el('upNext'); if (!box) return;
-  box.hidden = !upNext.length;
-  box.textContent = upNext.length ? `Up next: ${upNext.map(x => x.t).slice(0, 3).join(', ')}${upNext.length > 3 ? ` and ${upNext.length - 3} more` : ''}` : '';
+  const box = el('upNext'), ol = el('upNextList'); if (!box) return;
+  box.hidden = !upNext.length; ol.textContent = '';
+  upNext.forEach((q, i) => {
+    const li = document.createElement('li'), name = document.createElement('span'); name.textContent = `${q.t} — ${q.a}`;
+    const btn = (txt, label, fn, off) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rm'; b.textContent = txt; b.setAttribute('aria-label', label); b.disabled = !!off; b.addEventListener('click', () => { fn(); drawUpNext(); }); return b; };
+    li.append(name,
+      btn('↑', `Move ${q.t} up`, () => upNext.splice(i - 1, 0, upNext.splice(i, 1)[0]), i === 0),
+      btn('↓', `Move ${q.t} down`, () => upNext.splice(i + 1, 0, upNext.splice(i, 1)[0]), i === upNext.length - 1),
+      btn('×', `Remove ${q.t} from the queue`, () => upNext.splice(i, 1)));
+    ol.append(li);
+  });
 }
 // One switch can ask for a longer, slower crossfade (a break starting, say).
 let slowNext = false;
@@ -504,7 +531,7 @@ export const stoppingAtEnd = () => stopAtEnd;
 setInterval(() => {
   if (!hasSrc || audio.paused || queued || source === 'live' || !isFinite(audio.duration) || !audio.duration || stopAtEnd) return;
   // Your own tracks join tightly, as an album's do; the free tracks crossfade eight seconds early.
-  const lead = curTrack && curTrack.own ? .35 : xfade > 0 ? xfade : .35;
+  const lead = curTrack && curTrack.own ? .35 : fadeSecs() > 0 ? fadeSecs() : .35;
   if (audio.duration - audio.currentTime < lead) { queued = true; autoNext = true; nextTrack(); }
 }, curTrack && curTrack.own ? 100 : 500);
 // The sleep timer fades everything out over `seconds` and stops it.

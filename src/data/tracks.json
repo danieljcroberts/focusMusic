@@ -11,7 +11,10 @@
     "stream": "https://archive.org/download/Reappear-11948/Chris_Zabriskie_-_06_-_Chance_Luck_Errors_in_Nature_Fate_Destruction_As_a_Finale.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "len": 671
+    "len": 671,
+    "db": -16.6,
+    "bpm": 157,
+    "beat": 0.1
   },
   {
     "a": "Calling Sister Midnight",
@@ -135,7 +138,10 @@
     "file": "miles-tilmann-particle-song-1.mp3",
     "note": "From the XMASEP 2 release on Bandcamp",
     "genre": "downtempo",
-    "len": 181
+    "len": 181,
+    "db": -13.8,
+    "bpm": 157,
+    "beat": 0.16
   },
   {
     "a": "Miles Tilmann",
@@ -174,7 +180,10 @@
     "conf": "confirmed",
     "note": "Netlabel release only; the Bandcamp reissue is all rights reserved",
     "genre": "ambient",
-    "len": 629
+    "len": 629,
+    "db": -24.6,
+    "bpm": 170,
+    "beat": 0.18
   },
   {
     "a": "Ian Hawgood",
@@ -188,7 +197,10 @@
     "stream": "https://archive.org/download/IanHawgood-BeforeILetTheSunshineRotphch012/01BeforeILetTheSunshineRot.mp3",
     "conf": "confirmed",
     "genre": "classical",
-    "len": 432
+    "len": 432,
+    "db": -33.7,
+    "bpm": 115,
+    "beat": 0.14
   },
   {
     "a": "Pulse Emitter",
@@ -204,7 +216,10 @@
     "conf": "confirmed",
     "note": "Free Music Archive copy; Bandcamp now says all rights reserved",
     "genre": "ambient",
-    "len": 473
+    "len": 473,
+    "db": -16.1,
+    "bpm": 155,
+    "beat": 0.15
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -218,7 +233,10 @@
     "conf": "confirmed",
     "file": "agents-of-the-culture-industry-reality-effect-kafkadub.mp3",
     "genre": "downtempo",
-    "len": 1270
+    "len": 1270,
+    "db": -19.6,
+    "bpm": 146,
+    "beat": 0.29
   },
   {
     "a": "Renniac",
@@ -232,7 +250,10 @@
     "stream": "https://archive.org/download/gruen012/gruen012_ennui_06-renniac_-_earth_night.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 603
+    "len": 603,
+    "db": -16.9,
+    "bpm": 165,
+    "beat": 0.25
   },
   {
     "a": "_nono_",
@@ -271,7 +292,10 @@
     "conf": "confirmed",
     "file": "glochids-pulse-sjilver.mp3",
     "genre": "downtempo",
-    "len": 133
+    "len": 133,
+    "db": -15.2,
+    "bpm": 148,
+    "beat": 0.1
   },
   {
     "a": "Holger Flinsch",
@@ -285,7 +309,10 @@
     "stream": "https://archive.org/download/raam004/raam004_01_holger_flinsch_-_organon.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "len": 2353
+    "len": 2353,
+    "db": -19.9,
+    "bpm": 196,
+    "beat": 0.19
   },
   {
     "a": "Gaston Arevalo",
@@ -300,7 +327,10 @@
     "file": "gaston-arevalo-agreste.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 315
+    "len": 315,
+    "db": -11.6,
+    "bpm": 140,
+    "beat": 0.04
   },
   {
     "a": "Maps And Diagrams",
@@ -315,7 +345,10 @@
     "file": "maps-and-diagrams-eleemosyn.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 339
+    "len": 339,
+    "db": -17.1,
+    "bpm": 157,
+    "beat": 0.23
   },
   {
     "a": "Lomov",
@@ -329,7 +362,10 @@
     "stream": "https://archive.org/download/apl028/apl028-02-lomov_-_sommersumpf.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 506
+    "len": 506,
+    "db": -16.3,
+    "bpm": 146,
+    "beat": 0.05
   },
   {
     "a": "Sable",
@@ -343,7 +379,10 @@
     "stream": "https://archive.org/download/apl010/apl010_a1-epoq_-_sable_benthal.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 1642
+    "len": 1642,
+    "db": -21.7,
+    "bpm": 196,
+    "beat": 0.23
   },
   {
     "a": "Bannister Boy",
@@ -358,7 +397,10 @@
     "file": "bannister-boy-entrance-to-golden-suburbia.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "len": 144
+    "len": 144,
+    "db": -18.8,
+    "bpm": 160,
+    "beat": 0.21
   },
   {
     "a": "Khonnor",
@@ -373,7 +415,10 @@
     "file": "khonnor-i-was-everything-you-wanted-until-i-quit.mp3",
     "conf": "confirmed",
     "genre": "lofi",
-    "len": 84
+    "len": 84,
+    "db": -22.5,
+    "bpm": 133,
+    "beat": 0.1
   },
   {
     "a": "SiJ",
@@ -387,7 +432,10 @@
     "stream": "https://archive.org/download/gv491/01.%20SiJ%20-%20There%20Is%20No%20Life%20Without%20Love.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 908
+    "len": 908,
+    "db": -15.9,
+    "bpm": 106,
+    "beat": 0.07
   },
   {
     "a": "Zen Savauge",
@@ -402,7 +450,10 @@
     "file": "zen-savauge-quiet-view.mp3",
     "conf": "confirmed",
     "genre": "minimalist",
-    "len": 198
+    "len": 198,
+    "db": -14.1,
+    "bpm": 182,
+    "beat": 0.05
   },
   {
     "a": "Downliners Sekt",
@@ -416,7 +467,10 @@
     "stream": "https://archive.org/download/Meet_the_Decline-9490/Downliners_Sekt_-_04_-_hockey_nights_in_Canada.mp3",
     "conf": "confirmed",
     "genre": "downtempo",
-    "len": 382
+    "len": 382,
+    "db": -13.8,
+    "bpm": 110,
+    "beat": 0.07
   },
   {
     "a": "adamned.age",
@@ -431,7 +485,10 @@
     "file": "adamned-age-calmer.mp3",
     "conf": "confirmed",
     "genre": "downtempo",
-    "len": 317
+    "len": 317,
+    "db": -22.3,
+    "bpm": 167,
+    "beat": 0.09
   },
   {
     "a": "Vultrapia",
@@ -446,7 +503,10 @@
     "file": "vultrapia-scali.mp3",
     "conf": "confirmed",
     "genre": "ambient",
-    "len": 346
+    "len": 346,
+    "db": -11.3,
+    "bpm": 140,
+    "beat": 0.27
   },
   {
     "a": "migloJE",
@@ -460,7 +520,10 @@
     "stream": "https://archive.org/download/MigloJE_Ayesteeyah/kahvi174g_migloje-leti_vejai.mp3",
     "conf": "confirmed",
     "genre": "misc",
-    "len": 739
+    "len": 739,
+    "db": -20.5,
+    "bpm": 167,
+    "beat": 0.2
   },
   {
     "a": "Space Dimension Controller",
@@ -474,7 +537,10 @@
     "stream": "https://archive.org/download/acp046_space_dimension_controller_-_unidentified_flying_oscillator/01_Unidentified_Flying_Oscillator.mp3",
     "conf": "confirmed",
     "genre": "synth",
-    "len": 136
+    "len": 136,
+    "db": -23.9,
+    "bpm": 115,
+    "beat": 0.29
   },
   {
     "a": "The Inventors of Aircraft",
@@ -488,7 +554,10 @@
     "stream": "https://archive.org/download/ser017/ser017_05_the_inventors_of_aircraft_-_hazel.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "len": 438
+    "len": 438,
+    "db": -17.4,
+    "bpm": 121,
+    "beat": 0.31
   },
   {
     "a": "D_rradio",
@@ -503,7 +572,10 @@
     "file": "d-rradio-leaves.mp3",
     "conf": "confirmed",
     "genre": "postrock",
-    "len": 241
+    "len": 241,
+    "db": -19,
+    "bpm": 121,
+    "beat": 0.06
   },
   {
     "a": "Puffin On My Side",
@@ -568,7 +640,10 @@
     "conf": "likely",
     "note": "Free Music Archive mirror of the netlabel release",
     "genre": "ambient",
-    "len": 361
+    "len": 361,
+    "db": -15.2,
+    "bpm": 115,
+    "beat": 0.06
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -607,7 +682,10 @@
     "conf": "confirmed",
     "note": "Beyond Infinity, part 1 (34 min). Licence confirmed on the album page, 2026-10-10.",
     "genre": "downtempo",
-    "len": 2038
+    "len": 2038,
+    "db": -10.3,
+    "bpm": 150,
+    "beat": 0.34
   },
   {
     "a": "Agents Of The Culture Industry",
@@ -620,7 +698,10 @@
     "conf": "confirmed",
     "note": "Beyond Infinity, part 3 (11 min). Licence confirmed on the album page, 2026-10-10.",
     "genre": "downtempo",
-    "len": 691
+    "len": 691,
+    "db": -13.3,
+    "bpm": 157,
+    "beat": 0.09
   },
   {
     "a": "Glochids",
@@ -633,7 +714,10 @@
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 242
+    "len": 242,
+    "db": -14.6,
+    "bpm": 127,
+    "beat": 0.17
   },
   {
     "a": "Glochids",
@@ -646,7 +730,10 @@
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
     "genre": "minimalist",
-    "len": 366
+    "len": 366,
+    "db": -15,
+    "bpm": 110,
+    "beat": 0.03
   },
   {
     "a": "Glochids",
@@ -659,7 +746,10 @@
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 312
+    "len": 312,
+    "db": -14.4,
+    "bpm": 106,
+    "beat": 0.26
   },
   {
     "a": "Glochids",
@@ -672,7 +762,10 @@
     "conf": "confirmed",
     "note": "BE I-X (9 min). Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 569
+    "len": 569,
+    "db": -17.9,
+    "bpm": 157,
+    "beat": 0.04
   },
   {
     "a": "Glochids",
@@ -685,7 +778,10 @@
     "conf": "confirmed",
     "note": "BE I-X. Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 443
+    "len": 443,
+    "db": -21.6,
+    "bpm": 148,
+    "beat": 0.25
   },
   {
     "a": "Miles Tilmann",
@@ -698,7 +794,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
     "genre": "downtempo",
-    "len": 192
+    "len": 192,
+    "db": -19.4,
+    "bpm": 167,
+    "beat": 0.15
   },
   {
     "a": "Miles Tilmann",
@@ -711,7 +810,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 195
+    "len": 195,
+    "db": -20.4,
+    "bpm": 121,
+    "beat": 0.2
   },
   {
     "a": "Miles Tilmann",
@@ -724,7 +826,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2 (10 min). Licence confirmed on the album page, 2026-10-10.",
     "genre": "minimalist",
-    "len": 621
+    "len": 621,
+    "db": -20.3,
+    "bpm": 148,
+    "beat": 0.16
   },
   {
     "a": "Miles Tilmann",
@@ -737,7 +842,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
     "genre": "downtempo",
-    "len": 294
+    "len": 294,
+    "db": -14.3,
+    "bpm": 133,
+    "beat": 0.39
   },
   {
     "a": "Miles Tilmann",
@@ -750,7 +858,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2. Licence confirmed on the album page, 2026-10-10.",
     "genre": "downtempo",
-    "len": 232
+    "len": 232,
+    "db": -14.7,
+    "bpm": 179,
+    "beat": 0.16
   },
   {
     "a": "Miles Tilmann",
@@ -763,7 +874,10 @@
     "conf": "confirmed",
     "note": "XMASEP 2 (11 min). Licence confirmed on the album page, 2026-10-10.",
     "genre": "ambient",
-    "len": 641
+    "len": 641,
+    "db": -17.6,
+    "bpm": 102,
+    "beat": 0.35
   },
   {
     "a": "A Beautiful Machine",
@@ -776,7 +890,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"EMB014 - A Beautiful Machine - Home\" on archive.org; licence as stated on the release.",
-    "len": 448
+    "len": 448,
+    "db": -13.2,
+    "bpm": 148,
+    "beat": 0.33
   },
   {
     "a": "A Beautiful Machine",
@@ -789,7 +906,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"EMB011 - A Beautiful Machine - Solar Winds, White Noise, Antigravity\" on archive.org; licence as stated on the release.",
-    "len": 406
+    "len": 406,
+    "db": -13.1,
+    "bpm": 179,
+    "beat": 0.25
   },
   {
     "a": "Wacky Southern Current",
@@ -802,7 +922,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release.",
-    "len": 370
+    "len": 370,
+    "db": -14.5,
+    "bpm": 179,
+    "beat": 0.13
   },
   {
     "a": "Wacky Southern Current",
@@ -815,7 +938,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"In a Realm of Uncertain Summer\" on archive.org; licence as stated on the release.",
-    "len": 293
+    "len": 293,
+    "db": -13.1,
+    "bpm": 196,
+    "beat": 0.31
   },
   {
     "a": "Milhaven",
@@ -828,7 +954,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"Milhaven - I.M. Wagner EP [12rec.035]\" on archive.org; licence as stated on the release.",
-    "len": 331
+    "len": 331,
+    "db": -17.2,
+    "bpm": 115,
+    "beat": 0.06
   },
   {
     "a": "Jasmin",
@@ -841,7 +970,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"jasmin - EP02 [12rec.027]\" on archive.org; licence as stated on the release.",
-    "len": 223
+    "len": 223,
+    "db": -12.7,
+    "bpm": 121,
+    "beat": 0.15
   },
   {
     "a": "moji moji",
@@ -854,7 +986,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"moji moji - N\" on archive.org; licence as stated on the release.",
-    "len": 380
+    "len": 380,
+    "db": -19.9,
+    "bpm": 148,
+    "beat": 0.17
   },
   {
     "a": "Sekotis",
@@ -867,7 +1002,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"Picture puzzle pattern door\" on archive.org; licence as stated on the release.",
-    "len": 393
+    "len": 393,
+    "db": -9.8,
+    "bpm": 140,
+    "beat": 0.23
   },
   {
     "a": "Jupiter Makes Me Scream",
@@ -880,7 +1018,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"001records.com-03-_JMMS_Converge\" on archive.org; licence as stated on the release.",
-    "len": 229
+    "len": 229,
+    "db": -15.8,
+    "bpm": 179,
+    "beat": 0.14
   },
   {
     "a": "Nic Bommarito",
@@ -893,7 +1034,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"Nic Bommarito - Harp Fragments [12rec.058]\" on archive.org; licence as stated on the release.",
-    "len": 373
+    "len": 373,
+    "db": -18.9,
+    "bpm": 157,
+    "beat": 0.11
   },
   {
     "a": "Sister Benz",
@@ -906,7 +1050,10 @@
     "conf": "confirmed",
     "genre": "postrock",
     "note": "From \"Sister Benz - [pj012] e.p.\" on archive.org; licence as stated on the release.",
-    "len": 319
+    "len": 319,
+    "db": -17,
+    "bpm": 133,
+    "beat": 0.41
   },
   {
     "a": "Herr Doktor",
@@ -919,7 +1066,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Herr Doktor - 199X [enrmp345]\" on archive.org; licence as stated on the release.",
-    "len": 218
+    "len": 218,
+    "db": -8,
+    "bpm": 150,
+    "beat": 0.51
   },
   {
     "a": "The Abdukted",
@@ -932,7 +1082,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release.",
-    "len": 257
+    "len": 257,
+    "db": -11.7,
+    "bpm": 140,
+    "beat": 0.29
   },
   {
     "a": "Starlight Boy",
@@ -945,7 +1098,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Various Artists - Meet Me at Kuiper's [enrcmp23]\" on archive.org; licence as stated on the release.",
-    "len": 273
+    "len": 273,
+    "db": -14.4,
+    "bpm": 121,
+    "beat": 0.39
   },
   {
     "a": "Frau Holle",
@@ -958,7 +1114,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Ascending Souls\" on archive.org; licence as stated on the release.",
-    "len": 331
+    "len": 331,
+    "db": -17.1,
+    "bpm": 170,
+    "beat": 0.28
   },
   {
     "a": "Spacebirds",
@@ -971,7 +1130,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"[LV001-Rd] Spacebirds - Spacebirds-1 (2010) Deluxe Edition\" on archive.org; licence as stated on the release.",
-    "len": 330
+    "len": 330,
+    "db": -17.2,
+    "bpm": 176,
+    "beat": 0.68
   },
   {
     "a": "Sergey Korzhenevskiy",
@@ -984,7 +1146,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Various Artists - united:soviet.space.rangers [USC-WR-2004.0444]\" on archive.org; licence as stated on the release.",
-    "len": 380
+    "len": 380,
+    "db": -14.2,
+    "bpm": 146,
+    "beat": 0.14
   },
   {
     "a": "Juno6",
@@ -997,7 +1162,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Juno6 - Ita est [1bit 017]\" on archive.org; licence as stated on the release.",
-    "len": 431
+    "len": 431,
+    "db": -12.9,
+    "bpm": 146,
+    "beat": 0.1
   },
   {
     "a": "Michael Ballus",
@@ -1010,7 +1178,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"[RFR020] Michael Ballus - In weiter Ferne\" on archive.org; licence as stated on the release.",
-    "len": 360
+    "len": 360,
+    "db": -18,
+    "bpm": 115,
+    "beat": 0.07
   },
   {
     "a": "Animatek",
@@ -1023,7 +1194,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Animatek - Capibara Tracks - [Miga03]\" on archive.org; licence as stated on the release.",
-    "len": 487
+    "len": 487,
+    "db": -13.4,
+    "bpm": 127,
+    "beat": 0.65
   },
   {
     "a": "Softspace",
@@ -1036,7 +1210,10 @@
     "conf": "confirmed",
     "genre": "synth",
     "note": "From \"Softspace - Experiments at the Edge of Time [mt007]\" on archive.org; licence as stated on the release.",
-    "len": 345
+    "len": 345,
+    "db": -14.8,
+    "bpm": 188,
+    "beat": 0.28
   },
   {
     "a": "ProleteR",
@@ -1049,7 +1226,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Curses From Past Times (LP)\" on archive.org; licence as stated on the release.",
-    "len": 269
+    "len": 269,
+    "db": -13.2,
+    "bpm": 179,
+    "beat": 0.24
   },
   {
     "a": "Poldoore",
@@ -1062,7 +1242,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Lush Life (EP)\" on archive.org; licence as stated on the release.",
-    "len": 170
+    "len": 170,
+    "db": -13.4,
+    "bpm": 179,
+    "beat": 0.51
   },
   {
     "a": "Anitek",
@@ -1075,7 +1258,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Luna (LP)\" on archive.org; licence as stated on the release.",
-    "len": 173
+    "len": 173,
+    "db": -14,
+    "bpm": 179,
+    "beat": 0.36
   },
   {
     "a": "Lo-Fi Scientists",
@@ -1088,7 +1274,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Lo-Fi Scientists\" on archive.org; licence as stated on the release.",
-    "len": 327
+    "len": 327,
+    "db": -12.6,
+    "bpm": 179,
+    "beat": 0.33
   },
   {
     "a": "deeB",
@@ -1101,7 +1290,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Daydream (EP)\" on archive.org; licence as stated on the release.",
-    "len": 237
+    "len": 237,
+    "db": -16.5,
+    "bpm": 140,
+    "beat": 0.28
   },
   {
     "a": "Romo",
@@ -1114,7 +1306,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Listen, Love (EP)\" on archive.org; licence as stated on the release.",
-    "len": 172
+    "len": 172,
+    "db": -10.1,
+    "bpm": 176,
+    "beat": 0.23
   },
   {
     "a": "Thegntlmn",
@@ -1127,7 +1322,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Earbuds (Volume 1) (EP)\" on archive.org; licence as stated on the release.",
-    "len": 186
+    "len": 186,
+    "db": -15.7,
+    "bpm": 160,
+    "beat": 0.43
   },
   {
     "a": "Esbe",
@@ -1140,7 +1338,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Late Night Headphones (Volume 1) LP\" on archive.org; licence as stated on the release.",
-    "len": 200
+    "len": 200,
+    "db": -9.6,
+    "bpm": 102,
+    "beat": 0.13
   },
   {
     "a": "Jenova 7 & Mr. Moods",
@@ -1153,7 +1354,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Time Travellers (LP)\" on archive.org; licence as stated on the release.",
-    "len": 249
+    "len": 249,
+    "db": -15.1,
+    "bpm": 182,
+    "beat": 0.05
   },
   {
     "a": "Boogie Belgique",
@@ -1166,7 +1370,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Nightwalker (Vol. 1) (LP)\" on archive.org; licence as stated on the release.",
-    "len": 208
+    "len": 208,
+    "db": -15,
+    "bpm": 110,
+    "beat": 0.74
   },
   {
     "a": "Kai Engel",
@@ -1179,7 +1386,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Kai Engel - Evening Colors [SCL133]\" on archive.org; licence as stated on the release.",
-    "len": 333
+    "len": 333,
+    "db": -22.7,
+    "bpm": 121,
+    "beat": 0.12
   },
   {
     "a": "Fabrizio Paterlini",
@@ -1192,7 +1402,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Fabrizio Paterlini - Viandanze (EP) (ca315)\" on archive.org; licence as stated on the release.",
-    "len": 171
+    "len": 171,
+    "db": -28.9,
+    "bpm": 106,
+    "beat": 0.13
   },
   {
     "a": "Nest",
@@ -1205,7 +1418,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Nest - Nest EP\" on archive.org; licence as stated on the release.",
-    "len": 327
+    "len": 327,
+    "db": -18.2,
+    "bpm": 148,
+    "beat": 0.52
   },
   {
     "a": "Bartois",
@@ -1218,7 +1434,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Bartois - Solo Piano (ca359)\" on archive.org; licence as stated on the release.",
-    "len": 275
+    "len": 275,
+    "db": -25.8,
+    "bpm": 167,
+    "beat": 0.32
   },
   {
     "a": "Leandro Casas",
@@ -1231,7 +1450,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Leandro Casas - Entre Líneas (ca441)\" on archive.org; licence as stated on the release.",
-    "len": 240
+    "len": 240,
+    "db": -22.1,
+    "bpm": 133,
+    "beat": 0.12
   },
   {
     "a": "adam balusik",
@@ -1244,7 +1466,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"adam balusik: three trees (LP)\" on archive.org; licence as stated on the release.",
-    "len": 241
+    "len": 241,
+    "db": -18.3,
+    "bpm": 140,
+    "beat": 0.18
   },
   {
     "a": "Nöno",
@@ -1257,7 +1482,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Nöno - Juguetes (ca479)\" on archive.org; licence as stated on the release.",
-    "len": 391
+    "len": 391,
+    "db": -21.6,
+    "bpm": 160,
+    "beat": 0.19
   },
   {
     "a": "Gillicuddy",
@@ -1270,7 +1498,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Gillicuddy - ...Plays Guitar (ca488)\" on archive.org; licence as stated on the release.",
-    "len": 154
+    "len": 154,
+    "db": -10.8,
+    "bpm": 106,
+    "beat": 0.3
   },
   {
     "a": "Nuno Adelaida",
@@ -1283,7 +1514,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"Nuno Adelaida - Amentia\" on archive.org; licence as stated on the release.",
-    "len": 184
+    "len": 184,
+    "db": -28.5,
+    "bpm": 115,
+    "beat": 0.53
   },
   {
     "a": "Dastan Jackles",
@@ -1296,7 +1530,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"[SBWS195] Dastan Jackles - Fjöll\" on archive.org; licence as stated on the release.",
-    "len": 177
+    "len": 177,
+    "db": -30,
+    "bpm": 102,
+    "beat": 0.13
   },
   {
     "a": "Miranda Shvangiradze",
@@ -1309,7 +1546,10 @@
     "conf": "confirmed",
     "genre": "classical",
     "note": "From \"VKRSNL038 Miranda Shvangiradze Talk to Me EP\" on archive.org; licence as stated on the release.",
-    "len": 209
+    "len": 209,
+    "db": -18.1,
+    "bpm": 148,
+    "beat": 0.11
   },
   {
     "a": "Radj",
@@ -1322,7 +1562,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Genseq (LP)\" on archive.org; licence as stated on the release.",
-    "len": 239
+    "len": 239,
+    "db": -15.8,
+    "bpm": 148,
+    "beat": 0.3
   },
   {
     "a": "Kova",
@@ -1335,7 +1578,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Cookin' Session (EP)\" on archive.org; licence as stated on the release.",
-    "len": 320
+    "len": 320,
+    "db": -13.4,
+    "bpm": 157,
+    "beat": 0.29
   },
   {
     "a": "Jenova 7",
@@ -1348,7 +1594,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Dusted Jazz Volume Two (LP)\" on archive.org; licence as stated on the release.",
-    "len": 186
+    "len": 186,
+    "db": -14.8,
+    "bpm": 157,
+    "beat": 0.15
   },
   {
     "a": "Gone (x3)",
@@ -1361,7 +1610,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Gone EP\" on archive.org; licence as stated on the release.",
-    "len": 238
+    "len": 238,
+    "db": -13.2,
+    "bpm": 176,
+    "beat": 0.15
   },
   {
     "a": "Transient",
@@ -1374,7 +1626,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"A Sudden Soft Implosion of Noiselessness EP\" on archive.org; licence as stated on the release.",
-    "len": 386
+    "len": 386,
+    "db": -15.5,
+    "bpm": 176,
+    "beat": 0.25
   },
   {
     "a": "Third Person Lurkin",
@@ -1387,7 +1642,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"The Nameless City LP\" on archive.org; licence as stated on the release.",
-    "len": 237
+    "len": 237,
+    "db": -15.1,
+    "bpm": 167,
+    "beat": 0.3
   },
   {
     "a": "Mounika",
@@ -1400,7 +1658,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Born To Be Beats (EP)\" on archive.org; licence as stated on the release.",
-    "len": 165
+    "len": 165,
+    "db": -13.2,
+    "bpm": 140,
+    "beat": 0.21
   },
   {
     "a": "Nora Naughty",
@@ -1413,7 +1674,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Parts Of My Life (EP)\" on archive.org; licence as stated on the release.",
-    "len": 237
+    "len": 237,
+    "db": -19.2,
+    "bpm": 167,
+    "beat": 0.25
   },
   {
     "a": "Frenic",
@@ -1426,7 +1690,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Lessons From The Past (EP)\" on archive.org; licence as stated on the release.",
-    "len": 213
+    "len": 213,
+    "db": -13.2,
+    "bpm": 188,
+    "beat": 0.43
   },
   {
     "a": "Aydio",
@@ -1439,7 +1706,10 @@
     "conf": "confirmed",
     "genre": "lofi",
     "note": "From \"Deltitnu EP\" on archive.org; licence as stated on the release.",
-    "len": 282
+    "len": 282,
+    "db": -11.5,
+    "bpm": 155,
+    "beat": 0.11
   },
   {
     "a": "Evgeny Grinko",
@@ -1452,7 +1722,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"Evgeny Grinko - Cold Spaces (ca339)\" on archive.org; licence as stated on the release.",
-    "len": 194
+    "len": 194,
+    "db": -11.9,
+    "bpm": 196,
+    "beat": 0.22
   },
   {
     "a": "José Travieso",
@@ -1465,7 +1738,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"José Travieso - Musica para una Guitarra sin Voz (ca397)\" on archive.org; licence as stated on the release.",
-    "len": 283
+    "len": 283,
+    "db": -23.7,
+    "bpm": 157,
+    "beat": 0.14
   },
   {
     "a": "Joshua Rex",
@@ -1478,7 +1754,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"Joshua Rex - Inside the Shipwreck (ca255)\" on archive.org; licence as stated on the release.",
-    "len": 195
+    "len": 195,
+    "db": -13.5,
+    "bpm": 196,
+    "beat": 0.11
   },
   {
     "a": "Shokushu",
@@ -1491,7 +1770,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"[Siro301] Shokushu - Reverberations of the World\" on archive.org; licence as stated on the release.",
-    "len": 146
+    "len": 146,
+    "db": -21.3,
+    "bpm": 140,
+    "beat": 0.42
   },
   {
     "a": "Danny Kreutzfeldt",
@@ -1504,7 +1786,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"V/A - Janus [gruen007]\" on archive.org; licence as stated on the release.",
-    "len": 351
+    "len": 351,
+    "db": -15.2,
+    "bpm": 140,
+    "beat": 0.3
   },
   {
     "a": "n.kra",
@@ -1517,7 +1802,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"n.kra - Canteen Dummy Architect Dream [slapmp3_025]\" on archive.org; licence as stated on the release.",
-    "len": 283
+    "len": 283,
+    "db": -11.1,
+    "bpm": 127,
+    "beat": 0.22
   },
   {
     "a": "Svart1",
@@ -1530,7 +1818,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"Svart1 - Boxhagener strasse, 8_07 (ca055)\" on archive.org; licence as stated on the release.",
-    "len": 181
+    "len": 181,
+    "db": -33.2,
+    "bpm": 115,
+    "beat": 0.05
   },
   {
     "a": "melonhead",
@@ -1543,7 +1834,10 @@
     "conf": "confirmed",
     "genre": "minimalist",
     "note": "From \"melonhead : foundations (ar022)\" on archive.org; licence as stated on the release.",
-    "len": 281
+    "len": 281,
+    "db": -14.6,
+    "bpm": 176,
+    "beat": 0.18
   },
   {
     "a": "Plusplus",
@@ -1556,7 +1850,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"[LBN016] Plusplus - \"Game Over\"\" on archive.org; licence as stated on the release.",
-    "len": 340
+    "len": 340,
+    "db": -15.4,
+    "bpm": 188,
+    "beat": 0.19
   },
   {
     "a": "pEACEFANg",
@@ -1569,7 +1866,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"pEACEFANg EP\" on archive.org; licence as stated on the release.",
-    "len": 418
+    "len": 418,
+    "db": -18.2,
+    "bpm": 182,
+    "beat": 0.16
   },
   {
     "a": "Crepusculum",
@@ -1582,7 +1882,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"Crepusculum - Sky Diaries EP [12rec.036]\" on archive.org; licence as stated on the release.",
-    "len": 162
+    "len": 162,
+    "db": -19.2,
+    "bpm": 102,
+    "beat": 0.15
   },
   {
     "a": "Adriano Orrù",
@@ -1595,7 +1898,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"[LBN011] Adriano Orru - \"Hesperos\"\" on archive.org; licence as stated on the release.",
-    "len": 268
+    "len": 268,
+    "db": -16.8,
+    "bpm": 170,
+    "beat": 0.16
   },
   {
     "a": "Skytree",
@@ -1608,7 +1914,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"Skytree - Knotwork [EAR009]\" on archive.org; licence as stated on the release.",
-    "len": 350
+    "len": 350,
+    "db": -12.9,
+    "bpm": 157,
+    "beat": 0.35
   },
   {
     "a": "Art Sonic",
@@ -1621,7 +1930,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"Roadside Sketches\" on archive.org; licence as stated on the release.",
-    "len": 199
+    "len": 199,
+    "db": -23.8,
+    "bpm": 146,
+    "beat": 0.13
   },
   {
     "a": "Ross Baker",
@@ -1634,7 +1946,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"Photographic Reflection\" on archive.org; licence as stated on the release.",
-    "len": 256
+    "len": 256,
+    "db": -24.2,
+    "bpm": 165,
+    "beat": 0.13
   },
   {
     "a": "Madoka Ogitani",
@@ -1647,7 +1962,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"[LBN028] Madoka Ogitani - \"Take a Walk\"\" on archive.org; licence as stated on the release.",
-    "len": 241
+    "len": 241,
+    "db": -11.3,
+    "bpm": 150,
+    "beat": 0.42
   },
   {
     "a": "Rho",
@@ -1660,7 +1978,10 @@
     "conf": "confirmed",
     "genre": "misc",
     "note": "From \"Brace For Gravity\" on archive.org; licence as stated on the release.",
-    "len": 319
+    "len": 319,
+    "db": -13.2,
+    "bpm": 160,
+    "beat": 0.14
   },
   {
     "a": "Jemset",
@@ -1673,7 +1994,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[RAR027] Jemset - Dirty EP\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 281
+    "len": 281,
+    "db": -7.1,
+    "bpm": 140,
+    "beat": 0.94
   },
   {
     "a": "UnoRace",
@@ -1686,7 +2010,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[ZIMMER104] UnoRace - Fire Bomb\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 296
+    "len": 296,
+    "db": -7.2,
+    "bpm": 140,
+    "beat": 0.86
   },
   {
     "a": "UnoRace",
@@ -1699,7 +2026,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[ZIMMER104] UnoRace - Fire Bomb\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 271
+    "len": 271,
+    "db": -9.7,
+    "bpm": 140,
+    "beat": 0.91
   },
   {
     "a": "R.V. Aggelen",
@@ -1712,7 +2042,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"R.V. Aggelen - Bloody Bassdrum EP [hi014]\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 417
+    "len": 417,
+    "db": -6.9,
+    "bpm": 140,
+    "beat": 0.79
   },
   {
     "a": "R.V. Aggelen",
@@ -1725,7 +2058,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"R.V. Aggelen - Bloody Bassdrum EP [hi014]\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 436
+    "len": 436,
+    "db": -7.1,
+    "bpm": 140,
+    "beat": 0.51
   },
   {
     "a": "Strial",
@@ -1738,7 +2074,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Workaholic\" on archive.org (about 133 BPM); licence as stated on the release.",
-    "len": 428
+    "len": 428,
+    "db": -7.9,
+    "bpm": 133,
+    "beat": 0.76
   },
   {
     "a": "Insomniscene",
@@ -1751,7 +2090,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[DADA068] Insomniscene - A Kollekshun Ov Chuuns\" on archive.org (about 155 BPM); licence as stated on the release.",
-    "len": 307
+    "len": 307,
+    "db": -5.9,
+    "bpm": 155,
+    "beat": 0.59
   },
   {
     "a": "Tsabeat & Optical Human",
@@ -1764,7 +2106,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Tsabeat - Attractive Synthesis\" on archive.org (about 146 BPM); licence as stated on the release.",
-    "len": 391
+    "len": 391,
+    "db": -8.5,
+    "bpm": 146,
+    "beat": 0.75
   },
   {
     "a": "Faxi Nadu",
@@ -1777,7 +2122,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Faxi Nadu - Modern Knight\" on archive.org (about 146 BPM); licence as stated on the release.",
-    "len": 347
+    "len": 347,
+    "db": -10.2,
+    "bpm": 146,
+    "beat": 0.88
   },
   {
     "a": "Faxi Nadu",
@@ -1790,7 +2138,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Faxi Nadu - Modern Knight\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 378
+    "len": 378,
+    "db": -10.2,
+    "bpm": 140,
+    "beat": 0.88
   },
   {
     "a": "Makkadessia",
@@ -1803,7 +2154,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"wave002 ~ Makkadessia ~ Moonou\" on archive.org (about 127 BPM); licence as stated on the release.",
-    "len": 345
+    "len": 345,
+    "db": -8,
+    "bpm": 127,
+    "beat": 0.69
   },
   {
     "a": "Fabrik nos",
@@ -1816,7 +2170,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"AVX MP3 004 Fabrik nos - Sharp Objects EP\" on archive.org (about 133 BPM); licence as stated on the release.",
-    "len": 389
+    "len": 389,
+    "db": -10.3,
+    "bpm": 133,
+    "beat": 0.88
   },
   {
     "a": "Ninja16",
@@ -1829,7 +2186,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[Siro649] Ninja16 - The Shinobi Is Back!!!\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 306
+    "len": 306,
+    "db": -7.3,
+    "bpm": 140,
+    "beat": 0.6
   },
   {
     "a": "Electrypnose",
@@ -1842,7 +2202,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Postunder Records VA - These Boots Are Made For Stomping\" on archive.org (about 146 BPM); licence as stated on the release.",
-    "len": 427
+    "len": 427,
+    "db": -10.3,
+    "bpm": 146,
+    "beat": 0.84
   },
   {
     "a": "AKU",
@@ -1855,7 +2218,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[AUDCST037] AKU - Stories\" on archive.org (about 127 BPM); licence as stated on the release.",
-    "len": 337
+    "len": 337,
+    "db": -8.9,
+    "bpm": 127,
+    "beat": 0.72
   },
   {
     "a": "Dharmatec",
@@ -1868,7 +2234,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Dharmatec - Justify My Sin - EP (ca314)\" on archive.org (about 140 BPM); licence as stated on the release.",
-    "len": 247
+    "len": 247,
+    "db": -9.9,
+    "bpm": 140,
+    "beat": 0.8
   },
   {
     "a": "Larix",
@@ -1881,7 +2250,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"RAR015_Larix_Now_Or_Never_EP\" on archive.org (about 142 BPM); licence as stated on the release.",
-    "len": 377
+    "len": 377,
+    "db": -9.5,
+    "bpm": 142,
+    "beat": 0.76
   },
   {
     "a": "Larix",
@@ -1894,7 +2266,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"RAR015_Larix_Now_Or_Never_EP\" on archive.org (about 142 BPM); licence as stated on the release.",
-    "len": 395
+    "len": 395,
+    "db": -9.6,
+    "bpm": 142,
+    "beat": 0.74
   },
   {
     "a": "BERKANA",
@@ -1907,7 +2282,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[Nu-Logic028] Berkana - Sinner Ep.\" on archive.org (about 121 BPM); licence as stated on the release.",
-    "len": 324
+    "len": 324,
+    "db": -8.7,
+    "bpm": 121,
+    "beat": 0.76
   },
   {
     "a": "Wes Rock",
@@ -1920,7 +2298,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[rest032] Wes Rock - ISAR\" on archive.org (about 127 BPM); licence as stated on the release.",
-    "len": 372
+    "len": 372,
+    "db": -10.2,
+    "bpm": 127,
+    "beat": 0.72
   },
   {
     "a": "Echidna",
@@ -1933,7 +2314,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"Echidna - Curl Up [RACC005MP3]\" on archive.org (about 148 BPM); licence as stated on the release.",
-    "len": 242
+    "len": 242,
+    "db": -9.8,
+    "bpm": 148,
+    "beat": 0.65
   },
   {
     "a": "Antelikteram",
@@ -1946,7 +2330,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"SHRM002LP -- Antelikteram -- Mothership Of The Rebels\" on archive.org (about 170 BPM); licence as stated on the release.",
-    "len": 333
+    "len": 333,
+    "db": -7.9,
+    "bpm": 170,
+    "beat": 0.41
   },
   {
     "a": "Dextems & B Soul",
@@ -1959,7 +2346,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"From Samara With Love EP\" on archive.org (about 176 BPM); licence as stated on the release.",
-    "len": 375
+    "len": 375,
+    "db": -6.7,
+    "bpm": 176,
+    "beat": 0.47
   },
   {
     "a": "Dextems & Dub Elements",
@@ -1972,7 +2362,10 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"From Samara With Love EP\" on archive.org (about 176 BPM); licence as stated on the release.",
-    "len": 375
+    "len": 375,
+    "db": -7.6,
+    "bpm": 176,
+    "beat": 0.5
   },
   {
     "a": "Pogohm",
@@ -1985,6 +2378,9 @@
     "conf": "confirmed",
     "genre": "energy",
     "note": "From \"[Siro781] Pogohm - Spank\" on archive.org (about 157 BPM); licence as stated on the release.",
-    "len": 169
+    "len": 169,
+    "db": -8.3,
+    "bpm": 157,
+    "beat": 0.57
   }
 ]
