@@ -1,5 +1,6 @@
 // Music: CC tracks from the Music For Programming mixes (bundled or streamed from archive.org)
 // plus a live source that picks random CC-licensed netlabel releases from the Internet Archive.
+import { BeatClock } from './beat.js';
 import TRACKS from './data/tracks.json';
 import { M } from './assets.js';
 import { state, saveState } from './state.js';
@@ -41,8 +42,47 @@ function wireAnalyser() {
     eq.low.type = 'lowshelf'; eq.low.frequency.value = 120; eq.mid.type = 'peaking'; eq.mid.frequency.value = 400; eq.mid.Q.value = .9; eq.high.type = 'highshelf'; eq.high.frequency.value = 6000;
     analyser.connect(eq.low); eq.low.connect(eq.mid); eq.mid.connect(eq.high); eq.high.connect(actx.destination);
     applyEq();
+    listenForBeats();
   } catch (e) { analyser = null; }
 }
+// The beat clock listens on the audio thread, not once a frame: an AudioWorklet measures the low end (below about
+// 160 Hz, the kick) every 512 samples and posts how sharply it rose, timed by the audio clock. That keeps the clock on
+// the beat at any frame rate, even while a heavy scene draws every other frame. Without AudioWorklet it falls back to
+// sampling the analyser each frame.
+const ONSET_WORKLET = `class Onset extends AudioWorkletProcessor {
+  constructor() { super(); this.n = 0; this.e = 0; this.prev = 0; this.peak = 1e-3; this.buf = []; }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch) for (let i = 0; i < ch.length; i++) {
+      this.e += ch[i] * ch[i];
+      if (++this.n === 512) {
+        const rms = Math.sqrt(this.e / 512); this.peak = Math.max(rms, this.peak * .9995);
+        this.buf.push(Math.max(0, rms - this.prev) / this.peak); this.prev = rms; this.n = 0; this.e = 0;
+        if (this.buf.length === 4) { this.port.postMessage({ t: currentTime + (i + 1) / sampleRate, hop: 512 / sampleRate, f: this.buf }); this.buf = []; }
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('sw-onset', Onset);`;
+let heardAt = -1e9, audioT = 0;
+async function listenForBeats() {
+  if (!actx.audioWorklet) return;
+  try {
+    const url = URL.createObjectURL(new Blob([ONSET_WORKLET], { type: 'application/javascript' }));
+    await actx.audioWorklet.addModule(url); URL.revokeObjectURL(url);
+    const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 160; lp.Q.value = .7;
+    const node = new AudioWorkletNode(actx, 'sw-onset', { numberOfOutputs: 1 }), mute = actx.createGain(); mute.gain.value = 0;
+    analyser.connect(lp); lp.connect(node); node.connect(mute); mute.connect(actx.destination);   // silent, but on the graph so it runs
+    node.port.onmessage = ({ data }) => {
+      const on = musicPlaying, bpm = currentBpm();
+      if (curTrack !== beatTrack) { beatTrack = curTrack; beatClock.newTrack(); }
+      for (const f of data.f) beatClock.update(on ? f : 0, data.hop, bpm, on);
+      heardAt = performance.now(); audioT = data.t;
+    };
+  } catch (e) { /* no worklet: the per-frame fallback in sampleMusic carries on */ }
+}
+const worklet = () => performance.now() - heardAt < 400;
 
 // musicLevel (0–1) follows the loudness of what is playing; scenes use it for rain intensity and mist.
 // bands splits it into bass, mid and treble for the scenes that move with the music.
@@ -73,18 +113,37 @@ function agc(k, v, dt) {
 function average(a, from, to) { let s = 0; for (let i = from; i < to; i++) s += a[i]; return s / (to - from) / 255; }
 // Whether music is playing right now, read from the players themselves (musicPlaying is only refreshed while drawing).
 export const playingNow = () => players.some(p => !p.paused && !p.ended);
+// The beat clock (src/beat.js), fed each frame with how sharply the low end rose: scenes that move in step read it.
+const beatClock = new BeatClock();
+let lowPrev = null, beatTrack = null;
+function lowFlux() {
+  if (!lowPrev) lowPrev = new Float32Array(4);
+  let f = 0;
+  for (let i = 1; i < 4; i++) { const v = fdata[i] / 255; f += Math.max(0, v - lowPrev[i]) * (i === 1 ? 1.4 : 1); lowPrev[i] = v; }   // about 40 to 300 Hz, the kick's thump weighted most
+  return f / 3;
+}
+// Where the music is in its beats, as heard: the analyser hears a little before the speaker plays, so subtract that.
+// beats counts up continuously; one is the beat of the bar the strongest kicks fall on; lock is 0 to 1.
+export function beatPos() {
+  const lat = actx ? (actx.outputLatency || 0) + (actx.baseLatency || 0) : 0, since = worklet() ? Math.max(0, Math.min(.2, actx.currentTime - audioT)) : 0;
+  return { beats: beatClock.shown + (since - lat) * beatClock.bpm / 60, one: beatClock.one, bpm: beatClock.bpm, lock: beatClock.lock, lat };
+}
 export function sampleMusic(dt) {
   musicPlaying = players.some(p => !p.paused && !p.ended && p.readyState > 2);
-  let target = 0;
+  const fallback = !worklet();
+  if (fallback && curTrack !== beatTrack) { beatTrack = curTrack; beatClock.newTrack(); }
+  let target = 0, flux = 0, heard = false;
   if (musicPlaying) {
     const onGraph = players.slice(0, 2).some(p => !p.paused && p.readyState > 2);
     if (analyser && onGraph) {
       analyser.getByteFrequencyData(fdata);
+      flux = lowFlux(); heard = true;
       let lo = 0, all = 0; const nLo = 12;
       for (let i = 0; i < fdata.length; i++) { all += fdata[i]; if (i < nLo) lo += fdata[i]; }
       target = Math.min(1, Math.max(0, ((lo / nLo / 255) * .6 + (all / fdata.length / 255) * 1.2 - .06) * 1.6));
     } else target = .45; // a plain player gives no data, so sit in the middle
   }
+  if (fallback) beatClock.update(flux, dt, currentBpm(), heard);
   musicLevel += (target - musicLevel) * Math.min(1, dt * (target > musicLevel ? 6 : 1.2));
   const d = spectrum(), now = performance.now() / 1000;
   const want = d !== SILENCE

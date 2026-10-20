@@ -9,7 +9,7 @@ import { SCENES, makeScene, prefetchScenes } from './scenes/index.js';
 import { governor } from './scenes/trip.js';
 import { STAGES, BGS } from './scenes/glass-shared.js';
 import { prevTrack, volume, setVolume, currentArt, toggleLove, currentLoved, eqName, setEq, trackInfo, playNext, xfade, setCrossfade, volCap, setVolCap, pace, setPace } from './music.js';
-import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow, trackPos, trackClock, seekFraction } from './music.js';
+import { TRACKS, sampleMusic, tickFades, setScene, onSceneChange, togglePlay, nextTrack, openLib, libOpen, announce, setArtworkSource, bands, musicLevel, musicPlaying, currentTrack, queueResume, trackSlug, playingNow, trackPos, trackClock, seekFraction, beatPos } from './music.js';
 import { level as ambienceLevel, setAmbienceKind, setAmbienceLevel, startAmbience, ambienceState } from './ambience.js';
 import { localOn } from './local.js';
 import { report, gpuName, diagOn, setDiag, diagText } from './diag.js';
@@ -389,6 +389,7 @@ function diagLines() {
     `${lastFps.toFixed(0)} fps · ${W}×${H} css px · ${gpuName()}${inst.kind === 'webgl' && (governor.scale < 1 || governor.skip) ? ` · governor ${Math.round(governor.scale * 100)}%${governor.skip ? ', half rate' : ''}` : ''}`,
     `weather ${weather.toFixed(2)} · daylight ${daylight().toFixed(2)}${localOn ? ' (local)' : ''}`,
     `music ${musicPlaying ? 'playing' : 'off'} · level ${musicLevel.toFixed(2)} · bass ${bands.bass.toFixed(2)} mid ${bands.mid.toFixed(2)} treble ${bands.treble.toFixed(2)}`,
+    (b => `beat ${b.bpm.toFixed(1)} BPM${currentTrack()?.bpm ? '' : ' (heard)'} · lock ${Math.round(b.lock * 100)}% · the one on beat ${b.one + 1} · at ${(b.beats - b.one).toFixed(2)}${trackPos() ? ` · track ${trackPos().at.toFixed(2)} s` : ''}${b.lat ? ` · latency ${Math.round(b.lat * 1000)} ms` : ''}`)(beatPos()),
     `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
   ];
 }
@@ -616,11 +617,14 @@ window.addEventListener('sw-timer', e => {
 let hapticBeat = !!state.hapticBeat, beatCool = 0, lastBass = 0;
 const hapticBtn = el('hapticBtn'); hapticBtn.setAttribute('aria-pressed', String(hapticBeat));
 hapticBtn.addEventListener('click', () => { hapticBeat = !hapticBeat; hapticBtn.setAttribute('aria-pressed', String(hapticBeat)); saveState({ hapticBeat }); });
-const BEAT_GROUPS = new Set(['Classic visualisers', '80s', 'Trip']);
+const BEAT_GROUPS = new Set(['Classic visualisers', '80s', 'Trip', 'Workout']);
+let lastBeat = 0;
 function tickHaptic(dt) {
   beatCool -= dt;
-  if (hapticBeat && musicPlaying && beatCool <= 0 && BEAT_GROUPS.has(SCENES[cur].group) && bands.bass > .75 && lastBass <= .75) { beatCool = .3; try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }
-  lastBass = bands.bass;
+  // On the beat clock once it has locked onto the kicks; until then, on strong rises in the bass.
+  const b = beatPos(), beat = Math.floor(b.beats), onBeat = b.lock > .4 ? beat !== lastBeat : bands.bass > .75 && lastBass <= .75;
+  if (hapticBeat && musicPlaying && beatCool <= 0 && BEAT_GROUPS.has(SCENES[cur].group) && onBeat) { beatCool = .2; try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }
+  lastBass = bands.bass; lastBeat = beat;
 }
 
 // What a focus block is for: asked as it starts, in a small card that goes away by itself.

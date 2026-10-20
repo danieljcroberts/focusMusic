@@ -5,7 +5,7 @@
 //   Rowing at Dawn: facing the stern of a rowing shell on a still lake, the oars driving, puddles left behind.
 //   Floodlit Track: running a lane of an athletics track at night under the floodlights.
 import { shaderScene } from './trip.js';
-import { bands, musicLevel, currentBpm } from '../music.js';
+import { bands, musicLevel, beatPos } from '../music.js';
 import { lively } from '../view.js';
 
 const H = `
@@ -15,19 +15,21 @@ float px(){ return 1.5 / uRes.y; }
 // The route: gentle bends either way, x as a function of distance along it.
 float route(float z){ return 3. * sin(z * .045) + 1.2 * sin(z * .11 + 1.); }
 `;
-// In step with the music: uB counts the playing track's beats (from its measured tempo; 150 a minute when unknown), so a
-// stride, a pedal stroke or an oar stroke can land on them, and the pace follows the tempo too.
+// In step with the music: uB counts strides or strokes on the beat clock (src/beat.js), which follows the playing
+// track's tempo and locks onto its kicks, counted from the bar's first beat so a stroke every four beats starts on the
+// one. The count eases onto the clock rather than jumping, so a change of track or of beats per stroke stays smooth.
 // pace: metres per second at 140 BPM; push: how much the music's energy adds; per: beats per stroke, or a function of BPM.
 function moving(pace, push, extra = {}, per = 1) {
-  let dist = 0, beats = 0, bpm = 150;
+  let dist = 0, strokes = 0, bpm = 140;
   return {
     res: .8, ...extra,
     before(t, dt, gl, u) {
-      const want = currentBpm() || 150; bpm += (want - bpm) * Math.min(1, dt * .8);   // ease between tracks' tempos
+      const b = beatPos(); bpm += (b.bpm - bpm) * Math.min(1, dt * .8);
       const k = typeof per === 'function' ? per(bpm) : per;
-      beats += dt * bpm / 60 / k * (lively ? 1.25 : 1);
+      strokes += dt * b.bpm / 60 / k;
+      const d = (b.beats - b.one) / k - strokes; strokes += (d - Math.round(d)) * Math.min(1, dt * 4);
       dist += dt * pace * (bpm / 140) * (1 + push * (bands.bass * .7 + musicLevel * .6) * .5) * (lively ? 1.4 : 1);
-      gl.uniform1f(u.uC, dist); gl.uniform1f(u.uB, beats);
+      gl.uniform1f(u.uC, dist); gl.uniform1f(u.uB, strokes);
       if (extra.before) extra.before(t, dt, gl, u);
     },
   };
@@ -396,11 +398,13 @@ void main(){
   col = mix(col, bagC, body);
   col = mix(col, vec3(.1), step(abs(bq.x), w * 1.05) * step(top, bq.y) * step(bq.y, top + .025));
   // The glove: coming in from the side of the punch, at the bag on the beat, then back.
-  float reach = 1. - smoothstep(0., .35, ph);
-  vec2 gp = vec2(side * (.4 - .26 * reach), .04 + .02 * sin(ph * 3.)); float gr = .1 + .02 * reach;
+  // The glove that just landed pulls back; in the last quarter of the beat the other one comes in, landing on the beat.
+  bool next = ph > .62; float gs = next ? -side : side;
+  float reach = next ? smoothstep(.62, 1., ph) * smoothstep(.62, 1., ph) : 1. - smoothstep(0., .3, ph);
+  vec2 gp = vec2(gs * (.4 - .26 * reach), .04 + .02 * sin(ph * 3.)); float gr = .1 + .02 * reach;
   vec2 gq = (uv - gp) / gr;
   float glove = smoothstep(1., .95, length(gq * vec2(.85, 1.)));
-  float cuff = step(abs(gq.y + .2), .5) * step(.6, side * gq.x) * step(side * gq.x, 1.6);
+  float cuff = step(abs(gq.y + .2), .5) * step(.6, gs * gq.x) * step(gs * gq.x, 1.6);
   vec3 gc = mix(vec3(.08, .1, .3), vec3(.2, .3, .7), smoothstep(-1., 1., gq.y)) + vec3(.4) * pow(max(0., 1. - length(gq - vec2(-.3, .4))), 4.);
   col = mix(col, vec3(.9, .9, .85), cuff * .9);
   col = mix(col, gc, glove);
