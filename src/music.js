@@ -503,7 +503,7 @@ function pickNext(relaxed = false) {
   const pools = [];
   let free = [...TRACKS, ...(st.like === 'loved' ? found() : [])].filter(t => allowed(t) && ok(key(t)));
   if (st.id === 'energy' && pace !== 'any') {   // the Workout pace: tracks in its tempo range, when there are any
-    const [lo, hi] = PACES[pace], fit = free.filter(t => t.bpm >= lo && t.bpm < hi);
+    const [lo, hi] = PACES[pace], fit = free.filter(t => Math.round(t.bpm) >= lo && Math.round(t.bpm) < hi);   // 139.8 is a 140 track
     if (fit.length) free = fit;
   }
   const own = ownTracks().filter(e => mine.has(e.id) && ok('own:' + e.id));
