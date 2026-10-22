@@ -149,6 +149,12 @@ export const SCENES = [
     desc: 'The arcade is empty, but each cabinet still plays its attract mode: a maze, invaders, a racer, falling blocks. Coloured screen light spills onto the patterned carpet under a pink neon sign.' },
   { group: 'Pixel art', key: 'crtrain', name: 'CRT Rain', sw: '#2a1e44', sound: 'rain', mood: 'night', tone: 'dark', art: ORIGINAL, music: 'Sable|Benthal',
     desc: 'A rainy city window at night, played back on an old television: soft scan lines, a little colour bleed and a VHS timestamp in the corner.' },
+  { group: 'Layers', key: 'ranges', name: 'Mountain Layers', sw: '#8a9ab8', sound: 'wind', mood: 'any', tone: 'calm', art: ORIGINAL, music: 'Miles Tilmann|Navigator 6',
+    desc: 'Range behind range of mountains fading into the haze, mist pooling in the valleys, the sun or the moon over the far peaks and birds crossing by day. Tilt the phone, or move the mouse, to look around: the near ridges move more than the far ones.' },
+  { group: 'Layers', key: 'skyline', name: 'City Layers', sw: '#3a2e5a', sound: 'road', mood: 'night', tone: 'dark', art: ORIGINAL, music: 'Starlight Boy|Night Light',
+    desc: 'Rows of buildings at dusk and after dark, windows coming on as the light goes, a train crossing a viaduct between them and red lights blinking on the tall roofs. Rain when the weather turns. Tilt the phone to look between the rows.' },
+  { group: 'Layers', key: 'fogForest', name: 'Forest Layers', sw: '#5a7060', sound: 'forest', mood: 'day', tone: 'calm', art: ORIGINAL, music: 'Preslav Literary School|Velvet Shield',
+    desc: 'Ranks of pines fading back into fog, light slanting through on bright days, fireflies on summer nights, leaves falling in autumn and snow in winter. Tilt the phone to look between the trees.' },
 
   { group: 'three.js', key: 'ocean', name: 'Open Water', sw: '#2f7fa6', sound: 'sea', mood: 'any', tone: 'calm', music: 'Holger Flinsch|Organon',
     art: { who: 'three.js Water and Sky examples', lic: 'MIT', url: 'https://threejs.org/examples/#webgl_shaders_ocean' },

@@ -12,6 +12,7 @@ import { finishOn, setFinish } from './finish.js';
 import { weekLine, weekBars, weekIntents } from './timer.js';
 import { closeMenus } from './menus.js';
 import { whenSheetOpens } from './sheet.js';
+import { lookAround, setLookAround } from './tilt.js';
 import { openAbout } from './about.js';
 
 const el = id => document.getElementById(id);
@@ -104,6 +105,10 @@ el('importBtn').addEventListener('click', () => {
   });
   inp.click();
 });
+const lookBtn = el('lookBtn');
+const drawLook = () => lookBtn.setAttribute('aria-pressed', String(lookAround));
+lookBtn.addEventListener('click', () => { setLookAround(!lookAround); drawLook(); setStatus(lookAround ? 'Look around: tilt the phone, or move the mouse, in the layered scenes.' : 'Look around off.'); });
+drawLook();
 const finishBtn = el('finishBtn');
 function drawFinish() { finishBtn.setAttribute('aria-pressed', String(finishOn)); }
 finishBtn.addEventListener('click', () => { setFinish(!finishOn); drawFinish(); });

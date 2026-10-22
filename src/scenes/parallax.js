@@ -2,24 +2,30 @@
 import { W, H, ctx } from '../view.js';
 import { rand } from '../util.js';
 import { img, ok } from '../assets.js';
+import { tilt } from '../tilt.js';
 
 // Tiled parallax layers. Speeds are in source-art pixels per second; pixel art steps whole art pixels.
+// Looking around (tilt.js) shifts each layer by its depth, the back layer not at all and the front one most; the art is
+// drawn a little oversize so the shift never shows an edge.
+const OVER = 1.06;
 export function parallaxScene(o) {
   return {
     init() { o.layers.forEach(l => img(l.src)); (o.preload || []).forEach(img); },
     draw(t, dt) {
       ctx.fillStyle = o.bg || '#000'; ctx.fillRect(0, 0, W, H);
-      const s = Math.max(W / o.bw, H / o.bh), lw = o.bw * s, lh = o.bh * s;
-      const y = o.anchor === 'center' ? (H - lh) / 2 : H - lh;
+      const s = Math.max(W / o.bw, H / o.bh) * OVER, lw = o.bw * s, lh = o.bh * s;
+      const y = o.anchor === 'center' ? (H - lh) / 2 : H - lh + H * .035;   // a little below the bottom edge, room to look up
+      const look = tilt(dt), n = o.layers.length;
       ctx.imageSmoothingEnabled = !!o.smooth;
-      for (const l of o.layers) {
-        const im = img(l.src); if (!ok(im)) continue;
+      o.layers.forEach((l, i) => {
+        const im = img(l.src); if (!ok(im)) return;
+        const d = l.depth ?? (n > 1 ? i / (n - 1) : 0);
         ctx.globalAlpha = l.alpha ? l.alpha(t) : 1;
-        const yy = y + (l.bob ? l.bob(t) * s : 0);
-        let off = (t * (l.v || 0) * s) % lw;
+        const yy = y + (l.bob ? l.bob(t) * s : 0) - look.y * d * H * .022;
+        let off = ((t * (l.v || 0) * s + look.x * d * W * .03) % lw + lw) % lw;
         if (!o.smooth) off = Math.round(off / s) * s;
         for (let x = -off; x < W; x += lw) ctx.drawImage(im, Math.round(x), Math.round(yy), Math.ceil(lw) + 1, Math.ceil(lh));
-      }
+      });
       ctx.globalAlpha = 1;
       if (o.extra) o.extra(t, dt, { s, y, lw, lh });
       ctx.imageSmoothingEnabled = true;

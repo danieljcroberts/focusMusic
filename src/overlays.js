@@ -26,7 +26,7 @@ export function tickGrade(now, key) {
 }
 /* Weather over the pixel-art and photo scenes, which can't paint it themselves: rain streaks or, in the winter months,
    snow, when the weather is wet enough. Drawn on its own canvas above the scene. */
-const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk', 'photos'].includes(s.key)).map(s => s.key));
+const WX = new Set(SCENES.filter(s => s.group === 'Pixel art' || ['cityNight', 'nightSky', 'forestDusk', 'photos', 'ranges'].includes(s.key)).map(s => s.key));
 const wxCv = el('wxfx'), wxG = wxCv.getContext('2d');
 let wxDrops = null;
 // key: the scene on screen; t: the scene clock, for the snow's sway.

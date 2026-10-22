@@ -30,6 +30,7 @@ const MODS = {
   shaded3: () => import('./shaded3.js'),
   shaded4: () => import('./shaded4.js'),
   shaded5: () => import('./shaded5.js'),
+  layers: () => import('./layers.js'),
 };
 const L = (mod, make) => ({ mod, make });
 
@@ -132,6 +133,9 @@ const FACTORIES = {
   seaview: () => parallaxScene({ bw: 1920, bh: 1080, smooth: true, anchor: 'center', bg: '#9ad3e6', layers: [
     { src: 'seaview-sky.png' }, { src: 'seaview-clouds.png', v: 7 }, { src: 'seaview-hills.png' },
     { src: 'seaview-sea.png', bob: t => Math.sin(t * .5) * 3 }, { src: 'seaview-foreground.png' }] }),
+  ranges: L('layers', m => m.rangesScene()),
+  skyline: L('layers', m => m.skylineScene()),
+  fogForest: L('layers', m => m.fogForestScene()),
   cityNight: () => driftScene({ src: 'city-night.jpg', bg: '#05070f', fx: .53 }),
   nightSky: () => { const fx = skyExtras(); return driftScene({ src: 'night-sky.jpg', bg: '#03040c', setup: fx.setup, extra: fx.extra }); },
   forestDusk: L('shaded3', m => m.forestDuskScene()),
