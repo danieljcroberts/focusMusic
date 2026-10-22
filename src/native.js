@@ -69,3 +69,9 @@ export async function nativeWidget(d) { if (!NATIVE) return; await ready; try { 
 // Picture-in-picture when the app is left, on or off; onNativePip(f) hears f(true) entering it and f(false) leaving.
 export async function nativePip(on) { if (!NATIVE) return; await ready; try { await plugin.setPip({ on: !!on }); } catch (e) {} }
 export async function onNativePip(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('pip', e => f(!!e.in)); } catch (e) {} }
+
+// The app's own update: downloaded by Android and handed to the installer. Events: progress (pct), install, permission,
+// denied, failed. Falls back to the phone's browser.
+export async function nativeDownloadUpdate(url, name) { await ready; await plugin.downloadUpdate({ url, name }); }
+export async function onNativeUpdate(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('update', e => f(e.state, e.pct)); } catch (e) {} }
+export async function nativeOpenExternal(url) { await ready; await plugin.openExternal({ url }); }

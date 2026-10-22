@@ -3,7 +3,7 @@
 // Bedtime, the screen is held on while a scene shows, the web's offline buttons (a service-worker matter) are hidden,
 // and newer versions of the app are offered.
 import { TRACKS, currentTrack, playingNow, togglePlay, nextTrack, prevTrack } from './music.js';
-import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch, nativeSetWallpaper, nativeWidget, nativePip, onNativePip } from './native.js';
+import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch, nativeSetWallpaper, nativeWidget, nativePip, onNativePip, nativeDownloadUpdate, onNativeUpdate, nativeOpenExternal } from './native.js';
 import { loadDownloads, downloadAll, removeDownloads, downloadedCount } from './downloads.js';
 import { shouldOffer } from './update.js';
 import { timerRunning, toggleTimer, focusToday } from './timer.js';
@@ -108,7 +108,26 @@ export function initNativeUi({ caption, frame, go, current, find, sceneName }) {
     } catch (e) { if (manual) setStatus("Couldn't check for updates. Check the connection and try again."); }
   };
   el('updBtn').addEventListener('click', () => { el('sheetClose').click(); setStatus('Checking for updates…'); checkUpdate(true); });
-  el('updateGet').addEventListener('click', () => { el('updateBar').hidden = true; setStatus('Downloading the update. Open it when it finishes to install.'); });
+  // The download is Android's (a notification shows its progress), never a page inside the app: following the link in
+  // the app's web view only showed a blank page.
+  el('updateGet').addEventListener('click', async e => {
+    e.preventDefault();
+    const url = el('updateGet').href, name = url.split('/').pop();
+    el('updateBar').hidden = true;
+    try { await nativeDownloadUpdate(url, name); setStatus('Downloading the update…'); }
+    catch (err) {
+      try { await nativeOpenExternal(url); setStatus('The update is downloading in your browser. Open it when it finishes to install.'); }
+      catch (err2) { setStatus(`Couldn't download the update. Open ${url} in your browser to get it.`); }
+    }
+  });
+  let lastPct = -1;
+  onNativeUpdate((st, pct) => {
+    if (st === 'progress' && pct !== lastPct && pct % 10 === 0) { lastPct = pct; setStatus(`Downloading the update: ${pct}%`); }
+    else if (st === 'permission') setStatus('Allow Slow Windows to install updates, then come back to finish.');
+    else if (st === 'install') setStatus('Downloaded. Tap Install to update.');
+    else if (st === 'denied') setStatus('The update is downloaded but not installed: installing from Slow Windows is turned off. Try again from App, Check for updates.');
+    else if (st === 'failed') setStatus("The update didn't download. Check the connection and try again from App, Check for updates.");
+  });
   el('updateLater').addEventListener('click', async () => {
     el('updateBar').hidden = true;
     try { const v = await (await fetch(SITE + 'app-version.json', { cache: 'no-store' })).json(); saveState({ skipVersion: v.code }); } catch (e) {}
