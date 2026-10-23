@@ -1,15 +1,15 @@
 // Two ways to choose a scene besides swiping.
 // Shelves: a panel of thumbnail rows, opened from the scenes button in the bar or the scene's name: a search box, then
 // Right now (scenes that suit the hour, the weather and the season), Favourites, Recent, and a row for every group.
-// Filmstrip: holding the scene brings up a strip of thumbnails along the bottom; the scene behind changes as the strip
-// settles on each one, without touching the music, and tapping the scene again (or Done) keeps it.
+// Filmstrip: a strip of thumbnails just above the player, part of the controls that a tap, a swipe or a hold brings up;
+// the scene behind changes as the strip settles on each one, without touching the music until one is kept.
 import { state, saveState } from './state.js';
 import { daylight } from './daylight.js';
 import { weather } from './weather.js';
 import { isWinter } from './season.js';
 
 const el = id => document.getElementById(id);
-let M = null;   // what main.js lends: SCENES, cur(), go(i, quiet), commit(), thumb(i), included(name), openGrid(), haptic()
+let M = null;   // what main.js lends: SCENES, cur(), go(i, quiet), commit(), thumb(i), included(name), openGrid(), haptic(), wake()
 
 export function initSceneMenu(deps) { M = deps; }
 
@@ -81,7 +81,6 @@ function fillShelves() {
   for (const g of groups) row(g, shown().filter(i => M.SCENES[i].group === g));
 }
 export function openShelves() {
-  closeStrip(true);
   search.value = ''; fillShelves();
   shelves.hidden = false; document.body.classList.add('choosing-scene');
   rows.scrollTop = 0;
@@ -94,60 +93,68 @@ el('shelvesClose').addEventListener('click', closeShelves);
 el('shelfGrid').addEventListener('click', () => { closeShelves(); M.openGrid(); });
 shelves.addEventListener('click', e => { if (e.target === shelves) closeShelves(); });
 
-/* Filmstrip */
-const strip = el('strip'), track = el('stripTrack'), stripName = el('stripName');
-let startScene = -1, openedAt = 0, settle = 0, tiles = [];
-export const stripOpen = () => !strip.hidden;
-export function openStrip() {
-  closeShelves();
-  track.replaceChildren(); tiles = [];
+/* Filmstrip: part of the controls, just above the player. Scrolling it shows each scene behind the controls as it
+   comes to rest, without touching the music; a scene counts as chosen once the strip has rested on it for a moment (or
+   at once, by tapping it), and only then do the music, Drift and Recent hear of it. */
+const track = el('stripTrack');
+let settle = 0, keep = 0, tiles = [], built = '', auto = false, pending = false;
+const keepIt = () => { clearTimeout(keep); keep = 0; if (pending) { pending = false; M.commit(); } };
+function buildStrip() {
+  const key = shown().join();
+  if (key === built) return;
+  built = key; track.replaceChildren(); tiles = [];
   let g = '';
   for (const i of shown()) {
     const s = M.SCENES[i];
     if (s.group !== g) { g = s.group; const d = document.createElement('span'); d.className = 'sgrp'; d.textContent = g; track.append(d); }
-    const b = tile(i, onStripTap); track.append(b); tiles.push(b);
+    const b = tile(i, onStripTap); b.setAttribute('aria-label', `${s.name}, ${s.group}`); track.append(b); tiles.push(b);
   }
-  startScene = M.cur(); openedAt = performance.now();
-  strip.hidden = false; document.body.classList.add('choosing-scene', 'stripping');
-  const on = tiles.find(b => Number(b.dataset.i) === M.cur());
-  if (on) track.scrollLeft = on.offsetLeft - track.clientWidth / 2 + on.offsetWidth / 2;
-  label(M.cur());
 }
-function label(i) { const s = M.SCENES[i]; stripName.replaceChildren(Object.assign(document.createElement('b'), { textContent: s.name }), Object.assign(document.createElement('span'), { textContent: s.group })); }
+const tileOf = i => tiles.find(b => Number(b.dataset.i) === i);
+const centre = (b, smooth) => { auto = !smooth; track.scrollTo({ left: b.offsetLeft - track.clientWidth / 2 + b.offsetWidth / 2, behavior: smooth ? 'smooth' : 'instant' }); };
+const mark = i => tiles.forEach(t => t.setAttribute('aria-pressed', String(Number(t.dataset.i) === i)));
+// When the controls come up (or the scene changes under them): the strip on the scene showing.
+export function syncStrip() {
+  if (!M) return;
+  buildStrip();
+  if (performance.now() - touched < 800) return;   // not while a finger is on it
+  const b = tileOf(M.cur()); mark(M.cur());
+  if (b) centre(b, false);
+}
 function centred() {
   const mid = track.scrollLeft + track.clientWidth / 2;
   let best = null, d = Infinity;
   for (const b of tiles) { const c = b.offsetLeft + b.offsetWidth / 2, dd = Math.abs(c - mid); if (dd < d) { d = dd; best = b; } }
   return best;
 }
-// When the strip comes to rest, the scene behind becomes the one in the middle.
+let touched = 0;
+for (const ev of ['pointerdown', 'touchstart', 'wheel']) track.addEventListener(ev, () => { touched = performance.now(); auto = false; M.wake(); }, { passive: true });
 track.addEventListener('scroll', () => {
+  if (auto) return;   // our own centring, not the person's
+  M.wake();
   clearTimeout(settle);
   settle = setTimeout(() => {
     const b = centred(); if (!b) return;
     const i = Number(b.dataset.i);
-    tiles.forEach(t => t.setAttribute('aria-pressed', String(t === b)));
-    label(i);
-    if (i !== M.cur()) { M.go(i, true); M.haptic(); }
+    mark(i);
+    if (i !== M.cur()) { M.go(i, true); pending = true; M.haptic(); }
+    clearTimeout(keep); keep = setTimeout(keepIt, 1600);
   }, 160);
 }, { passive: true });
+track.addEventListener('scrollend', () => { auto = false; });
 // A mouse wheel scrolls the strip sideways.
 track.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { track.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
 function onStripTap(i, b) {
-  if (performance.now() - openedAt < 500) return;   // the lift of the hold that opened the strip
-  if (b === centred() && i === M.cur()) { closeStrip(); return; }
-  track.scrollTo({ left: b.offsetLeft - track.clientWidth / 2 + b.offsetWidth / 2, behavior: 'smooth' });
-}
-// Closing keeps the scene on screen; the music, Drift and Recent hear about it now, not for every scene passed.
-export function closeStrip(silent = false) {
-  if (strip.hidden) return;
   clearTimeout(settle);
-  strip.hidden = true; document.body.classList.remove('stripping'); if (!shelvesOpen()) document.body.classList.remove('choosing-scene');
-  if (!silent && M.cur() !== startScene) M.commit();
+  mark(i); centre(b, true);
+  if (i !== M.cur()) { M.go(i, true); pending = true; }
+  keepIt();
 }
-el('stripDone').addEventListener('click', () => closeStrip());
-// A tap on the scene above the strip keeps what is showing.
-document.addEventListener('pointerdown', e => {
-  if (strip.hidden || performance.now() - openedAt < 500 || e.target.closest('#strip')) return;
-  closeStrip();
-}, true);
+// Holding the scene: the controls come up with the strip ready, a little nudge to show it scrolls.
+export function focusStrip() {
+  syncStrip();
+  const b = tileOf(M.cur()); if (!b) return;
+  b.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-6px)' }, { transform: 'translateY(0)' }], { duration: 380, easing: 'ease-out' });
+}
+// Before the controls hide: a scene being previewed counts as chosen.
+export function settleStrip() { keepIt(); }

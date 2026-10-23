@@ -27,7 +27,7 @@ import { initBench, benching } from './bench.js';
 import './intervals.js';
 import './tasks.js';
 import './sync.js';
-import { initSceneMenu, openShelves, closeShelves, shelvesOpen, openStrip, closeStrip, stripOpen, noteRecent } from './scene-menu.js';
+import { initSceneMenu, openShelves, closeShelves, shelvesOpen, syncStrip, focusStrip, settleStrip, noteRecent } from './scene-menu.js';
 import { initNativeUi } from './native-ui.js';
 import { NATIVE, SITE, nativeKeepAwake, nativeSavePicture } from './native.js';
 import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
@@ -270,7 +270,7 @@ function go(i, quiet = false) {
   cur = i; ensure(cur); show(cur); updateText();
   saveState({ scene: SCENES[cur].name }); scheduleThumb();
   if (quiet) { if (still) render(0); return; }
-  sceneKept();
+  sceneKept(); syncStrip();
   if (document.body.classList.contains('idle') && picker.hidden) caption(SCENES[cur].name);
   if (still) render(0);
 }
@@ -435,21 +435,19 @@ tick(); setInterval(tick, 10000);
 let idleTimer, lastTouch = 0;
 function wake(ms) {
   wakeFromSleep();
-  document.body.classList.remove('idle');
+  if (document.body.classList.contains('idle')) { document.body.classList.remove('idle'); syncStrip(); }
   clearTimeout(idleTimer);
   idleTimer = setTimeout(hide, ms || (performance.now() - lastTouch < 1500 ? 3000 : 5000));
   keepAwake();
 }
-function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
-function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
+function hide() { clearTimeout(idleTimer); settleStrip(); document.body.classList.add('idle'); }
+function showByHand() { saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill, .shelves, .strip');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill, .shelves, .strip');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
-// Touching the mini player keeps the full controls hidden; it has its own short timer.
-const onMini = e => !!e.target.closest('.mini');
-window.addEventListener('pointerdown', e => { if (onMini(e)) return; if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
+window.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' || !onScene(e)) wake(); }, { passive: true });
 window.addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) wake(); else { wakeFromSleep(); keepAwake(); } }, { passive: true });
-window.addEventListener('focusin', e => { if (!onScene(e) && !onMini(e)) wake(); });
+window.addEventListener('focusin', e => { if (!onScene(e)) wake(); });
 
 /* Ambient sound: starts on the first gesture, follows the scene, its level is remembered */
 const amb = el('amb'); amb.value = ambienceLevel;
@@ -523,7 +521,7 @@ window.addEventListener('keydown', e => {
     case 'g': case 'G': if (!picker.hidden) closePicker(); else shelvesOpen() ? closeShelves() : openShelves(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (!el('trackInfo').hidden) { el('trackInfo').hidden = true; break; } if (!el('tour').hidden) { el('tourSkip').click(); break; } if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (stripOpen()) closeStrip(); else if (shelvesOpen()) closeShelves(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
+    case 'Escape': if (!el('trackInfo').hidden) { el('trackInfo').hidden = true; break; } if (!el('tour').hidden) { el('tourSkip').click(); break; } if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (shelvesOpen()) closeShelves(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
   }
 });
 
@@ -550,7 +548,7 @@ window.addEventListener('touchstart', e => {
   const edge = p.clientX > W * (1 - EDGE) ? 'right' : p.clientX < W * EDGE ? 'left' : null;
   swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false, edge, drag: false, v0: edge === 'right' ? volume() : ambienceLevel };
   clearTimeout(pressTimer);
-  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; holding = true; haptic(); openStrip(); } }, 550);
+  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; holding = true; haptic(); showByHand(); focusStrip(); } }, 550);
 }, { passive: true });
 window.addEventListener('touchmove', e => {
   if (!swipe) return;
@@ -575,7 +573,7 @@ window.addEventListener('touchend', e => {
   if (s0.drag) { haptic(); return; }
   const dx = p.clientX - s0.x, dy = p.clientY - s0.y, ms = performance.now() - s0.at;
   wakeFromSleep(); keepAwake();
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); step(dx < 0 ? 1 : -1); return; }
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { haptic(); showByHand(); step(dx < 0 ? 1 : -1); return; }   // the new scene, with the controls
   if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) showByHand(); else hideByHand(); return; }
   if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && ms < 400) {
     if (tapTimer && lastTap && Math.hypot(p.clientX - lastTap.x, p.clientY - lastTap.y) < 60) {   // double-tap, by zone
@@ -587,12 +585,10 @@ window.addEventListener('touchend', e => {
       return;
     }
     lastTap = { x: p.clientX, y: p.clientY };
-    const low = p.clientY > H * .8;
     tapTimer = setTimeout(() => {
       tapTimer = null;
-      if (quiet && focusRunning() && document.body.classList.contains('idle') && mini.hidden) { if (!quietTold) { quietTold = true; caption('Focusing · swipe up for the controls'); } return; }
-      if (!mini.hidden) hideMini();                                          // any tap on the scene puts the mini player away
-      else if (document.body.classList.contains('idle')) { if (low) showMini(); else showByHand(); }   // near the bottom: the mini player
+      if (quiet && focusRunning() && document.body.classList.contains('idle')) { if (!quietTold) { quietTold = true; caption('Focusing · swipe up for the controls'); } return; }
+      if (document.body.classList.contains('idle')) showByHand();   // the same controls wherever the tap is
       else hideByHand();
     }, 260);
   }
@@ -695,7 +691,7 @@ xButtons.forEach(b => b.addEventListener('click', () => { setCrossfade(+b.datase
 const paceButtons = [...el('paceSeg').querySelectorAll('button')];
 const drawPace = () => paceButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === pace)));
 paceButtons.forEach(b => b.addEventListener('click', () => { setPace(b.dataset.p); drawPace(); setStatus(`Workout pace: ${b.textContent.toLowerCase()}.`); })); drawPace();
-// Holding play or pause (on the bar or the mini player) offers the sleep timer: 15, 30 or 60 minutes, or the end of the track.
+// Holding play or pause offers the sleep timer: 15, 30 or 60 minutes, or the end of the track.
 {
   const pop = document.createElement('div'); pop.className = 'tmenu sleeppop'; pop.hidden = true; pop.setAttribute('role', 'menu');
   const head = document.createElement('span'); head.className = 'lbl'; head.textContent = 'Stop playing';
@@ -706,7 +702,7 @@ paceButtons.forEach(b => b.addEventListener('click', () => { setPace(b.dataset.p
     pop.append(b);
   }
   document.body.append(pop);
-  for (const id of ['play', 'miniPlay']) {
+  for (const id of ['play']) {
     const b = el(id); let hold = null, held = false;
     b.addEventListener('pointerdown', () => { held = false; clearTimeout(hold); hold = setTimeout(() => {
       held = true; haptic(); const r = b.getBoundingClientRect();
@@ -740,37 +736,23 @@ el('tiClose').addEventListener('click', () => { el('trackInfo').hidden = true; }
 el('npTitle').addEventListener('click', openInfo); el('npTitle').setAttribute('role', 'button'); el('npTitle').tabIndex = 0; el('npTitle').title = 'About this track';
 el('npTitle').addEventListener('keydown', e => { if (e.key === 'Enter') openInfo(); });
 
-/* Mini player: the track and previous / play / next, over the bottom of the scene while the controls stay hidden.
-   It follows the main player and tucks itself away after a few quiet seconds. Tapping the title opens the full controls. */
-const mini = el('mini'), miniPlay = el('miniPlay');
-let miniTimer;
-function syncMini() {
-  const [name, artist] = el('npTitle').textContent.split(' — ');
-  el('miniName').textContent = name || 'Nothing playing';
-  el('miniArtist').textContent = artist || 'Tap play for music';
-  const playing = el('play').getAttribute('aria-pressed') === 'true';
-  miniPlay.setAttribute('aria-pressed', String(playing)); miniPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-  drawLove();
-  const art = currentArt(), im = el('miniArt');            // the same cover as the bar
-  if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
-}
 function drawLove() {
   const on = currentLoved();
   el('loveBtn').setAttribute('aria-pressed', String(on)); el('loveBtn').textContent = (on ? '♥' : '♡') + ' Love';
-  for (const b of [el('barLove'), el('miniLove')]) { b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Loved. Tap to unlove' : 'Love this track'); }
+  for (const b of [el('barLove')]) { b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Loved. Tap to unlove' : 'Love this track'); }
 }
 // The player bar: previous and love here (play and next are wired in music.js); the art follows the track, as does the
 // love state, on every track change and play or pause.
 el('prev').addEventListener('click', () => prevTrack());
 el('barTitle').addEventListener('click', () => openInfo());
-// The seek lines (bar and mini player): tap to jump, or drag with the time shown above the finger; arrow keys step 10 s.
-for (const pg of [el('barSeek'), el('miniSeek')]) {
+// The seek line: tap to jump, or drag with the time shown above the finger; arrow keys step 10 s.
+for (const pg of [el('barSeek')]) {
   const bubble = pg.querySelector('.when'), fill = pg.firstChild;
   const fracAt = e => { const r = pg.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
   const show = f => { const p = trackPos(); fill.style.width = `${(f * 100).toFixed(2)}%`; if (p) { bubble.hidden = false; bubble.style.left = `${f * 100}%`; bubble.textContent = `${trackClock(f * p.dur)} / ${trackClock(p.dur)}`; } };
   pg.addEventListener('pointerdown', e => {
     e.stopPropagation(); if (!trackPos()) return;
-    pg.setPointerCapture(e.pointerId); pg.classList.add('drag'); show(fracAt(e)); if (pg.id === 'miniSeek') bumpMini();
+    pg.setPointerCapture(e.pointerId); pg.classList.add('drag'); show(fracAt(e));
   });
   pg.addEventListener('pointermove', e => { if (pg.classList.contains('drag')) show(fracAt(e)); });
   const done = e => { if (!pg.classList.contains('drag')) return; pg.classList.remove('drag'); bubble.hidden = true; if (e.type === 'pointerup') { seekFraction(fracAt(e)); haptic(); } };
@@ -791,7 +773,7 @@ for (const pg of [el('barSeek'), el('miniSeek')]) {
 }
 // Swiping the bar sideways skips: left for the next track, right for the previous one. The bar follows the finger a
 // little, and a swipe never also presses the button it started on.
-for (const bar of [el('playerBar'), el('mini')]) {
+for (const bar of [el('playerBar')]) {
   let x0 = null, y0 = 0, swiped = false;
   bar.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; swiped = false; bar.style.transition = 'none'; });
   bar.addEventListener('pointermove', e => { if (x0 === null) return; const dx = e.clientX - x0; if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - y0)) bar.style.transform = `translateX(${Math.max(-40, Math.min(40, dx * .35))}px)`; });
@@ -811,23 +793,12 @@ function syncBar() {
   if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
   const [name, artist] = el('npTitle').textContent.split(' — ');
   el('barName').textContent = name || 'Nothing playing'; el('barArtist').textContent = artist || 'Tap play for music';
-  if (!mini.hidden) syncMini();
   const ct = currentTrack(); el('stBtn').setAttribute('aria-label', `${ct ? `${ct.t} by ${ct.a}. ` : ''}Soundtrack: ${el('stName').textContent}. Tap to change it or open the library.`);
 }
 window.addEventListener('sw-playstate', syncBar); window.addEventListener('sw-loved', syncBar);
 new MutationObserver(syncBar).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
 function love() { const on = toggleLove(); if (on === null) return; drawLove(); caption(on ? '♥ Loved' : 'Not loved'); haptic(); }
-el('miniLove').addEventListener('click', () => { love(); bumpMini(); });
 el('loveBtn').addEventListener('click', love);
-function showMini() { syncMini(); mini.hidden = false; bumpMini(); haptic(); }
-function hideMini() { clearTimeout(miniTimer); mini.hidden = true; }
-function bumpMini() { clearTimeout(miniTimer); miniTimer = setTimeout(hideMini, 6000); }
-new MutationObserver(syncMini).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
-new MutationObserver(syncMini).observe(el('play'), { childList: true, characterData: true, subtree: true });
-el('miniPrev').addEventListener('click', () => { prevTrack(); bumpMini(); });
-miniPlay.addEventListener('click', () => { togglePlay(); bumpMini(); });
-el('miniNext').addEventListener('click', () => { nextTrack(); bumpMini(); });
-el('miniTitle').addEventListener('click', () => { hideMini(); showByHand(); });
 
 /* The scene picker: every scene as a thumbnail, grouped. Built once; reopening only updates the current scene and new
    thumbnails. While it is open the scene behind stops drawing, so scrolling the grid stays smooth. */
@@ -913,7 +884,7 @@ function closePicker() { picker.hidden = true; if (pickMode === 'choose') { pick
 el('pickerClose').addEventListener('click', closePicker);
 el('sceneBtn').addEventListener('click', () => openShelves());
 el('scenesBtn').addEventListener('click', () => openShelves());
-initSceneMenu({ SCENES, cur: () => cur, go, commit: () => { sceneKept(); caption(SCENES[cur].name); }, included, haptic,
+initSceneMenu({ SCENES, cur: () => cur, go, commit: sceneKept, included, haptic, wake: () => wake(),
   thumb: i => thumbs[SCENES[i].name] || `assets/thumbs/${slug(SCENES[i])}.jpg`, openGrid: () => openPicker() });
 
 // A scene link in the hash switches scenes (so the back button walks through them).

@@ -295,8 +295,8 @@ body.touring .chrome, body.touring .shade { opacity: 1 !important; visibility: v
   text-shadow: 0 2px 18px rgba(0, 0, 0, .6); opacity: 0; transition: opacity .5s ease; white-space: nowrap; }
 .toast.on { opacity: .92; }
 /* Mini player: a slim bar over the bottom of the scene, from a tap near the bottom while the controls are hidden */
-.mini.player { position: fixed; z-index: 6; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); max-width: 520px; width: auto; margin-inline: auto; }
-body:not(.idle) .mini { display: none; }
+
+
 /* The level shown while sliding along an edge */
 .level { position: fixed; z-index: 6; top: 50%; transform: translateY(-50%); display: grid; justify-items: center; gap: 8px; pointer-events: none;
   width: 54px; padding: 12px 0; border-radius: 16px; background: rgba(9, 10, 14, .55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
@@ -435,7 +435,7 @@ body.sheet-open .chrome, body.sheet-open .shade { opacity: 1 !important; visibil
 .bench ol { margin: 0; padding-left: 18px; max-height: 40vh; overflow: auto; font-size: 12px; color: var(--muted); display: grid; gap: 2px; }
 .bench .row { display: flex; gap: 8px; }
 /* Picture-in-picture (the Android app): only the scene shows in the small window. */
-body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip .shelves, body.pip .strip, body.pip #toast { display: none !important; }
+body.pip .chrome, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip .shelves, body.pip #toast { display: none !important; }
 /* The player bar (one translucent strip): album art, previous, play or pause, next, love and more, all icons. A thin
    line along its top edge is the track's progress. The scene's name sits at the top, by the clock. */
 .player { position: relative; display: flex; align-items: center; gap: 4px; padding: 6px; max-width: 520px; width: 100%;
@@ -500,7 +500,7 @@ body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .pi
 }
 @media (orientation: landscape) and (max-height: 520px) { .bottom { justify-items: start; } .bottom .status { left: 0; transform: none; max-width: min(90vw, 520px); } }
 
-#playerBar, .mini.player { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+#playerBar { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 @media (max-width: 400px) { .player .ib { width: 38px; height: 38px; } .player .ib.main { width: 44px; height: 44px; } .player .art { width: 40px; height: 40px; } }
 /* Today's tasks, under the timer and on the end-of-block card. */
 .tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -553,18 +553,14 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 .stile[aria-pressed="true"] .pt { box-shadow: 0 0 0 2px var(--accent); }
 .stile[aria-pressed="true"] .nm { color: var(--text); }
 .stile:active .pt { transform: scale(.97); }
-.strip { position: fixed; z-index: 8; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
-.strip > * { pointer-events: auto; }
-.strip .stripName { display: grid; justify-items: center; gap: 1px; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); pointer-events: none; }
-.strip .stripName b { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 22px; }
-.strip .stripName span { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-.strip .track { width: 100%; display: flex; align-items: flex-end; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 50vw 4px; box-sizing: border-box; scrollbar-width: none;
-  background: linear-gradient(to top, rgba(5, 6, 10, .8), rgba(5, 6, 10, 0)); overscroll-behavior-x: contain; }
+.strip { width: 100%; max-width: 760px; min-width: 0; margin: 0 auto 8px; }
+.bottom { grid-template-columns: minmax(0, 1fr); width: 100%; box-sizing: border-box; }
+.strip .track { position: relative; display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 50% 6px; box-sizing: border-box; scrollbar-width: none; overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
 .strip .track::-webkit-scrollbar { display: none; }
-.strip .stile { width: 104px; scroll-snap-align: center; }
+.strip .stile { width: 88px; scroll-snap-align: center; }
 .strip .stile .nm { display: none; }
-.strip .stile .pt { transition: transform .2s; }
-.strip .stile[aria-pressed="true"] .pt { transform: scale(1.12); }
-.strip .sgrp { flex: none; align-self: center; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 2px; }
-body.stripping .chrome, body.stripping .mini { opacity: 0 !important; pointer-events: none !important; }
+.strip .stile .pt { transition: transform .2s, box-shadow .2s; border-radius: 8px; }
+.strip .stile[aria-pressed="true"] .pt { transform: scale(1.14); }
+.strip .sgrp { flex: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 2px; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
 @media (max-width: 440px) { .player #barLove { display: none; } }

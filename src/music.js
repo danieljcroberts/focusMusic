@@ -214,7 +214,7 @@ export function onSceneChange() {
 export const trackSlug = t => (t.a + ' ' + t.t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 export const currentTrack = () => curTrack;
 
-const ui = { play: el('play'), next: el('next'), progs: [el('barSeek'), el('miniSeek')], title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
+const ui = { play: el('play'), next: el('next'), progs: [el('barSeek')], title: el('npTitle'), meta: el('npMeta'),  vol: el('vol'), lib: el('lib'), list: el('libList'), seek: el('seek') };
 let source = 'mix', curTrack = null, hasSrc = false, iaOnline = null, liveTotal = 0, loadingLive = false, errors = 0;
 const key = t => t.a + '|' + t.t;
 const byKey = Object.fromEntries(TRACKS.map(t => [key(t), t]));
@@ -652,7 +652,7 @@ export function togglePlay() {
 }
 // The seek bar follows the current player and scrubs it. Hidden until a track has a known length.
 let scrubbing = false;
-// Where the playing track is, and moving within it: for the seek lines on the player bar and the mini player.
+// Where the playing track is, and moving within it: for the seek line on the player bar.
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 export const trackClock = clock;
 export const trackPos = () => (hasSrc && audio.duration > 0 && isFinite(audio.duration)) ? { at: audio.currentTime, dur: audio.duration } : null;
