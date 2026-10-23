@@ -435,7 +435,7 @@ body.sheet-open .chrome, body.sheet-open .shade { opacity: 1 !important; visibil
 .bench ol { margin: 0; padding-left: 18px; max-height: 40vh; overflow: auto; font-size: 12px; color: var(--muted); display: grid; gap: 2px; }
 .bench .row { display: flex; gap: 8px; }
 /* Picture-in-picture (the Android app): only the scene shows in the small window. */
-body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip #toast { display: none !important; }
+body.pip .chrome, body.pip .mini, body.pip .shade, body.pip .sheet, body.pip .picker, body.pip .update, body.pip .bench, body.pip .summary, body.pip .hint1, body.pip .shelves, body.pip .strip, body.pip #toast { display: none !important; }
 /* The player bar (one translucent strip): album art, previous, play or pause, next, love and more, all icons. A thin
    line along its top edge is the track's progress. The scene's name sits at the top, by the clock. */
 .player { position: relative; display: flex; align-items: center; gap: 4px; padding: 6px; max-width: 520px; width: 100%;
@@ -528,3 +528,43 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 @media (max-width: 640px), (orientation: landscape) and (max-height: 520px) { .tmenu.sleeppop { left: auto; right: auto; } }
 
 @media (max-height: 560px) { .hint1 { top: 8px; max-height: calc(100% - 16px); } }
+
+/* Choosing a scene: the shelves panel (rows of thumbnails) and the filmstrip (scene-menu.js). */
+.shelves { position: fixed; inset: 0; z-index: 8; display: flex; align-items: flex-end; justify-content: center; background: linear-gradient(to top, rgba(5, 6, 10, .55), rgba(5, 6, 10, 0) 70%); }
+.shelves .box { width: min(760px, 100%); max-height: min(78vh, 760px); display: flex; flex-direction: column; background: rgba(11, 12, 17, .96); border: 1px solid var(--line); border-bottom: 0; border-radius: 20px 20px 0 0;
+  padding: 14px 0 calc(env(safe-area-inset-bottom, 0px) + 10px); }
+.shelves header { display: flex; gap: 10px; align-items: center; padding: 0 16px 8px; }
+.shelves input[type=search] { flex: 1; min-width: 0; font: inherit; font-size: 15px; color: var(--text); background: rgba(236, 230, 218, .07); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.shelves .rows { overflow-y: auto; overscroll-behavior: contain; padding-bottom: 6px; }
+.shelves section { padding: 6px 0 4px; }
+.shelves h3 { margin: 4px 16px 6px; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.shelves h3 span { margin-left: 8px; letter-spacing: .04em; text-transform: none; opacity: .75; }
+.shelves .srow { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 16px; padding: 2px 16px 6px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.shelves .srow::-webkit-scrollbar { display: none; }
+.shelves .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; padding: 2px 16px; }
+.shelves .empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
+.shelves footer { padding: 8px 16px 0; }
+.shelves footer .pbtn { width: 100%; font-size: 12px; }
+.stile { flex: none; width: 132px; display: grid; gap: 5px; padding: 0; text-align: left; background: none; border: 0; color: var(--text); scroll-snap-align: start; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 10px; }
+.sgrid .stile { width: auto; }
+.stile .pt { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(236, 230, 218, .08); }
+.stile .pt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stile .nm { font-size: 12px; line-height: 1.3; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stile[aria-pressed="true"] .pt { box-shadow: 0 0 0 2px var(--accent); }
+.stile[aria-pressed="true"] .nm { color: var(--text); }
+.stile:active .pt { transform: scale(.97); }
+.strip { position: fixed; z-index: 8; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
+.strip > * { pointer-events: auto; }
+.strip .stripName { display: grid; justify-items: center; gap: 1px; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); pointer-events: none; }
+.strip .stripName b { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 400; font-size: 22px; }
+.strip .stripName span { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.strip .track { width: 100%; display: flex; align-items: flex-end; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 50vw 4px; box-sizing: border-box; scrollbar-width: none;
+  background: linear-gradient(to top, rgba(5, 6, 10, .8), rgba(5, 6, 10, 0)); overscroll-behavior-x: contain; }
+.strip .track::-webkit-scrollbar { display: none; }
+.strip .stile { width: 104px; scroll-snap-align: center; }
+.strip .stile .nm { display: none; }
+.strip .stile .pt { transition: transform .2s; }
+.strip .stile[aria-pressed="true"] .pt { transform: scale(1.12); }
+.strip .sgrp { flex: none; align-self: center; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 2px; }
+body.stripping .chrome, body.stripping .mini { opacity: 0 !important; pointer-events: none !important; }
+@media (max-width: 440px) { .player #barLove { display: none; } }

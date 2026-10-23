@@ -3,10 +3,10 @@ const el = id => document.getElementById(id);
 const STEPS = [
   ['#play', 'Play and pause, with the previous and next track either side. A double-tap in the middle of the scene does the same.'],
   ['#stBtn', 'The cover of the playing track. Tap it to switch soundtrack (Ambient, Lo-fi, Loved, your own music and more) or open the library. The heart on the right loves the track.'],
-  ['#sceneBtn', "The scene's name. Tap it for the scene's story and all the others. Swipe sideways on the scene to change it."],
+  ['#sceneBtn', "The scene's name. Tap it, or the window button in the bar, for rows of scenes to choose from: ones that suit right now, your favourites and a search. Swipe sideways to change scene, or hold the scene to flick through them."],
   ['#menuBtn', 'Everything else lives here: moods to start with, the timer and alarm, sounds, scene sets, your photos, backups. There is a search at the top.'],
   ['#tStart', 'The focus timer. Tap to start a block; the controls stay out of the way while it runs, and a card sums it up at the end.'],
-  [null, 'Gestures: tap near the bottom for a mini player, slide the right edge for volume and the left for ambience, long-press for all scenes. That is all. Enjoy the view.'],
+  [null, 'Gestures: tap near the bottom for a mini player, slide the right edge for volume and the left for ambience, hold the scene to flick through the others. That is all. Enjoy the view.'],
 ];
 let i = 0, hi = null;
 function step() {

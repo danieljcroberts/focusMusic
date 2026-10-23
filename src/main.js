@@ -27,6 +27,7 @@ import { initBench, benching } from './bench.js';
 import './intervals.js';
 import './tasks.js';
 import './sync.js';
+import { initSceneMenu, openShelves, closeShelves, shelvesOpen, openStrip, closeStrip, stripOpen, noteRecent } from './scene-menu.js';
 import { initNativeUi } from './native-ui.js';
 import { NATIVE, SITE, nativeKeepAwake, nativeSavePicture } from './native.js';
 import { excluded, included, setIncluded, onExcludedChange } from './excluded.js';
@@ -259,17 +260,21 @@ async function postcard() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); setStatus('Picture saved.');
 }
 el('postcardBtn').addEventListener('click', () => { el('sheetClose').click(); setTimeout(postcard, 400); });
-function go(i) {
+// quiet: a preview from the filmstrip, which changes only the picture; the music, Drift and Recent hear of the scene
+// once it is kept (sceneKept).
+function go(i, quiet = false) {
   i = (i + SCENES.length) % SCENES.length;
   if (i === cur) return;
   keepCost(cur); snapshot();
   fade = still ? 0 : 1; fadeAt = performance.now(); fadeCv.style.opacity = fade;
   cur = i; ensure(cur); show(cur); updateText();
-  saveState({ scene: SCENES[cur].name }); onSceneChange();
-  noteSceneChange(); scheduleThumb();
+  saveState({ scene: SCENES[cur].name }); scheduleThumb();
+  if (quiet) { if (still) render(0); return; }
+  sceneKept();
   if (document.body.classList.contains('idle') && picker.hidden) caption(SCENES[cur].name);
   if (still) render(0);
 }
+function sceneKept() { onSceneChange(); noteSceneChange(); noteRecent(SCENES[cur].name); }
 // Next or previous, skipping the scenes you have left out.
 function step(d) {
   const n = SCENES.length;
@@ -438,7 +443,7 @@ function wake(ms) {
 function hide() { clearTimeout(idleTimer); document.body.classList.add('idle'); }
 function showByHand() { if (typeof hideMini === 'function') hideMini(); saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
-const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill');
+const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .mini, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill, .shelves, .strip');
 window.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') wake(); }, { passive: true });
 // Touching the mini player keeps the full controls hidden; it has its own short timer.
 const onMini = e => !!e.target.closest('.mini');
@@ -515,10 +520,10 @@ window.addEventListener('keydown', e => {
     case 'a': case 'A': openAbout(); break;
     case 'b': case 'B': setListening(true); break;
     case 'c': case 'C': postcard(); break;
-    case 'g': case 'G': picker.hidden ? openPicker() : closePicker(); break;
+    case 'g': case 'G': if (!picker.hidden) closePicker(); else shelvesOpen() ? closeShelves() : openShelves(); break;
     case '?': showHelp(); break;
     case '`': setDiagOn(!diagOn()); break;
-    case 'Escape': if (!el('trackInfo').hidden) { el('trackInfo').hidden = true; break; } if (!el('tour').hidden) { el('tourSkip').click(); break; } if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
+    case 'Escape': if (!el('trackInfo').hidden) { el('trackInfo').hidden = true; break; } if (!el('tour').hidden) { el('tourSkip').click(); break; } if (wizardOpen()) break; else if (!picker.hidden) closePicker(); else if (stripOpen()) closeStrip(); else if (shelvesOpen()) closeShelves(); else if (helpOpen()) showHelp(false); else if (aboutOpen()) openAbout(false); else if (libOpen()) openLib(false); else if (sheetOpen()) openSheet(false); else closeMenus(); break;
   }
 });
 
@@ -545,7 +550,7 @@ window.addEventListener('touchstart', e => {
   const edge = p.clientX > W * (1 - EDGE) ? 'right' : p.clientX < W * EDGE ? 'left' : null;
   swipe = { x: p.clientX, y: p.clientY, at: performance.now(), long: false, edge, drag: false, v0: edge === 'right' ? volume() : ambienceLevel };
   clearTimeout(pressTimer);
-  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; holding = true; haptic(); openPicker(); } }, 550);
+  pressTimer = setTimeout(() => { if (swipe && !swipe.drag) { swipe.long = true; holding = true; haptic(); openStrip(); } }, 550);
 }, { passive: true });
 window.addEventListener('touchmove', e => {
   if (!swipe) return;
@@ -906,7 +911,10 @@ el('chooseFavs').addEventListener('click', () => {
 el('chooseBtn').addEventListener('click', () => { el('sheetClose').click(); pickMode = 'choose'; openPicker(); });
 function closePicker() { picker.hidden = true; if (pickMode === 'choose') { pickMode = state.pickMode && state.pickMode !== 'choose' ? state.pickMode : 'all'; } }
 el('pickerClose').addEventListener('click', closePicker);
-el('sceneBtn').addEventListener('click', () => openPicker());
+el('sceneBtn').addEventListener('click', () => openShelves());
+el('scenesBtn').addEventListener('click', () => openShelves());
+initSceneMenu({ SCENES, cur: () => cur, go, commit: () => { sceneKept(); caption(SCENES[cur].name); }, included, haptic,
+  thumb: i => thumbs[SCENES[i].name] || `assets/thumbs/${slug(SCENES[i])}.jpg`, openGrid: () => openPicker() });
 
 // A scene link in the hash switches scenes (so the back button walks through them).
 window.addEventListener('hashchange', () => { const i = parseHash().scene; if (i >= 0) go(i); });
