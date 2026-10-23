@@ -136,6 +136,7 @@ const FACTORIES = {
   ranges: L('layers', m => m.rangesScene()),
   skyline: L('layers', m => m.skylineScene()),
   fogForest: L('layers', m => m.fogForestScene()),
+  canyon: L('layers', m => m.canyonScene()),
   cityNight: () => driftScene({ src: 'city-night.jpg', bg: '#05070f', fx: .53 }),
   nightSky: () => { const fx = skyExtras(); return driftScene({ src: 'night-sky.jpg', bg: '#03040c', setup: fx.setup, extra: fx.extra }); },
   forestDusk: L('shaded3', m => m.forestDuskScene()),

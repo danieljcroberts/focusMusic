@@ -264,3 +264,163 @@ export function fogForestScene() {
   }
   return sc;
 }
+
+/* Grand Canyon: from the South Rim, looking north. The flat North Rim far off, ranks of terraced buttes between,
+   striped with the canyon's rock (cream limestone over red sandstone, the dark schist at the bottom), the river in the
+   inner gorge, and the rim's ledge with a juniper in front. Shadows fall on the faces turned from the sun (the right
+   ones in the morning, the left in the evening); sunset turns the rock red, night turns it blue. Condors soar, clouds
+   drift with their shadows crossing the canyon, summer storms trail rain in the distance, and in winter snow lies on
+   the flat tops. */
+const STRATA = [   // [fraction of the depth, colour]: from the rim down
+  [0, [226, 210, 176]], [.07, [204, 176, 136]], [.13, [234, 216, 174]], [.22, [178, 92, 62]], [.28, [194, 116, 76]], [.33, [170, 82, 56]],
+  [.38, [196, 122, 82]], [.44, [182, 94, 66]], [.58, [160, 112, 92]], [.68, [134, 106, 92]], [.78, [84, 70, 72]], [1, [62, 54, 58]]];
+export function canyonScene() {
+  let birds = [], clouds = [], rainOn = 0, sun = null;
+  const sc = layeredScene({
+    sky(e) {
+      const top = skyMix([8, 12, 30], [70, 66, 120], [86, 146, 214], e.d), low = skyMix([30, 34, 62], [250, 150, 96], [214, 222, 226], e.d);
+      const storm = Math.max(0, e.wx - .6) / .4;
+      const [c, g] = skyCanvas(mix(top, [90, 96, 110], storm * .5), mix(mix(top, low, .5), [120, 124, 132], storm * .4), mix(low, [150, 150, 156], storm * .3));
+      if (e.d < .45) starField(g, prng(17), Math.round(W * H / 3500), H * .5, (1 - e.d / .45) * (1 - storm));
+      const hour = new Date().getHours();
+      sun = { x: W * (hour < 12 ? .82 : .18), y: H * (.1 + .2 * (1 - e.d)), day: e.d > .3, east: hour < 12 };
+      rainOn = storm;
+      return c;
+    },
+    layers(e) {
+      const r = prng(41), out = [];
+      const tint = e.d > .5 ? mix([255, 236, 220], [255, 248, 238], (e.d - .5) * 2) : mix([60, 70, 110], [255, 150, 110], e.d * 2);
+      const light = c => c.map((v, k) => Math.min(255, Math.round(v * tint[k] / 255)));
+      const haze = skyMix([30, 34, 62], [236, 160, 120], [196, 206, 216], e.d);
+      const sunX = sun && sun.east ? 1 : -1, low = 1 - Math.abs(e.d - .5) * 1.2;   // shadows strongest with a low sun
+      // [top y, floor y, depth, buttes, height range, kind]
+      const L = [[.30, .40, .12, 0, [.9, 1], 'rim'], [.33, .54, .3, 16, [.45, .95], 'temples'], [.39, .66, .5, 12, [.4, .9], 'temples'],
+        [.5, .8, .68, 9, [.2, .6], 'gorge'], [.55, .97, .84, 3, [.5, 1], 'temples'], [.85, 1.12, 1, 0, [0, 0], 'ledge']];
+      for (const [ty, fy, depth, n, [h0, h1], kind] of L) {
+        const [c, g] = sc.strip(), top = ty * H + H * OV / 2, floor = fy * H + H * OV / 2, span = floor - top;
+        // The profile: the height (0 floor, 1 rim) across the strip, joining up with itself.
+        const feats = Array.from({ length: n }, () => ({ c: r(), w: .025 + .06 * r(), h: h0 + (h1 - h0) * r(), steps: 3 + Math.floor(r() * 3) }));
+        const wob = ridge(r, false);
+        let side = 0, owner = -1;   // set by height(): the butte a column belongs to, and which side of it (-1 left, 1 right)
+        const jag = ridge(r, true);
+        const height = u => {
+          side = 0; owner = -1;
+          if (kind === 'rim') return .96 + .03 * wob(u);
+          if (kind === 'ledge') return .5 + .22 * wob(u) + .12 * jag(u * 3 % 1) + .15 * Math.max(0, Math.sin(u * TAU * 3));
+          let h = kind === 'gorge' ? .06 + .05 * Math.max(0, wob(u)) : .12 + .05 * wob(u);
+          feats.forEach((f, fi) => {
+            let du = u - f.c; du -= Math.round(du);
+            const t = Math.max(0, 1 - Math.abs(du) / f.w), tt = Math.min(1, t * 1.25);   // a narrow top, widening down
+            const q = tt * f.steps, k = Math.floor(q), fr = q - k;
+            // Cliffs and sloping ledges of scree between them, as the hard and soft rocks wear back.
+            const v = f.h * (k + .25 * fr + .75 * Math.min(1, Math.max(0, (fr - .62) / .38))) / f.steps;
+            if (v > h) { h = v; owner = fi; side = Math.sign(du); }
+          });
+          return h;
+        };
+        const N = Math.ceil(e.TW / 2), hs = new Float32Array(N + 1), sides = new Int8Array(N + 1);
+        for (let i = 0; i <= N; i++) { hs[i] = height(i / N); sides[i] = owner >= 0 ? side : 0; }
+        const yAt = i => floor - hs[i] * span;
+        g.beginPath(); g.moveTo(0, e.SH);
+        for (let i = 0; i <= N; i++) g.lineTo(i * 2, yAt(i));
+        g.lineTo(e.TW, e.SH); g.closePath();
+        // The strata, lit and hazed by distance.
+        const fill = g.createLinearGradient(0, top, 0, floor);
+        const fog = Math.pow(1 - depth, 1.3) * .55;
+        STRATA.forEach(([f, col], k) => {
+          const cc = rgb(mix(light(kind === 'ledge' ? mix(col, [150, 130, 108], .7) : col), haze, fog));
+          if (k) fill.addColorStop(Math.max(0, f - .004), rgb(mix(light(kind === 'ledge' ? mix(STRATA[k - 1][1], [150, 130, 108], .7) : STRATA[k - 1][1]), haze, fog)));
+          fill.addColorStop(f, cc);
+        });
+        g.fillStyle = fill; g.fill();
+        g.save(); g.clip();
+        // Faces turned from the sun in shadow, deeper with a low sun; then fine vertical streaks of erosion.
+        // Each butte's side turned from the sun in shade (the sun is east, on the right, in the morning).
+        const shade = (.22 + .4 * low) * (1 - fog);
+        for (let i = 0; i <= N; i++) if (sides[i] && sides[i] !== sunX) { g.fillStyle = `rgba(40,18,36,${shade})`; g.fillRect(i * 2 - 1, yAt(i), 2.5, e.SH); }
+        g.globalAlpha = .03 * (1 - fog);
+        for (let x = 0; x < e.TW; x += 3 + r() * 6) { g.fillStyle = r() < .5 ? '#000' : '#fff'; g.fillRect(x, top, 1, e.SH); }
+        g.globalAlpha = 1;
+        g.restore();
+        // Snow on the flat tops in winter.
+        if (e.snow && kind !== 'gorge') {
+          g.fillStyle = rgb(mix([240, 244, 250], haze, fog), .85);
+          for (let i = 1; i <= N; i++) if (Math.abs(hs[i] - hs[i - 1]) < .002 && hs[i] > .3) g.fillRect(i * 2 - 2, yAt(i) - 1, 2.5, 2 + 3 * depth);
+        }
+        // The river along the floor of the inner gorge, catching the sky.
+        if (kind === 'gorge') {
+          const river = mix(light([86, 120, 96]), haze, fog * .5), glint = mix(skyMix([40, 50, 90], [255, 190, 130], [230, 236, 230], e.d), river, .3);
+          g.lineCap = 'round';
+          for (const [w, col] of [[H * .011, river], [H * .0028, glint]]) {
+            g.strokeStyle = rgb(col); g.lineWidth = w; g.beginPath();
+            let on = false;
+            for (let i = 0; i <= N; i += 2) {
+              const x = i * 2, y = floor - span * .04 + Math.sin(x / e.TW * TAU * 4) * H * .008;
+              if (hs[i] < .13) { if (on) g.lineTo(x, y); else g.moveTo(x, y); on = true; } else on = false;   // only where the gorge floor shows
+            }
+            g.stroke();
+          }
+        }
+        // The ledge: cracked limestone, and a juniper twisted by the wind.
+        if (kind === 'ledge') {
+          g.strokeStyle = 'rgba(30,20,20,.35)'; g.lineWidth = 1.2;
+          for (let k = 0; k < 40; k++) { const x = r() * e.TW, y0 = yAt(Math.round(x / 2)) + 4; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (r() - .5) * 20, y0 + H * (.03 + .06 * r())); g.stroke(); }
+          const jx = e.TW * .3, jy = yAt(Math.round(N * .3)) + 6, s = H * .22, dark = light([40, 52, 36]);
+          g.strokeStyle = rgb(mix(dark, [60, 44, 34], .5)); g.lineWidth = s * .05; g.lineCap = 'round';
+          g.beginPath(); g.moveTo(jx, jy + 4); g.quadraticCurveTo(jx - s * .15, jy - s * .4, jx + s * .2, jy - s * .7); g.stroke();
+          g.beginPath(); g.moveTo(jx - s * .05, jy - s * .3); g.quadraticCurveTo(jx - s * .4, jy - s * .45, jx - s * .5, jy - s * .62); g.stroke();
+          g.fillStyle = rgb(dark);
+          for (const [dx, dy, rr] of [[.2, -.72, .2], [.05, -.8, .16], [.35, -.62, .15], [-.5, -.66, .16], [-.35, -.55, .12], [-.1, -.6, .12]]) {
+            g.beginPath(); g.ellipse(jx + dx * s, jy + dy * s, rr * s * 1.3, rr * s * .7, 0, 0, TAU); g.fill();
+          }
+        }
+        out.push({ c, depth, v: 4 * e.u });
+        if (kind === 'temples' && depth === .5) out[out.length - 1].after = soar;
+        if (kind === 'gorge') out[out.length - 1].after = shadows;
+      }
+      return out;
+    },
+    setup(e) {
+      const r = prng(9);
+      birds = e.d > .25 && rainOn < .5 ? [0, 1].map(k => ({ cx: W * (.3 + .4 * r()), cy: H * (.35 + .08 * k), rx: W * (.12 + .08 * r()), ry: H * .03, p: r() * TAU, v: .05 + .03 * r() })) : [];
+      const n = 3 + Math.round(e.wx * 5);
+      clouds = Array.from({ length: n }, () => ({ x: r() * W * 1.4, y: H * (.04 + .16 * r()), w: W * (.12 + .18 * r()), v: 4 + 6 * r(), a: .5 + .4 * r() }));
+    },
+    back(t, dt) {
+      if (!sun) return;
+      if (sun.day) { glow(ctx, sun.x, sun.y, H * .35, [255, 230, 190], .3); glow(ctx, sun.x, sun.y, H * .045, [255, 250, 236], .9); }
+      else drawMoon(ctx, W * .7, H * .14, Math.min(W, H) * .03, 'rgba(240,236,220,.95)');
+      const d = daylight(), col = skyMix([50, 56, 80], [250, 200, 180], [255, 255, 255], d);
+      for (const c of clouds) {
+        c.x -= c.v * dt; if (c.x < -c.w) c.x = W + c.w;
+        for (let k = 0; k < 4; k++) glow(ctx, c.x + (k - 1.5) * c.w * .28, c.y + (k % 2) * c.w * .04, c.w * .3, mix(col, [140, 140, 150], rainOn * .6), c.a * (.35 + .25 * rainOn));
+      }
+      // Summer storms: grey curtains of rain falling over the far rim.
+      if (rainOn > 0) {
+        for (let k = 0; k < 4; k++) {
+          const x = W * (.15 + .22 * k) + Math.sin(t * .02 + k) * W * .03, g = ctx.createLinearGradient(0, H * .12, 0, H * .45);
+          g.addColorStop(0, `rgba(110,114,126,${.35 * rainOn})`); g.addColorStop(1, 'rgba(110,114,126,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x, H * .14); ctx.lineTo(x + W * .1, H * .14); ctx.lineTo(x + W * .07, H * .45); ctx.lineTo(x - W * .03, H * .45); ctx.fill();
+        }
+      }
+    },
+  });
+  // Condors circling slowly on the air over the canyon, tilting as they turn.
+  function soar(t, dt, look) {
+    for (const b of birds) {
+      b.p += b.v * dt;
+      const x = b.cx + Math.cos(b.p) * b.rx - look.x * W * .03, y = b.cy + Math.sin(b.p) * b.ry, s = Math.max(W, H) * .012 * (1 + .25 * Math.sin(b.p)), tilt = Math.cos(b.p) * .25;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.fillStyle = 'rgba(28,24,26,.85)';
+      ctx.beginPath(); ctx.moveTo(-s * 1.6, -s * .1); ctx.quadraticCurveTo(-s * .6, -s * .35, 0, 0); ctx.quadraticCurveTo(s * .6, -s * .35, s * 1.6, -s * .1); ctx.quadraticCurveTo(s * .6, -s * .05, 0, s * .18); ctx.quadraticCurveTo(-s * .6, -s * .05, -s * 1.6, -s * .1); ctx.fill();
+      ctx.restore();
+    }
+  }
+  // The shadows of the clouds sliding across the canyon.
+  function shadows() {
+    if (!sun || !sun.day) return;
+    ctx.save(); ctx.globalCompositeOperation = 'multiply';
+    for (const c of clouds) glow(ctx, c.x, H * (.5 + c.y / H * .9), c.w * .55, [150, 130, 140], .35 * c.a);
+    ctx.restore();
+  }
+  return sc;
+}

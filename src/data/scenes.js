@@ -155,6 +155,8 @@ export const SCENES = [
     desc: 'Rows of buildings at dusk and after dark, windows coming on as the light goes, a train crossing a viaduct between them and red lights blinking on the tall roofs. Rain when the weather turns. Tilt the phone to look between the rows.' },
   { group: 'Layers', key: 'fogForest', name: 'Forest Layers', sw: '#5a7060', sound: 'forest', mood: 'day', tone: 'calm', art: ORIGINAL, music: 'Preslav Literary School|Velvet Shield',
     desc: 'Ranks of pines fading back into fog, light slanting through on bright days, fireflies on summer nights, leaves falling in autumn and snow in winter. Tilt the phone to look between the trees.' },
+  { group: 'Layers', key: 'canyon', name: 'Grand Canyon', sw: '#c0603a', sound: 'wind', mood: 'any', tone: 'warm', art: ORIGINAL, music: 'Miles Tilmann|Bloom',
+    desc: 'The Grand Canyon from the South Rim: the North Rim far across, ranks of terraced buttes striped cream and red, the river in the inner gorge and a juniper on the ledge. The light follows the clock, red at sunset and blue at night; condors circle, cloud shadows cross the canyon, summer storms trail rain over the far rim and snow lies on the tops in winter. Tilt the phone to look around.' },
 
   { group: 'three.js', key: 'ocean', name: 'Open Water', sw: '#2f7fa6', sound: 'sea', mood: 'any', tone: 'calm', music: 'Holger Flinsch|Organon',
     art: { who: 'three.js Water and Sky examples', lic: 'MIT', url: 'https://threejs.org/examples/#webgl_shaders_ocean' },
