@@ -70,8 +70,9 @@ export async function nativeWidget(d) { if (!NATIVE) return; await ready; try { 
 export async function nativePip(on) { if (!NATIVE) return; await ready; try { await plugin.setPip({ on: !!on }); } catch (e) {} }
 export async function onNativePip(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('pip', e => f(!!e.in)); } catch (e) {} }
 
-// The app's own update: downloaded by Android and handed to the installer. Events: progress (pct), install, permission,
-// denied, failed. Falls back to the phone's browser.
+// The app's own update: downloaded by Android and handed to its package installer. Events: progress (pct), ready,
+// permission, install, installed, cancelled, denied, failed (msg). Falls back to the phone's browser.
 export async function nativeDownloadUpdate(url, name) { await ready; await plugin.downloadUpdate({ url, name }); }
-export async function onNativeUpdate(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('update', e => f(e.state, e.pct)); } catch (e) {} }
+export async function onNativeUpdate(f) { if (!NATIVE) return; await ready; try { await plugin.addListener('update', e => f(e.state, e.pct, e.msg)); } catch (e) {} }
+export async function nativeInstallUpdate() { await ready; await plugin.installUpdate(); }
 export async function nativeOpenExternal(url) { await ready; await plugin.openExternal({ url }); }

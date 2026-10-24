@@ -3,7 +3,7 @@
 // Bedtime, the screen is held on while a scene shows, the web's offline buttons (a service-worker matter) are hidden,
 // and newer versions of the app are offered.
 import { TRACKS, currentTrack, playingNow, togglePlay, nextTrack, prevTrack } from './music.js';
-import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch, nativeSetWallpaper, nativeWidget, nativePip, onNativePip, nativeDownloadUpdate, onNativeUpdate, nativeOpenExternal } from './native.js';
+import { NATIVE, SITE, nativePlaying, nativeKeepAwake, onNativeMedia, onNativeLaunch, nativeSetWallpaper, nativeWidget, nativePip, onNativePip, nativeDownloadUpdate, onNativeUpdate, nativeOpenExternal, nativeInstallUpdate } from './native.js';
 import { loadDownloads, downloadAll, removeDownloads, downloadedCount } from './downloads.js';
 import { shouldOffer } from './update.js';
 import { timerRunning, toggleTimer, focusToday } from './timer.js';
@@ -104,29 +104,33 @@ export function initNativeUi({ caption, frame, go, current, find, sceneName }) {
       if (manual && !(v.code > mine)) { setStatus(`You have the latest version (1.0.${mine}).`); return; }
       if (!shouldOffer(v, mine, manual ? null : state.skipVersion)) return;
       el('updateText').textContent = `A new version of the app is ready (${v.name}).${v.notes ? ' ' + v.notes : ''}`;
-      el('updateGet').href = SITE + v.apk; el('updateBar').hidden = false;
+      el('updateGet').href = SITE + v.apk; el('updateGet').textContent = 'Download'; barMode = 'download'; el('updateBar').hidden = false;
     } catch (e) { if (manual) setStatus("Couldn't check for updates. Check the connection and try again."); }
   };
   el('updBtn').addEventListener('click', () => { el('sheetClose').click(); setStatus('Checking for updates…'); checkUpdate(true); });
-  // The download is Android's (a notification shows its progress), never a page inside the app: following the link in
-  // the app's web view only showed a blank page.
+  // The download is Android's (a notification shows its progress), never a page inside the app, and the install goes
+  // to Android's package installer directly (native SlowWindowsPlugin). The bar's one button changes with what is next:
+  // download, install a downloaded update, or, when something went wrong, download it in the browser instead.
+  let barMode = 'download', lastPct = -1;
+  const offer = (text, label, mode) => { el('updateText').textContent = text; el('updateGet').textContent = label; barMode = mode; el('updateBar').hidden = false; };
   el('updateGet').addEventListener('click', async e => {
     e.preventDefault();
     const url = el('updateGet').href, name = url.split('/').pop();
     el('updateBar').hidden = true;
-    try { await nativeDownloadUpdate(url, name); setStatus('Downloading the update…'); }
-    catch (err) {
-      try { await nativeOpenExternal(url); setStatus('The update is downloading in your browser. Open it when it finishes to install.'); }
-      catch (err2) { setStatus(`Couldn't download the update. Open ${url} in your browser to get it.`); }
-    }
+    if (barMode === 'install') { try { await nativeInstallUpdate(); } catch (err) { barMode = 'download'; offer("The downloaded update has gone; download it again.", 'Download', 'download'); } return; }
+    if (barMode === 'browser') { try { await nativeOpenExternal(url); setStatus('The update is downloading in your browser. Open it when it finishes, then tap Install.'); } catch (err) { setStatus(`Open ${url} in your browser to get the update.`); } return; }
+    try { lastPct = -1; await nativeDownloadUpdate(url, name); setStatus('Downloading the update…'); }
+    catch (err) { offer("The update couldn't start downloading here.", 'Download in the browser', 'browser'); }
   });
-  let lastPct = -1;
-  onNativeUpdate((st, pct) => {
-    if (st === 'progress' && pct !== lastPct && pct % 10 === 0) { lastPct = pct; setStatus(`Downloading the update: ${pct}%`); }
+  onNativeUpdate((st, pct, msg) => {
+    if (st === 'progress') { if (pct !== lastPct && pct % 10 === 0) { lastPct = pct; setStatus(`Downloading the update: ${pct}%`); } }
+    else if (st === 'ready') setStatus('Downloaded. Opening the installer…');
     else if (st === 'permission') setStatus('Allow Slow Windows to install updates, then come back to finish.');
-    else if (st === 'install') setStatus('Downloaded. Tap Install to update.');
-    else if (st === 'denied') setStatus('The update is downloaded but not installed: installing from Slow Windows is turned off. Try again from Settings, Check for updates.');
-    else if (st === 'failed') setStatus("The update didn't download. Check the connection and try again from Settings, Check for updates.");
+    else if (st === 'install') setStatus('Tap Update on the installer to finish.');
+    else if (st === 'installed') setStatus('Updated.');
+    else if (st === 'cancelled') offer('The update is downloaded and waiting.', 'Install', 'install');
+    else if (st === 'denied') offer('The update is downloaded, but installing from Slow Windows is turned off.', 'Install', 'install');
+    else if (st === 'failed') offer(`The update didn't install: ${msg || 'something went wrong'}.`, 'Download in the browser', 'browser');
   });
   el('updateLater').addEventListener('click', async () => {
     el('updateBar').hidden = true;

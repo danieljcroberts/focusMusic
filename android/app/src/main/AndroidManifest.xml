@@ -43,6 +43,8 @@
         </receiver>
         <!-- The sunrise alarm going off. -->
         <receiver android:name=".AlarmReceiver" android:exported="false" />
+        <!-- What the package installer says about an update the app handed it. -->
+        <receiver android:name=".UpdateReceiver" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,12 +1,18 @@
 package io.github.danieljcroberts.slowwindows;
 
 import android.app.AlarmManager;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import androidx.core.content.pm.PackageInfoCompat;
+import androidx.core.app.NotificationCompat;
+import android.app.NotificationManager;
+import android.app.NotificationChannel;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInstaller;
+import android.content.pm.PackageInfo;
 import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.provider.Settings;
-import androidx.core.content.FileProvider;
 import java.io.File;
 import android.app.PendingIntent;
 import android.app.PictureInPictureParams;
@@ -178,18 +184,27 @@ public class SlowWindowsPlugin extends Plugin {
         } catch (SecurityException e) { call.reject("Alarms are not allowed: " + e.getMessage()); }
     }
 
-    // Updates: the APK is fetched by Android's download manager (with its own progress notification) into the app's
-    // own folder, then handed to the package installer. The first time, Android asks to allow installs from this app;
-    // the install carries on when the person comes back from that setting. Progress and the outcome go to the page as
-    // "update" events: progress (pct), install, permission, failed.
+    // Updates, without the phone's "open with" choice in the way. Android's download manager fetches the APK into the
+    // app's own folder, watched here every moment (so a missed broadcast can't lose it); then the file goes straight to
+    // Android's package installer through an install session, which shows its own Update screen. (Handing it over as a
+    // file to "view" let a default chosen once, such as a system-update app, take it and do nothing.) If the download
+    // finishes while the app is in the background, a notification offers the install, and so does the app when it comes
+    // back. The first time, Android asks to allow installs from this app. Events to the page ("update"): progress (pct),
+    // ready, permission, install (the installer is showing), denied, failed (msg).
+    private static final String PREFS = "sw-update";
+    private static final String CHANNEL_UPDATES = "updates";
     private long updateId = -1;
     private File updateFile;
-    private BroadcastReceiver updateDone;
     private final Handler updateTick = new Handler(Looper.getMainLooper());
+    private boolean installPending = false, inFront = false;
 
-    private void updateEvent(String state, int pct) {
-        JSObject o = new JSObject(); o.put("state", state); o.put("pct", pct); notifyListeners("update", o);
+    private void updateEvent(String state, int pct) { updateEvent(state, pct, null); }
+    private void updateEvent(String state, int pct, String msg) {
+        JSObject o = new JSObject(); o.put("state", state); o.put("pct", pct); if (msg != null) o.put("msg", msg);
+        notifyListeners("update", o, true);   // kept until the page listens, if it isn't yet
     }
+    // From UpdateReceiver: what the installer said.
+    static void installResult(String state, String msg) { if (instance != null) instance.updateEvent(state, 100, msg); }
 
     @PluginMethod
     public void downloadUpdate(PluginCall call) {
@@ -208,30 +223,61 @@ public class SlowWindowsPlugin extends Plugin {
                 .setMimeType("application/vnd.android.package-archive")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setDestinationUri(Uri.fromFile(updateFile));
-            if (updateDone != null) { try { ctx.unregisterReceiver(updateDone); } catch (Exception e) {} }
-            updateDone = new BroadcastReceiver() {
-                @Override public void onReceive(Context c, Intent i) {
-                    if (i.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -2) != updateId) return;
-                    updateTick.removeCallbacksAndMessages(null);
-                    try { c.unregisterReceiver(this); } catch (Exception e) {}
-                    updateDone = null;
-                    if (statusOf(dm) == DownloadManager.STATUS_SUCCESSFUL && updateFile.length() > 0) install();
-                    else updateEvent("failed", 0);
-                }
-            };
-            ContextCompat.registerReceiver(ctx, updateDone, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_EXPORTED);
+            updateTick.removeCallbacksAndMessages(null);
             updateId = dm.enqueue(r);
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("file", updateFile.getAbsolutePath()).apply();
             updateTick.post(new Runnable() { @Override public void run() {
                 try (Cursor q = dm.query(new DownloadManager.Query().setFilterById(updateId))) {
-                    if (q != null && q.moveToFirst()) {
-                        long got = q.getLong(q.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)), all = q.getLong(q.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
-                        if (all > 0) updateEvent("progress", (int) (got * 100 / all));
-                    }
-                } catch (Exception e) {}
+                    if (q == null || !q.moveToFirst()) { updateEvent("failed", 0, "the download was cancelled"); return; }
+                    int status = q.getInt(q.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) { downloaded(); return; }
+                    if (status == DownloadManager.STATUS_FAILED) { updateEvent("failed", 0, "the download failed (code " + q.getInt(q.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)) + ")"); return; }
+                    long got = q.getLong(q.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)), all = q.getLong(q.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+                    if (all > 0) updateEvent("progress", (int) (got * 100 / all));
+                } catch (Exception e) { Logger.error("update poll", e); }
                 updateTick.postDelayed(this, 700);
             } });
             call.resolve();
         } catch (Exception e) { call.reject("Couldn't start the download: " + e.getMessage()); }
+    }
+
+    // A downloaded update that is really a newer build of this app.
+    private boolean isNewer(File f) {
+        if (f == null || !f.exists() || f.length() == 0) return false;
+        try {
+            PackageManager pm = getContext().getPackageManager();
+            PackageInfo apk = pm.getPackageArchiveInfo(f.getAbsolutePath(), 0), mine = pm.getPackageInfo(getContext().getPackageName(), 0);
+            return apk != null && getContext().getPackageName().equals(apk.packageName) && PackageInfoCompat.getLongVersionCode(apk) > PackageInfoCompat.getLongVersionCode(mine);
+        } catch (Exception e) { return false; }
+    }
+
+    private void downloaded() {
+        if (!isNewer(updateFile)) { updateEvent("failed", 0, "the downloaded file isn't a newer version of the app"); return; }
+        updateEvent("ready", 100);
+        if (inFront) install();
+        else { installPending = true; notifyReady(); }
+    }
+
+    // The download finished with the app in the background: a notification that brings it back to install.
+    private void notifyReady() {
+        Context ctx = getContext();
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(CHANNEL_UPDATES) == null)
+            nm.createNotificationChannel(new NotificationChannel(CHANNEL_UPDATES, "App updates", NotificationManager.IMPORTANCE_HIGH));
+        Intent open = new Intent(ctx, MainActivity.class).putExtra("installUpdate", true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent tap = PendingIntent.getActivity(ctx, 7, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        try {
+            nm.notify(7, new NotificationCompat.Builder(ctx, CHANNEL_UPDATES).setSmallIcon(R.drawable.ic_stat_icon)
+                .setContentTitle("Slow Windows update ready").setContentText("Tap to install it.").setContentIntent(tap).setAutoCancel(true).build());
+        } catch (SecurityException e) { /* notifications are off: the app offers it when it comes back */ }
+    }
+
+    // From the page: install a downloaded update now (the "Install" button).
+    @PluginMethod
+    public void installUpdate(PluginCall call) {
+        if (updateFile == null) { String path = getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("file", null); if (path != null) updateFile = new File(path); }
+        if (!isNewer(updateFile)) { call.reject("no update downloaded"); return; }
+        install(); call.resolve();
     }
 
     // A link opened in the phone's browser rather than inside the app.
@@ -244,14 +290,6 @@ public class SlowWindowsPlugin extends Plugin {
         } catch (Exception e) { call.reject(e.getMessage()); }
     }
 
-    private int statusOf(DownloadManager dm) {
-        try (Cursor q = dm.query(new DownloadManager.Query().setFilterById(updateId))) {
-            if (q != null && q.moveToFirst()) return q.getInt(q.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
-        } catch (Exception e) {}
-        return -1;
-    }
-
-    private boolean installPending = false;
     private void install() {
         Context ctx = getContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ctx.getPackageManager().canRequestPackageInstalls()) {
@@ -262,23 +300,51 @@ public class SlowWindowsPlugin extends Plugin {
             return;
         }
         installPending = false;
-        try {
-            Uri uri = FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".fileprovider", updateFile);
-            Intent i = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive");
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-            ctx.startActivity(i);
-            updateEvent("install", 100);
-        } catch (Exception e) { Logger.error("update install", e); updateEvent("failed", 0); }
+        ((NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(7);
+        final File apk = updateFile;
+        new Thread(() -> {
+            try {
+                PackageInstaller pi = ctx.getPackageManager().getPackageInstaller();
+                PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+                params.setAppPackageName(ctx.getPackageName());
+                int id = pi.createSession(params);
+                try (PackageInstaller.Session session = pi.openSession(id)) {
+                    try (InputStream in = new FileInputStream(apk); OutputStream out = session.openWrite("base.apk", 0, apk.length())) {
+                        byte[] buf = new byte[1 << 16]; int n;
+                        while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                        session.fsync(out);
+                    }
+                    Intent done = new Intent(ctx, UpdateReceiver.class);
+                    int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+                    session.commit(PendingIntent.getBroadcast(ctx, id, done, flags).getIntentSender());
+                }
+            } catch (Exception e) { Logger.error("update install", e); updateEvent("failed", 0, "the installer couldn't start (" + e.getMessage() + ")"); }
+        }).start();
     }
 
-    // Back from the "install unknown apps" setting: carry on with the install if it was allowed.
     @Override
     protected void handleOnResume() {
         super.handleOnResume();
-        if (installPending && updateFile != null && updateFile.exists()) {
+        inFront = true;
+        // Opened from the "update ready" notification, or back from the "install unknown apps" setting.
+        if (getActivity() != null && getActivity().getIntent() != null && getActivity().getIntent().getBooleanExtra("installUpdate", false)) {
+            getActivity().getIntent().removeExtra("installUpdate");
+            if (updateFile == null) { String path = getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("file", null); if (path != null) updateFile = new File(path); }
+            installPending = isNewer(updateFile);
+        }
+        if (installPending && isNewer(updateFile)) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getContext().getPackageManager().canRequestPackageInstalls()) install();
             else { installPending = false; updateEvent("denied", 0); }
         }
+    }
+
+    @Override
+    protected void handleOnPause() { super.handleOnPause(); inFront = false; }
+
+    @Override
+    protected void handleOnNewIntent(Intent intent) {
+        super.handleOnNewIntent(intent);
+        if (intent.getBooleanExtra("installUpdate", false)) { if (getActivity() != null) getActivity().setIntent(intent); }
     }
 
     @PluginMethod
