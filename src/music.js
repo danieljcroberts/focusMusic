@@ -325,7 +325,7 @@ export function trackInfo() {
     lines: [genre && `Soundtrack: ${genre}`, base.ep && base.ep.length && `Heard in Music For Programming episode${base.ep.length > 1 ? 's' : ''} ${base.ep.join(', ')}`, base.note].filter(Boolean),
     more: TRACKS.filter(x => x.a === t.a && key(x) !== key(t)) };
 }
-export const currentArt = (plain = true) => curTrack ? coverFor(curTrack, plain) : null;
+export const currentArt = (plain = true) => (curTrack || resume) ? coverFor(curTrack || resume, plain) : null;   // the waiting track's cover too
 export function announce(t = curTrack) {
   if (!ms || !t) return;
   try {
@@ -610,10 +610,27 @@ setInterval(() => { if (!audio.paused) saveNow(true); }, 2000);
 for (const p of players) p.addEventListener('pause', () => { if (p === audio) saveNow(false); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(!audio.paused); });
 window.addEventListener('pagehide', () => saveNow(!audio.paused));
-if (state.np) {
+// The default genre (held down in the cover's menu): the app opens on it. The last track carries on only if it is in it.
+if (state.defaultSt && ST.byId(state.defaultSt)) ST.setCurrent(state.defaultSt);
+const inCurrent = np => np.own ? ST.current().own.includes(np.own) : !!(byKey[np.key] && ST.freeAllows(byKey[np.key]));
+if (state.np && (!state.defaultSt || inCurrent(state.np))) {
   if (state.np.key && byKey[state.np.key]) queueResume(byKey[state.np.key], state.np.t || 0);
   else if (state.np.own) resumeOwn = state.np;     // its entry arrives once your music has loaded
 }
+// Otherwise a track from the genre is ready from the first moment: its name and cover on the bar, and Play starts it.
+// Streams count before the archive.org check is done (Play waits for it); your own music once it has loaded.
+function loadOne() {
+  if (resume || resumeOwn || curTrack) return;
+  const free = ST.freeTracks().filter(t => (t.file || t.stream) && !never.has(key(t)));
+  if (free.length) { queueResume(weighted(free, key), 0); setMeta(['press Play', resume.lic], resume.src, 'Source ↗'); return; }
+  const mine = ownTracks().filter(e => ST.current().own.includes(e.id));
+  if (mine.length) { const e = weighted(mine, x => 'own:' + x.id); resume = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music' }; resumeAt = 0; ui.title.textContent = `${e.t} — ${e.a}`; setMeta(['press Play', 'your music']); }
+}
+loadOne();
+window.addEventListener('sw-own-loaded', loadOne);
+// A new genre chosen while nothing plays: a track from it takes the place of the one that was waiting.
+let loadedFor = ST.current().id;
+ST.onChange(() => { const id = ST.current().id; if (id === loadedFor) return; loadedFor = id; if (!hasSrc && !curTrack) { resume = null; resumeOwn = null; loadOne(); } });
 // Streams need the archive.org check to have finished before they count as playable; a few seconds at most.
 const readyFor = async t => { if (t && t.stream && iaOnline === null && probeDone) await Promise.race([probeDone, new Promise(r => setTimeout(r, 6000))]); return t.own || playable(t); };
 async function carryOn() {

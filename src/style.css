@@ -591,3 +591,7 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 .stmenu .mlist { display: grid; gap: 4px; }
 .stmenu .genre .ic { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 22%, transparent); }
 .stmenu .genre[aria-checked="true"] .ic { background: color-mix(in srgb, var(--c) 40%, transparent); }
+.stmenu .genre { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.stmenu .genre .txt { display: grid; min-width: 0; }
+.stmenu .genre .def { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.stmenu .mnote { margin: 2px 4px 0; font-size: 11px; color: var(--muted); }

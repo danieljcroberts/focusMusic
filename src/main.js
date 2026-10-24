@@ -800,6 +800,7 @@ function syncBar() {
   const ct = currentTrack(); el('stBtn').setAttribute('aria-label', `${ct ? `${ct.t} by ${ct.a}. ` : ''}Soundtrack: ${el('stName').textContent}. Tap to change it or open the library.`);
 }
 window.addEventListener('sw-playstate', syncBar); window.addEventListener('sw-loved', syncBar);
+syncBar();   // the track waiting on opening
 new MutationObserver(syncBar).observe(el('npTitle'), { childList: true, characterData: true, subtree: true });
 function love() { const on = toggleLove(); if (on === null) return; drawLove(); caption(on ? '♥ Loved' : 'Not loved'); haptic(); }
 el('loveBtn').addEventListener('click', love);

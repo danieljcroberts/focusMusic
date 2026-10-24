@@ -46,6 +46,14 @@ function head(title, iconSvg, label, onClick) {
   const b = h('button', { type: 'button', className: 'ib corner', innerHTML: iconSvg }); b.setAttribute('aria-label', label); b.addEventListener('click', e => { e.stopPropagation(); onClick(); });
   return h('div', { className: 'mhead' }, h('span', { className: 'lbl', textContent: title }), b);
 }
+let quietUntil = 0;   // the lift of a hold lands on the redrawn menu: not a tap
+function setDefault(id) {
+  quietUntil = performance.now() + 700;
+  const on = state.defaultSt !== id;
+  saveState({ defaultSt: on ? id : null });
+  setStatus(on ? `${ST.byId(id).name} is now the default: the app opens with it.` : 'No default genre: the app opens where you left off.');
+  fillMenu();
+}
 // The Music section of the sheet, with its More open: the rest of the music settings.
 function openMusicSettings() {
   closeMenus(); el('menuBtn').click();
@@ -68,12 +76,20 @@ function fillMenu() {
   const grid = h('div', { className: 'genres', role: 'menu' });
   for (const s of ST.soundtracks()) {
     if (counts(s).text === 'empty' && s.id !== ST.current().id) continue;   // nothing to play yet (Jazz and French are for your own music)
-    const b = h('button', { type: 'button', className: 'genre' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }));
+    const def = state.defaultSt === s.id;
+    const b = h('button', { type: 'button', className: 'genre' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)),
+      h('span', { className: 'txt' }, h('span', { className: 'nm', textContent: s.name }), def ? h('small', { className: 'def', textContent: 'Default' }) : null));
     b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(s.id === ST.current().id));
-    b.addEventListener('click', () => choose(s.id));
+    b.setAttribute('aria-label', `${s.name}${def ? ', the default' : ''}. Hold to ${def ? 'stop opening with it' : 'open the app with it'}.`);
+    // A tap plays the genre; holding it makes it the default, the genre the app opens with (holding it again clears that).
+    let hold = 0, held = false;
+    b.addEventListener('pointerdown', () => { held = false; clearTimeout(hold); hold = setTimeout(() => { held = true; try { navigator.vibrate && navigator.vibrate(15); } catch (e) {} setDefault(s.id); }, 520); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => clearTimeout(hold));
+    b.addEventListener('click', e => { if (held || performance.now() < quietUntil) { held = false; e.preventDefault(); return; } choose(s.id); });
+    b.addEventListener('contextmenu', e => e.preventDefault());
     grid.append(b);
   }
-  stMenu.append(grid);
+  stMenu.append(grid, h('p', { className: 'mnote', textContent: 'Hold a genre to open the app with it.' }));
 }
 // Each time it opens, the menu starts on the genres.
 stBtn.addEventListener('click', () => { menuView = 'genres'; }, true);
