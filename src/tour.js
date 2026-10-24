@@ -1,12 +1,11 @@
-// A short guided tour: six steps, each pointing at one control, offered on the first visit and under App.
+// A short guided tour: five steps, each pointing at one control, offered on the first visit and under Settings.
 const el = id => document.getElementById(id);
 const STEPS = [
-  ['#play', 'Play and pause, with the previous and next track either side. A double-tap in the middle of the scene does the same.'],
-  ['#stBtn', 'The cover of the playing track. Tap it to switch soundtrack (Ambient, Lo-fi, Loved, your own music and more) or open the library. The heart on the right loves the track.'],
-  ['#sceneBtn', "The scene's name. Tap it, or the window button in the bar, for rows of scenes to choose from: ones that suit right now, your favourites and a search. Swipe sideways to change scene, or hold the scene to flick through them."],
-  ['#menuBtn', 'Everything else lives here: moods to start with, the timer and alarm, sounds, scene sets, your photos, backups. There is a search at the top.'],
-  ['#tStart', 'The focus timer. Tap to start a block; the controls stay out of the way while it runs, and a card sums it up at the end.'],
-  [null, 'Gestures: a tap, a swipe or a hold brings up the controls, with a strip of scenes above the player to scroll through. Slide the right edge for volume and the left for ambience. That is all. Enjoy the view.'],
+  ['#play', 'Play and pause, and next beside it. Double-tap the left of the scene for the previous track, the middle to pause, the right for the next.'],
+  ['#stBtn', 'The cover of the playing track. Tap it to switch soundtrack or open the library; hold it for the track\'s card, with its heart.'],
+  ['#strip', 'Scenes. Scroll the strip to look through them, or tap one; the button at its end opens them all, with a search. Swiping sideways on the scene changes it too.'],
+  ['#menuBtn', 'Everything else, in three parts: Music, Timer (focus blocks, tasks, the sleep timer) and Settings. There is a search at the top.'],
+  [null, 'A tap, a swipe or a hold anywhere brings these controls back. Slide the right edge for volume and the left for ambience. That is all. Enjoy the view.'],
 ];
 let i = 0, hi = null;
 function step() {

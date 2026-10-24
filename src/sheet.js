@@ -1,14 +1,11 @@
-// The sheet: everything that isn't Play, Next, the soundtrack or the scene lives here, in five sections. Each section's
+// The sheet: everything that isn't Play, Next, the soundtrack or the scene lives here, in three sections (Music, Timer,
+// Settings), the rarer choices folded under More in each. Each section's
 // summary line says what it is doing now, so a glance covers the lot. A bottom sheet on phones, a side panel otherwise.
-import { excluded } from './excluded.js';
 import { state, saveState } from './state.js';
 import { follow, setFollow, currentTrack, musicPlaying } from './music.js';
 import * as ST from './soundtracks.js';
 import { drift, driftMin, favs } from './drift.js';
-import { weather } from './weather.js';
-import { localOn } from './local.js';
-import { lowPower, lively } from './view.js';
-import { finishOn } from './finish.js';
+import { lively } from './view.js';
 
 const el = id => document.getElementById(id);
 const sheet = el('sheet'), btn = el('menuBtn');
@@ -73,14 +70,10 @@ followButtons.forEach(b => b.addEventListener('click', () => setFollowMode(b.dat
 drawFollow();
 
 /* The summary lines. */
-const FOLLOW_WORDS = { none: 'follows nothing', scene: 'follows the scene', timer: 'follows the timer', both: 'follows the scene and the timer' };
 function summarise() {
   const t = currentTrack();
-  el('sumNow').textContent = t ? `${musicPlaying ? '' : 'paused · '}${t.t} — ${t.a}` : 'Nothing playing';
-  el('sumMusic').textContent = `${ST.current().name} · ${FOLLOW_WORDS[followMode()]}${follow ? ' · scenes change the track' : ''}`;
+  el('sumMusic').textContent = [t ? `${musicPlaying ? '' : 'paused · '}${t.t}` : '', ST.current().name].filter(Boolean).join(' · ');
   const tl = el('tStart').textContent, count = el('tCount').textContent, sleep = [...el('sleepSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true');
   el('sumTimer').textContent = [tl, count, sleep && sleep.dataset.sleep !== '0' ? `sleep in ${sleep.textContent}` : ''].filter(Boolean).join(' · ');
-  const tod = [...el('todSeg').querySelectorAll('button')].find(b => b.getAttribute('aria-pressed') === 'true'), auto = el('wxAuto').getAttribute('aria-pressed') === 'true';
-  el('sumScene').textContent = [drift ? `drift every ${driftMin} min` : 'no drift', `${favs.size} favourite${favs.size === 1 ? '' : 's'}`, excluded.size ? `${excluded.size} left out` : '', auto ? `weather ${Math.round(weather * 100)}% (auto)` : `weather ${Math.round(weather * 100)}%`, tod && tod.dataset.tod !== 'auto' ? tod.textContent.toLowerCase() : '', localOn ? 'local sky' : '', lively ? 'lively' : '', finishOn ? '' : 'no film finish'].filter(Boolean).join(' · ');
-  el('sumApp').textContent = [lowPower ? 'low power' : '', document.fullscreenElement ? 'full screen' : el('fsAutoBtn').getAttribute('aria-pressed') === 'true' ? 'full screen on tap' : ''].filter(Boolean).join(' · ') || 'all as usual';
+  el('sumScene').textContent = [drift ? `drift every ${driftMin} min` : '', favs.size ? `${favs.size} favourite${favs.size === 1 ? '' : 's'}` : '', lively ? 'lively' : ''].filter(Boolean).join(' · ');
 }

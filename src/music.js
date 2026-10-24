@@ -244,7 +244,7 @@ const noteSceneLove = (k, on) => { if (!sceneName) return; sceneLoves = withScen
 let loudFor = 0, loudTold = false;
 setInterval(() => {
   if (!musicPlaying) return;
-  if (Math.min(master, volCap) >= .85) { loudFor += 5; if (loudFor >= 3600 && !loudTold) { loudTold = true; setStatus('An hour at high volume: if you are on headphones, a little lower is kinder to your ears. A volume limit is under Now playing.'); note('hearing reminder shown'); } }
+  if (Math.min(master, volCap) >= .85) { loudFor += 5; if (loudFor >= 3600 && !loudTold) { loudTold = true; setStatus('An hour at high volume: if you are on headphones, a little lower is kinder to your ears. A volume limit is under Music.'); note('hearing reminder shown'); } }
   else { loudFor = Math.max(0, loudFor - 10); if (loudFor === 0) loudTold = false; }
 }, 5000);
 export const found = () => state.found || [];
@@ -549,7 +549,7 @@ const upNext = [];
 export const queue = () => upNext;
 export function playNext(item) { upNext.push(item); drawUpNext(); setStatus(`Up next: ${item.t} — ${item.a}.`); }
 export function clearQueue() { upNext.length = 0; drawUpNext(); }
-// The queue under Now playing: each track with up, down and remove.
+// The queue under Music: each track with up, down and remove.
 function drawUpNext() {
   const box = el('upNext'), ol = el('upNextList'); if (!box) return;
   box.hidden = !upNext.length; ol.textContent = '';

@@ -83,7 +83,9 @@ async function controls(page) {
   await page.click('#lowBtn'); await page.waitForTimeout(300); await page.click('#lowBtn');
   await page.keyboard.press('g'); await page.waitForTimeout(200); await page.keyboard.press('Escape');   // scene picker opens and closes
   await page.click('#libBtn'); await page.keyboard.press('Escape'); await page.keyboard.press('Escape');   // the library, then the sheet
-  await page.click('#tStart'); await page.click('#tStart');
+  // The focus timer starts from the Timer section of the sheet.
+  await page.click('#menuBtn'); await page.evaluate(() => { document.getElementById('secTimer').open = true; });
+  await page.click('#tStart'); await page.click('#tStart'); await page.click('#sheetClose');
   await page.waitForTimeout(300);
 }
 // Second pass with real motion: the animation loop runs, and every scene must yield a thumbnail (so it drew something).

@@ -7,10 +7,10 @@ import * as ST from './soundtracks.js';
 
 const el = id => document.getElementById(id);
 const MOODS = {
-  study: { name: 'Study', note: 'Ambient music, the library window in the rain, a 50-minute focus timer', soundtrack: 'ambient', scene: 'library', ambience: .3, timer: '50' },
-  relax: { name: 'Relax', note: 'Downtempo electronic over the fjord at Holmestrand, a little wind', soundtrack: 'downtempo', scene: 'holmestrand', ambience: .25 },
-  workout: { name: 'Workout', note: 'Hard techno, psytrance, drum and bass and hardstyle on a run through the woods, 25-minute rounds with short breaks', soundtrack: 'energy', scene: 'trailRun', ambience: .15, timer: '25' },
-  sleep: { name: 'Sleep', note: 'Calm music, the night sky, the screen dimmed, stopping in 30 minutes', bedtime: true },
+  study: { name: 'Study', note: 'Ambient, rain on the library window, 50-minute focus', soundtrack: 'ambient', scene: 'library', ambience: .3, timer: '50' },
+  relax: { name: 'Relax', note: 'Downtempo by the fjord', soundtrack: 'downtempo', scene: 'holmestrand', ambience: .25 },
+  workout: { name: 'Workout', note: 'Hard and fast, on a trail run', soundtrack: 'energy', scene: 'trailRun', ambience: .15, timer: '25' },
+  sleep: { name: 'Sleep', note: 'Calm music, dimmed, off in 30 minutes', bedtime: true },
 };
 let go = () => {}, find = () => -1, syncAmb = () => {};
 export function applyMood(k) {
@@ -23,7 +23,7 @@ export function applyMood(k) {
   if (!musicPlaying) togglePlay(); else nextTrack();
   setStatus(`${m.name}: ${m.note}.`);
 }
-// A row of three buttons, used in the first-visit card and at the top of the sheet.
+// A row of mood buttons, used in the first-visit card and at the top of the sheet.
 export function moodButtons(onPick) {
   const row = document.createElement('div'); row.className = 'moods';
   for (const [k, m] of Object.entries(MOODS)) {

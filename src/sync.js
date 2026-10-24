@@ -57,7 +57,7 @@ async function openSend() {
     row.append(share);
   }
   const note = document.createElement('p'); note.className = 'muted';
-  note.textContent = 'In the Android app, paste the link under App, Receive settings. Anyone with the link can see these settings, so send it only to yourself.';
+  note.textContent = 'In the Android app, paste the link under Settings, More, Receive settings. Anyone with the link can see these settings, so send it only to yourself.';
   body.replaceChildren(svg, p, row, note);
 }
 

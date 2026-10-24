@@ -290,7 +290,7 @@ body.touring .chrome, body.touring .shade { opacity: 1 !important; visibility: v
   nav .thumb { width: 76px; height: 42px; }
   .tmenu { left: auto; right: 10px; width: min(380px, 60vw); }
 }
-.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); transform: translateX(-50%); z-index: 5; pointer-events: none;
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 22px); transform: translateX(-50%); z-index: 7; pointer-events: none;
   font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 300; font-size: 26px; color: var(--text);
   text-shadow: 0 2px 18px rgba(0, 0, 0, .6); opacity: 0; transition: opacity .5s ease; white-space: nowrap; }
 .toast.on { opacity: .92; }
@@ -555,12 +555,33 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 .stile:active .pt { transform: scale(.97); }
 .strip { width: 100%; max-width: 760px; min-width: 0; margin: 0 auto 8px; }
 .bottom { grid-template-columns: minmax(0, 1fr); width: 100%; box-sizing: border-box; }
-.strip .track { position: relative; display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 50% 6px; box-sizing: border-box; scrollbar-width: none; overscroll-behavior-x: contain;
+.strip .track { position: relative; display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 0; box-sizing: border-box; scrollbar-width: none; overscroll-behavior-x: contain;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
 .strip .track::-webkit-scrollbar { display: none; }
+.strip .track::before, .strip .track::after { content: ""; flex: 0 0 calc(50% - 48px); }   /* room to centre the first and last scenes */
 .strip .stile { width: 88px; scroll-snap-align: center; }
 .strip .stile .nm { display: none; }
 .strip .stile .pt { transition: transform .2s, box-shadow .2s; border-radius: 8px; }
 .strip .stile[aria-pressed="true"] .pt { transform: scale(1.14); }
 .strip .sgrp { flex: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 2px; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
-@media (max-width: 440px) { .player #barLove { display: none; } }
+/* Stripped back: no top bar (the scene's name shows at the top for a moment when it changes, and opens the scenes);
+   the player is the cover, the track, play, next and ⋯ (previous is a double-tap on the left or a swipe of the bar,
+   the heart is in the track card). */
+.chrome .top { display: none; }
+.chrome { justify-content: flex-end; }
+.player #prev, .player #barLove { display: none; }
+.toast.scene.on { pointer-events: auto; cursor: pointer; }
+.strip { display: flex; align-items: center; gap: 6px; }
+.strip .track { flex: 1; min-width: 0; }
+.strip .allbtn { flex: none; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--text); }
+.strip .allbtn svg { width: 20px; height: 20px; }
+.sheet details.more { margin-top: 6px; }
+.sheet details.more > summary { display: block; cursor: pointer; font-size: 12px; color: var(--muted); padding: 8px 0; list-style: none; border-radius: 0; }
+.sheet details.more > summary::after { content: none; }
+.sheet details.more > summary::before { content: "+ "; }
+.sheet details.more[open] > summary::before { content: "− "; }
+.sheet details.more > summary::-webkit-details-marker { display: none; }
+.sheet details.more > .pane { padding: 0; }
+.sheet .moods { grid-template-columns: repeat(4, 1fr); }
+.sheet .mood span { display: none; }
+.sheet .mood { padding: 10px 8px; text-align: center; }

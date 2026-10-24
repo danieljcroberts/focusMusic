@@ -125,8 +125,8 @@ export function initNativeUi({ caption, frame, go, current, find, sceneName }) {
     if (st === 'progress' && pct !== lastPct && pct % 10 === 0) { lastPct = pct; setStatus(`Downloading the update: ${pct}%`); }
     else if (st === 'permission') setStatus('Allow Slow Windows to install updates, then come back to finish.');
     else if (st === 'install') setStatus('Downloaded. Tap Install to update.');
-    else if (st === 'denied') setStatus('The update is downloaded but not installed: installing from Slow Windows is turned off. Try again from App, Check for updates.');
-    else if (st === 'failed') setStatus("The update didn't download. Check the connection and try again from App, Check for updates.");
+    else if (st === 'denied') setStatus('The update is downloaded but not installed: installing from Slow Windows is turned off. Try again from Settings, Check for updates.');
+    else if (st === 'failed') setStatus("The update didn't download. Check the connection and try again from Settings, Check for updates.");
   });
   el('updateLater').addEventListener('click', async () => {
     el('updateBar').hidden = true;

@@ -92,7 +92,7 @@ el('exportBtn').addEventListener('click', () => {
   const { np, ...keep } = state; void np;
   const blob = new Blob([JSON.stringify({ app: 'slow-windows', version: 1, at: new Date().toISOString(), state: keep }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `slow-windows-settings-${new Date().toISOString().slice(0, 10)}.json`; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000); setStatus('Settings saved as a file. Restore it on another device under App.');
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); setStatus('Settings saved as a file. Restore it on another device under Settings, More.');
 });
 el('importBtn').addEventListener('click', () => {
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';

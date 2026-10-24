@@ -271,7 +271,7 @@ function go(i, quiet = false) {
   saveState({ scene: SCENES[cur].name }); scheduleThumb();
   if (quiet) { if (still) render(0); return; }
   sceneKept(); syncStrip();
-  if (document.body.classList.contains('idle') && picker.hidden) caption(SCENES[cur].name);
+  if (picker.hidden && !shelvesOpen()) caption(SCENES[cur].name, true);   // there is no title bar: the name shows for a moment
   if (still) render(0);
 }
 function sceneKept() { onSceneChange(); noteSceneChange(); noteRecent(SCENES[cur].name); }
@@ -283,7 +283,7 @@ function step(d) {
 // While the controls are hidden, a scene change shows just its name for a moment.
 const toast = el('toast');
 let toastTimer;
-function caption(text) { toast.textContent = text; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1600); }
+function caption(text, scene = false) { toast.textContent = text; toast.classList.toggle('scene', scene); toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1600); }
 /* Scenes that don't listen to the music themselves breathe a little with it: a touch of brightness on the bass and the
    level, smoothed. The scenes that react in their own way are left alone. */
 const REACTS = new Set(['spectrumBars', 'feedback', 'superscope', 'beatstars', 'dancingscope', 'scope', 'spectrum', 'ferrofluid', 'tunnel', 'synthwave', 'neonhighway', 'vector', 'lasers', 'memphis',
@@ -370,7 +370,7 @@ let batteryNoted = false;
 if (navigator.getBattery) navigator.getBattery().then(b => {
   let lowNoted = false;
   const check = () => {
-    if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off under App.'); }
+    if (!b.charging && b.level < .4 && !lowPower && !batteryNoted) { batteryNoted = true; setLowPower(true, 'Low power turned on to spare the battery. Turn it off under Settings.'); }
     const heavy = ['webgl', 'video'].includes(instances[cur].kind) || instances[cur].kind === 'three';
     if (!b.charging && b.level < .2 && heavy && !lowNoted) { lowNoted = true; const i = SCENES.findIndex(s => s.key === 'nightSky'); if (i >= 0) { go(i); setStatus('Battery below 20%: moved to a still scene, which costs almost nothing to show.'); } }
   };
@@ -382,7 +382,7 @@ function watchFps(real) {
   if (fpsAcc < 1) return;
   const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; lastFps = fps;
   if (fps < 22 && !lowPower && !autoLow && !document.hidden) {
-    if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off under App in the ⋯ menu.'); }
+    if (++slowFor >= 6) { autoLow = true; setLowPower(true, 'Low power turned on because the frame rate was low. Turn it off under Settings in the ⋯ menu.'); }
   } else slowFor = 0;
 }
 function drawDiag() { setDiag(diagLines()); }
@@ -398,7 +398,7 @@ function diagLines() {
     `ambience ${amb.kind} · level ${amb.level.toFixed(2)} · ${amb.layers} layer${amb.layers === 1 ? '' : 's'}`,
   ];
 }
-// The version, under App: the Android app checks for a newer one on demand (native-ui.js); the website is always current.
+// The version, under Settings: the Android app checks for a newer one on demand (native-ui.js); the website is always current.
 el('verNote').textContent = NATIVE ? `Version 1.0.${import.meta.env.VITE_APP_VERSION}` : `Web app, always the latest (1.0.${import.meta.env.VITE_APP_VERSION})`;
 el('updBtn').hidden = !NATIVE;
 el('copyDiagBtn').addEventListener('click', async () => {
@@ -638,7 +638,7 @@ window.addEventListener('sw-focus-start', () => {
 el('intentOk').addEventListener('click', () => closeIntent(true));
 intentIn.addEventListener('keydown', e => { if (e.key === 'Enter') closeIntent(true); else if (e.key === 'Escape') { intentIn.value = ''; closeIntent(true); } else { clearTimeout(intentTimer); intentTimer = setTimeout(() => closeIntent(true), 20000); } });
 
-// The sound preset, and the extra sounds you mix in under Now playing.
+// The sound preset, and the extra sounds you mix in under Music.
 const eqButtons = [...el('eqSeg').querySelectorAll('button')];
 const drawEq = () => eqButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.eq === eqName)));
 eqButtons.forEach(b => b.addEventListener('click', () => { setEq(b.dataset.eq); drawEq(); })); drawEq();
@@ -718,7 +718,7 @@ const capButtons = [...el('capSeg').querySelectorAll('button')];
 const drawCap = () => capButtons.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.cap === volCap)));
 capButtons.forEach(b => b.addEventListener('click', () => { setVolCap(+b.dataset.cap); drawCap(); })); drawCap();
 
-// The track info card: tap the track's name under Now playing (or press I).
+// The track info card: tap the track's name under Music (or press I).
 function openInfo() {
   const info = trackInfo(); if (!info) { setStatus('Nothing playing yet.'); return; }
   el('tiTitle').textContent = info.t; el('tiArtist').textContent = info.a; el('tiKind').textContent = [info.kind, info.lic].filter(Boolean).join(' · ');
@@ -883,7 +883,8 @@ el('chooseBtn').addEventListener('click', () => { el('sheetClose').click(); pick
 function closePicker() { picker.hidden = true; if (pickMode === 'choose') { pickMode = state.pickMode && state.pickMode !== 'choose' ? state.pickMode : 'all'; } }
 el('pickerClose').addEventListener('click', closePicker);
 el('sceneBtn').addEventListener('click', () => openShelves());
-el('scenesBtn').addEventListener('click', () => openShelves());
+el('stripAll').addEventListener('click', () => openShelves());
+toast.addEventListener('click', () => { if (toast.classList.contains('scene')) openShelves(); });
 initSceneMenu({ SCENES, cur: () => cur, go, commit: sceneKept, included, haptic, wake: () => wake(),
   thumb: i => thumbs[SCENES[i].name] || `assets/thumbs/${slug(SCENES[i])}.jpg`, openGrid: () => openPicker() });
 

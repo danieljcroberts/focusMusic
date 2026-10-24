@@ -1,7 +1,7 @@
 // Look around: tilting the phone, or moving the mouse on a computer, shifts layered scenes by depth, near layers more
 // than far ones, as if looking out of a window. The phone's resting angle is learnt over a few seconds and counts as
 // straight ahead, so holding it at any angle is fine and only leaning it looks around. Off with reduced motion, and
-// under Scene in the sheet.
+// under Settings in the sheet.
 import { state, saveState } from './state.js';
 import { still } from './view.js';
 
