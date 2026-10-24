@@ -2,7 +2,7 @@
 const el = id => document.getElementById(id);
 const STEPS = [
   ['#play', 'Play and pause, and next beside it. Double-tap the left of the scene for the previous track, the middle to pause, the right for the next.'],
-  ['#stBtn', 'The cover of the playing track. Tap it to switch soundtrack or open the library; hold it for the track\'s card, with its heart.'],
+  ['#stBtn', 'The cover of the playing track. Tap it to choose a genre; the cog there has your own music, the library and the music settings. Hold it for the track\'s card, with its heart.'],
   ['#strip', 'Scenes. Scroll the strip to look through them, or tap one; the button at its end opens them all, with a search. Swiping sideways on the scene changes it too.'],
   ['#menuBtn', 'Everything else, in three parts: Music, Timer (focus blocks, tasks, the sleep timer) and Settings. There is a search at the top.'],
   [null, 'A tap, a swipe or a hold anywhere brings these controls back. Slide the right edge for volume and the left for ambience. That is all. Enjoy the view.'],

@@ -38,18 +38,45 @@ function choose(id) {
   setStatus(`Soundtrack: ${s.name}.`);
   if (musicPlaying) nextTrack();          // switch now, with the usual crossfade
 }
+// The menu: the genres, nothing else; a cog swaps them for the music settings (your own music, the library, editing).
+let menuView = 'genres';
+const cog = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" class="s"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" class="s"/><circle cx="12" cy="12" r="6.2" class="s"/></svg>';
+const back = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" class="s"/></svg>';
+function head(title, iconSvg, label, onClick) {
+  const b = h('button', { type: 'button', className: 'ib corner', innerHTML: iconSvg }); b.setAttribute('aria-label', label); b.addEventListener('click', e => { e.stopPropagation(); onClick(); });
+  return h('div', { className: 'mhead' }, h('span', { className: 'lbl', textContent: title }), b);
+}
+// The Music section of the sheet, with its More open: the rest of the music settings.
+function openMusicSettings() {
+  closeMenus(); el('menuBtn').click();
+  requestAnimationFrame(() => { const d = el('secMusic'); d.open = true; el('moreMusic').open = true; d.scrollIntoView({ block: 'start' }); });
+}
 function fillMenu() {
   stMenu.textContent = '';
-  stMenu.append(h('span', { className: 'lbl', textContent: 'Soundtrack' }));
+  if (menuView === 'settings') {
+    stMenu.append(head('Music settings', back, 'Back to the genres', () => { menuView = 'genres'; fillMenu(); }));
+    const list = h('div', { className: 'mlist' },
+      btn('Add your music…', () => { closeMenus(); openWizard(); }, ''),
+      btn('Music library', () => { closeMenus(); openLib(true); }, ''),
+      btn('Edit soundtracks', () => { closeMenus(); openEditor(); }, ''),
+      btn('New soundtrack', () => { closeMenus(); openEditor({ create: true }); }, ''),
+      btn('More music settings…', openMusicSettings, ''));
+    stMenu.append(list);
+    return;
+  }
+  stMenu.append(head('Genre', cog, 'Music settings: your own music, the library and more', () => { menuView = 'settings'; fillMenu(); }));
+  const grid = h('div', { className: 'genres', role: 'menu' });
   for (const s of ST.soundtracks()) {
-    const c = counts(s);
-    const b = h('button', { type: 'button', className: 'opt' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }), h('small', { textContent: c.own ? `${c.own} of yours${c.free ? ' + free' : ''}` : c.free ? c.freeText : s.live ? 'random finds' : s.id === 'loved' ? 'tap ♥ while playing' : 'add your own' }));
+    if (counts(s).text === 'empty' && s.id !== ST.current().id) continue;   // nothing to play yet (Jazz and French are for your own music)
+    const b = h('button', { type: 'button', className: 'genre' }, h('span', { className: 'ic', style: `--c:${s.color}` }, icon(s)), h('span', { className: 'nm', textContent: s.name }));
     b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(s.id === ST.current().id));
     b.addEventListener('click', () => choose(s.id));
-    stMenu.append(b);
+    grid.append(b);
   }
-  stMenu.append(h('hr'), btn('Music library', () => { closeMenus(); openLib(true); }, ''), btn('+ New soundtrack', () => { closeMenus(); openEditor({ create: true }); }, ''), btn('Edit soundtracks', () => { closeMenus(); openEditor(); }, ''), btn('Add your music…', () => { closeMenus(); openWizard(); }, ''));
+  stMenu.append(grid);
 }
+// Each time it opens, the menu starts on the genres.
+stBtn.addEventListener('click', () => { menuView = 'genres'; }, true);
 registerMenu(stBtn, stMenu, fillMenu);
 ST.onChange(drawChip);
 drawChip();

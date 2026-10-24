@@ -440,7 +440,11 @@ function wake(ms) {
   idleTimer = setTimeout(hide, ms || (performance.now() - lastTouch < 1500 ? 3000 : 5000));
   keepAwake();
 }
-function hide() { clearTimeout(idleTimer); settleStrip(); document.body.classList.add('idle'); }
+function hide() {
+  clearTimeout(idleTimer);
+  if (document.querySelector('.tmenu:not([hidden])')) { idleTimer = setTimeout(hide, 3000); return; }   // not while a menu is open
+  settleStrip(); document.body.classList.add('idle');
+}
 function showByHand() { saveState({ hidden: false }); wake(3000); }
 function hideByHand() { saveState({ hidden: true }); hide(); }
 const onScene = e => !e.target.closest('.chrome, .sheet, .lib, .help, .hint1, .diag, .picker, .wiz, .summary, .intent, .info-card, .tour, .update, .ivpill, .shelves, .strip');
