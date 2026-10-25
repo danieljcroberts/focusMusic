@@ -15,7 +15,9 @@ function seeded(seed) { let s = seed; return () => { s = (s * 1664525 + 10139042
 const lerp = (a, b, k) => a + (b - a) * k;
 const smooth = x => x * x * (3 - 2 * x);
 // Value noise on a grid, summed over octaves: a small buffer of fbm in 0..1, for clouds, hills and leaves.
-function fbmBuffer(w, h, seed, octaves = 5, scale = 1) {
+// With wrap, the buffer joins up with itself left to right (each point is blended with its twin one width along), so
+// copies laid side by side show no seam.
+function fbmBuffer(w, h, seed, octaves = 5, scale = 1, wrap = false) {
   const r = seeded(seed), G = 64, grid = new Float32Array(G * G);
   for (let i = 0; i < grid.length; i++) grid[i] = r();
   const noise = (x, y) => {
@@ -24,10 +26,11 @@ function fbmBuffer(w, h, seed, octaves = 5, scale = 1) {
     return lerp(lerp(g(xi, yi), g(xi + 1, yi), fx), lerp(g(xi, yi + 1), g(xi + 1, yi + 1), fx), fy);
   };
   const out = new Float32Array(w * h);
+  const at = (x, y) => { let v = 0, a = .5, f = scale * 4 / w; for (let o = 0; o < octaves; o++) { v += a * noise(x * f + o * 7.3, y * f + o * 3.1); f *= 2.03; a *= .5; } return v; };
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    let v = 0, a = .5, f = scale * 4 / w;
-    for (let o = 0; o < octaves; o++) { v += a * noise(x * f + o * 7.3, y * f + o * 3.1); f *= 2.03; a *= .5; }
-    out[y * w + x] = v;
+    if (!wrap) { out[y * w + x] = at(x, y); continue; }
+    const k = x / w, v = at(x, y) * (1 - k) + at(x - w, y) * k;   // the same value at both edges
+    out[y * w + x] = .5 + (v - .5) / Math.sqrt(k * k + (1 - k) * (1 - k));   // keep the contrast the blend would lose
   }
   return out;
 }
@@ -60,13 +63,13 @@ export function holmestrandScene() {
     /* Sky: the deck. A base gradient, then noise-shaded cloud: dark bellies, lighter tops, and a warm underlight that
        grows toward the horizon and the sun, so the gold reads as light getting under the cloud. */
     [sky, g] = layer(W, H);
-    const top = skyMix([8, 11, 22], [84, 90, 106], [150, 158, 172], d), low = skyMix([24, 28, 44], [236, 196, 128], [214, 212, 204], d);
+    const top = skyMix([12, 16, 30], [84, 90, 106], [150, 158, 172], d), low = skyMix([30, 34, 54], [236, 196, 128], [214, 212, 204], d);
     const gr = g.createLinearGradient(0, 0, 0, hy); gr.addColorStop(0, rgb(top)); gr.addColorStop(.75, rgb(skyMix([14, 18, 32], [150, 142, 136], [190, 194, 202], d))); gr.addColorStop(1, rgb(low));
     g.fillStyle = gr; g.fillRect(0, 0, W, hy + 2);
     cw = Math.ceil(W * 2);
-    const nw = 320, nh = Math.max(64, Math.min(320, Math.round(nw * hy / W))), nb = fbmBuffer(nw, nh, 11, 5, 3), nb2 = fbmBuffer(nw, nh, 23, 3, 9);   // the buffer keeps the sky's shape, so lumps stay lumps
+    const nw = 320, nh = Math.max(64, Math.min(320, Math.round(nw * hy / W))), nb = fbmBuffer(nw, nh, 11, 5, 3, true), nb2 = fbmBuffer(nw, nh, 23, 3, 9, true);   // the buffer keeps the sky's shape, so lumps stay lumps
     const cim = new ImageData(nw, nh);
-    const belly = skyMix([6, 8, 16], [66, 68, 80], [140, 146, 160], d), edge = skyMix([16, 18, 30], [176, 150, 128], [208, 208, 214], d), under = [255, 200, 120];
+    const belly = skyMix([8, 10, 20], [66, 68, 80], [140, 146, 160], d), edge = skyMix([34, 38, 58], [176, 150, 128], [208, 208, 214], d), under = [255, 200, 120];
     for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
       const i = y * nw + x, k = y / nh;
       const n = nb[i] * .8 + nb2[i] * .2 + (k - .5) * .25;                      // thicker up top, breaking up toward the horizon
@@ -133,11 +136,26 @@ export function holmestrandScene() {
     /* The town. The slope first: a hillside of lawns, hedges and streets, warm where the low sun reaches it. Then houses,
        nearer rows larger, each a proper wooden house with eaves, a gable or hip, dormers, framed windows and a shadow. */
     [town, g] = layer(W, H);
+    windows = [];
     const hg = g.createLinearGradient(0, wy1 - H * .05, 0, H);
     hg.addColorStop(0, mix([12, 18, 16], [78, 86, 56], [108, 122, 76], d)); hg.addColorStop(.5, mix([8, 12, 10], [54, 64, 40], [80, 96, 56], d)); hg.addColorStop(1, mix([4, 6, 6], [30, 38, 24], [48, 60, 34], d));
     g.fillStyle = hg; g.fillRect(0, wy1 - H * .05, W, H);
     if (season === 'winter') { g.fillStyle = mix([150, 160, 180], [226, 222, 220], [244, 246, 250], d); g.fillRect(0, wy1 - H * .05, W, H); }
     g.fillStyle = rgb([255, 190, 110], .12 * gold); g.fillRect(0, wy1 - H * .05, W, H * .25);
+    // The waterfront: a stone quay along the water, then a row of low warehouses, shops and old wharf houses.
+    { const qy = wy1 - H * .05, qc = skyMix([20, 22, 28], [120, 112, 100], [156, 152, 144], d);
+      g.fillStyle = rgb(qc); g.fillRect(0, qy, W, H * .018);
+      g.fillStyle = rgb(qc.map(v => v * .75)); g.fillRect(0, qy + H * .018, W, H * .004);
+      const rq = seeded(57), wcols = [[200, 80, 56], [232, 220, 196], [214, 170, 96], [150, 154, 150], [236, 232, 222], [120, 60, 50]];
+      for (let x = -10; x < W; ) {
+        const bw = (30 + 60 * rq()) * s, bh = (14 + 16 * rq()) * s, by = qy + H * .022 + bh * .2;
+        const c = wcols[Math.floor(rq() * wcols.length)];
+        g.fillStyle = wallC(c, 1); g.fillRect(x, by - bh, bw, bh);
+        g.fillStyle = wallC(c, 0); g.fillRect(x + bw * .75, by - bh, bw * .25, bh);
+        g.fillStyle = rgb([40, 40, 46].map(v => v * (.4 + .6 * lit))); g.beginPath(); g.moveTo(x - 2 * s, by - bh); g.lineTo(x + bw / 2, by - bh - bh * (.25 + .3 * rq())); g.lineTo(x + bw + 2 * s, by - bh); g.fill();
+        for (let k = 0; k < Math.max(1, Math.round(bw / (10 * s))); k++) { const wx = x + (k + .5) * bw / Math.max(1, Math.round(bw / (10 * s))) - 2 * s; g.fillStyle = rgb(skyMix([30, 36, 50], [86, 96, 112], [120, 138, 160], d)); g.fillRect(wx, by - bh * .7, 4 * s, 5 * s); windows.push({ x: wx, y: by - bh * .7, w: 4 * s, h: 5 * s, on: rq() < .6, ph: rq() * 9, owner: -1 }); }
+        x += bw + (2 + 10 * rq()) * s;
+      } }
     { const gw2 = 160, gh2 = 64, gb = fbmBuffer(gw2, gh2, 41, 4, 4), gim = new ImageData(gw2, gh2);
       const dk = skyMix([6, 10, 8], [34, 46, 26], [52, 72, 38], d), lt = skyMix([14, 22, 16], [96, 112, 60], [128, 150, 84], d);
       for (let i = 0; i < gw2 * gh2; i++) { const n = gb[i], c = n < .5 ? dk : lt; gim.data[i * 4] = c[0]; gim.data[i * 4 + 1] = c[1]; gim.data[i * 4 + 2] = c[2]; gim.data[i * 4 + 3] = 255 * Math.abs(n - .5) * 2.2; }
@@ -146,7 +164,6 @@ export function holmestrandScene() {
     for (let i = 0; i < 140; i++) { const x = r() * W, y = wy1 + H * .02 + Math.pow(r(), .8) * H * .32, k = (y - wy1) / (H * .34), rr3 = (5 + 14 * k + 8 * r()) * s; g.fillStyle = rgb(treeC.map(v => v * (.8 + .4 * r())), .9); g.beginPath(); g.ellipse(x, y, rr3 * 1.2, rr3, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = rgb(treeC.map(v => v * 1.5 + 36 * gold), .5); g.beginPath(); g.ellipse(x + rr3 * .3, y - rr3 * .35, rr3 * .7, rr3 * .5, 0, 0, Math.PI * 2); g.fill(); }
     g.strokeStyle = rgb(skyMix([20, 22, 26], [92, 90, 86], [130, 128, 124], d), .8); g.lineWidth = 3 * s;
     for (const [x0, y0, x1, y1] of [[W * .05, wy1, W * .32, H * .9], [W * .45, wy1 - H * .02, W * .3, H * .88], [W * .95, wy1, W * .6, H * .9], [0, wy1 + H * .12, W, wy1 + H * .16]]) { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
-    windows = [];
     const palette = [[240, 236, 226], [240, 236, 226], [238, 232, 216], [236, 226, 198], [226, 214, 184], [206, 160, 90], [214, 206, 194], [176, 58, 42], [96, 118, 140]];
     const houses = [];
     const rows = port ? 9 : 6, rk = port ? .62 : 1;
@@ -159,8 +176,25 @@ export function holmestrandScene() {
         houses.push({ x, yb, w, h, base: palette[Math.floor(r() * palette.length)], red: r() < .14, hip: r() < .3, dormer: r() < .4, chimney: r() < .6, tree: r(), treeK: r(), two: r() < .5 });
       }
     }
+    // The white church with its spire, among the second row.
+    { const cy = wy1 + H * (.012 + .042 * rk), sc = 1.5 + .5 * rk, cx = W * (port ? .3 : .36);
+      for (let i = houses.length - 1; i >= 0; i--) if (Math.abs(houses[i].x + houses[i].w / 2 - cx) < 60 * s * sc && Math.abs(houses[i].yb - cy) < H * .03) houses.splice(i, 1);
+      houses.push({ church: true, x: cx - 24 * s * sc, yb: cy, w: 48 * s * sc, h: 20 * s * sc }); }
     houses.sort((a, b) => a.yb - b.yb);
+    houses.forEach((hs, i) => { hs.n = i; });
     for (const hs of houses) {
+      const owner = hs.n;
+      if (hs.church) {
+        const { x, yb, w, h } = hs, white = [244, 242, 236], roofC2 = (season === 'winter' ? [228, 230, 236] : [56, 58, 66]).map(v => v * (.35 + .65 * lit));
+        g.fillStyle = wallC(white, 0); g.fillRect(x, yb - h, w * .7, h); g.fillStyle = wallC(white, 1); g.fillRect(x + w * .7, yb - h, w * .3, h);
+        g.fillStyle = rgb(roofC2); g.beginPath(); g.moveTo(x - w * .04, yb - h); g.lineTo(x + w * .5, yb - h * 1.55); g.lineTo(x + w * 1.04, yb - h); g.fill();
+        const tx = x + w * .06, tw = w * .24;   // the tower and spire at the west end
+        g.fillStyle = wallC(white, 1); g.fillRect(tx, yb - h * 2.1, tw, h * 2.1);
+        g.fillStyle = rgb(roofC2); g.beginPath(); g.moveTo(tx - tw * .1, yb - h * 2.1); g.lineTo(tx + tw / 2, yb - h * 3.3); g.lineTo(tx + tw * 1.1, yb - h * 2.1); g.fill();
+        g.fillStyle = rgb([60, 70, 90]); for (let k = 0; k < 3; k++) { g.beginPath(); g.ellipse(x + w * (.42 + k * .16), yb - h * .55, 2.2 * s, 4.5 * s, 0, 0, Math.PI * 2); g.fill(); }
+        g.beginPath(); g.ellipse(tx + tw / 2, yb - h * 1.7, 2.5 * s, 2.5 * s, 0, 0, Math.PI * 2); g.fill();
+        continue;
+      }
       const { x, yb, w, h, base, red, hip, dormer, chimney, tree, treeK, two } = hs, sc = h / (14 * s);
       const roofC = (season === 'winter' ? [228, 230, 236] : red ? [148, 64, 48] : [44, 46, 50]).map(v => v * (.35 + .65 * lit)), roofLit = roofC.map(v => Math.min(255, v * 1.25 + 24 * gold));
       g.fillStyle = rgb([0, 0, 0], .22 * lit); g.beginPath(); g.ellipse(x + w * .35, yb + 2 * s, w * .7, 4 * s * sc, 0, 0, Math.PI * 2); g.fill();
@@ -172,20 +206,27 @@ export function holmestrandScene() {
       else { g.beginPath(); g.moveTo(x - w * .07, yb - h); g.lineTo(x + w * .5, yb - h * 1.65); g.lineTo(x + w * 1.07, yb - h); g.fill(); g.fillStyle = rgb(roofLit); g.beginPath(); g.moveTo(x + w * .5, yb - h * 1.65); g.lineTo(x + w * 1.07, yb - h); g.lineTo(x + w * .62, yb - h); g.fill();
         g.fillStyle = wallC(base, 1); g.beginPath(); g.moveTo(x + w * .62, yb - h); g.lineTo(x + w * .5, yb - h * 1.6); g.lineTo(x + w * .38, yb - h); g.fill(); }
       g.strokeStyle = rgb(roofC.map(v => v * .6)); g.lineWidth = Math.max(1, s * sc * .5); g.beginPath(); g.moveTo(x - w * .07, yb - h); g.lineTo(x + w * 1.07, yb - h); g.stroke();
-      if (dormer && !hip) { g.fillStyle = wallC(base, 1); g.fillRect(x + w * .2, yb - h * 1.3, w * .14, h * .3); g.fillStyle = rgb(roofC); g.beginPath(); g.moveTo(x + w * .17, yb - h * 1.3); g.lineTo(x + w * .27, yb - h * 1.42); g.lineTo(x + w * .37, yb - h * 1.3); g.fill(); windows.push({ x: x + w * .24, y: yb - h * 1.26, w: w * .06, h: h * .18, on: r() < .5, ph: r() * 9 }); }
+      if (dormer && !hip) { g.fillStyle = wallC(base, 1); g.fillRect(x + w * .2, yb - h * 1.3, w * .14, h * .3); g.fillStyle = rgb(roofC); g.beginPath(); g.moveTo(x + w * .17, yb - h * 1.3); g.lineTo(x + w * .27, yb - h * 1.42); g.lineTo(x + w * .37, yb - h * 1.3); g.fill(); windows.push({ x: x + w * .24, y: yb - h * 1.26, w: w * .06, h: h * .18, on: r() < .5, ph: r() * 9, owner }); }
       if (chimney) { g.fillStyle = rgb([80, 66, 60].map(v => v * (.35 + .65 * lit))); g.fillRect(x + w * (.3 + .4 * treeK), yb - h * 1.62, 3 * s * sc, h * .35); }
       const floors = two ? 2 : 1, wn = Math.max(1, Math.round(w / (11 * s * sc)));
       for (let f = 0; f < floors; f++) for (let k = 0; k < wn; k++) {
         const ww = 4.5 * s * sc, wh = 5.5 * s * sc, wx = x + w * (k + .5) / wn - ww / 2, wy = yb - h * (floors === 2 ? (f ? .82 : .4) : .62);
         g.fillStyle = rgb([236, 234, 226].map(v => v * (.4 + .6 * lit))); g.fillRect(wx - 1, wy - 1, ww + 2, wh + 2);
         g.fillStyle = rgb(skyMix([30, 36, 50], [86, 96, 112], [120, 138, 160], d)); g.fillRect(wx, wy, ww, wh);
-        windows.push({ x: wx, y: wy, w: ww, h: wh, on: r() < .5, ph: r() * 9 });
+        windows.push({ x: wx, y: wy, w: ww, h: wh, on: r() < .5, ph: r() * 9, owner });
       }
       g.fillStyle = rgb([70, 50, 40].map(v => v * (.4 + .6 * lit))); g.fillRect(x + w * .08, yb - h * .3, 3.5 * s * sc, h * .3);
       g.fillStyle = rgb(season === 'winter' ? skyMix([30, 32, 36], [120, 118, 116], [150, 148, 146], d) : skyMix([10, 18, 12], [40, 64, 32], [60, 96, 44], d)); g.fillRect(x - w * .05, yb + 1, w * 1.1, 3 * s * sc);
       if (tree < .45) { const tc = season === 'winter' ? skyMix([14, 16, 22], [52, 54, 60], [76, 78, 84], d) : skyMix([12, 22, 14], [40, 68, 34], [62, 104, 48], d); g.fillStyle = rgb(tc); g.beginPath(); if (tree < .2) g.ellipse(x + w * 1.1, yb - h * .4, 5 * s * sc, 13 * s * sc, 0, 0, Math.PI * 2); else g.ellipse(x - w * .14, yb - h * .5, 10 * s * sc, 9 * s * sc, 0, 0, Math.PI * 2); g.fill();
         g.fillStyle = rgb(tc.map(v => v * 1.4 + 30 * gold), .6); g.beginPath(); if (tree < .2) g.ellipse(x + w * 1.1 + 2 * s * sc, yb - h * .5, 2.5 * s * sc, 9 * s * sc, 0, 0, Math.PI * 2); else g.ellipse(x - w * .12, yb - h * .6, 6 * s * sc, 5 * s * sc, 0, 0, Math.PI * 2); g.fill(); }
     }
+    // Lit windows are drawn over the finished town, so drop those a nearer house stands in front of.
+    const covers = (hs, cx, cy) => {
+      if (cx > hs.x && cx < hs.x + hs.w && cy > hs.yb - hs.h && cy < hs.yb) return true;                         // its walls
+      const peak = hs.yb - hs.h * (hs.church ? 1.55 : 1.65);
+      return cy > peak && cy < hs.yb - hs.h && Math.abs(cx - (hs.x + hs.w / 2)) < hs.w * .57 * (cy - peak) / (hs.yb - hs.h - peak);   // its roof
+    };
+    windows = windows.filter(w => { const cx = w.x + w.w / 2, cy = w.y + w.h / 2; return !houses.some(hs => hs.n > w.owner && covers(hs, cx, cy)); });
     const lampX = W * (port ? .72 : .74), lampY = wy1 + H * .22;
     g.strokeStyle = rgb([40, 42, 46]); g.lineWidth = 2.5 * s; g.beginPath(); g.moveTo(lampX, lampY + H * .12); g.lineTo(lampX, lampY); g.lineTo(lampX - 8 * s, lampY - 3 * s); g.stroke();
     g.fillStyle = rgb(skyMix([120, 120, 120], [210, 210, 210], [240, 240, 240], d)); g.beginPath(); g.ellipse(lampX - 9 * s, lampY - 4 * s, 7 * s, 4 * s, 0, 0, Math.PI * 2); g.fill();
@@ -200,10 +241,12 @@ export function holmestrandScene() {
     const leafK = season === 'winter' ? .12 : season === 'spring' ? .7 : 1;
     fol = [0, 1, 2].map(k => {
       const [c, lg] = layer(W + 80, H);
-      const rr2 = seeded(100 + k), top = H * (port ? .6 : .62) + H * .09 * k, dark = .45 + .55 * lit, shade = 1 - k * .15;
-      const stems = Math.round(W / (8 - 1.5 * k));
+      const rr2 = seeded(100 + k), top = H * (port ? .7 : .74) + H * .07 * k, dark = .45 + .55 * lit, shade = 1 - k * .15;
+      const stems = Math.round(W / (14 - 2.5 * k));
+      // A frame, not a wall: the scrub crowds the two sides and thins to a few stems in the middle, so the town shows.
+      const edgeX = () => { const u = rr2(); const side = rr2() < .5 ? u * u * .32 : 1 - u * u * .32; return side * (W + 80); };
       for (let i = 0; i < stems; i++) {
-        const sx = rr2() * (W + 80), sy2 = top + (H - top) * (.3 + .7 * rr2()), sh = (40 + 90 * rr2()) * s * (1 + k * .4), lean = (rr2() - .5) * .5;
+        const sx = rr2() < .93 ? edgeX() : rr2() * (W + 80), sy2 = top + (H - top) * (.3 + .7 * rr2()), sh = (40 + 90 * rr2()) * s * (1 + k * .4), lean = (rr2() - .5) * .5;
         lg.strokeStyle = rgb([80, 60, 44].map(v => v * dark * shade)); lg.lineWidth = Math.max(.8, (.8 + k * .5) * s); lg.beginPath(); lg.moveTo(sx, sy2 + sh * .3); lg.quadraticCurveTo(sx + lean * sh * .4, sy2 - sh * .4, sx + lean * sh, sy2 - sh); lg.stroke();
         const base = leafCols[Math.floor(rr2() * leafCols.length)], nl = Math.round((14 + Math.floor(rr2() * 16)) * leafK);
         for (let j = 0; j < nl; j++) {
@@ -290,7 +333,7 @@ export function holmestrandScene() {
       ctx.drawImage(town, 0, 0, W, H);
       if (night > .15) {
         ctx.globalCompositeOperation = 'lighter';
-        for (const w of windows) if (w.on && Math.sin(t * .05 + w.ph) > -.6) { ctx.fillStyle = rgb([255, 212, 150], .9 * night); ctx.fillRect(w.x, w.y, w.w, w.h); }
+        for (const w of windows) if (w.on && Math.sin(t * .05 + w.ph) > -.4) { ctx.fillStyle = rgb([255, 178, 96], .78 * night); ctx.fillRect(w.x, w.y, w.w, w.h); }   // warm lamplight, not every room
         glow(ctx, G.lamp.x, G.lamp.y, 50 * s, [255, 200, 120], .55 * night); ctx.fillStyle = rgb([255, 240, 200], night); ctx.beginPath(); ctx.ellipse(G.lamp.x, G.lamp.y, 5 * s, 3 * s, 0, 0, Math.PI * 2); ctx.fill();
         glow(ctx, W * .3, wy1 - H * .005, 70 * s, [255, 200, 130], .22 * night);
         ctx.globalCompositeOperation = 'source-over';
