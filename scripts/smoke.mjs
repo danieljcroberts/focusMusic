@@ -1,7 +1,7 @@
 // Opens the built app in headless Chromium, steps through every scene
 // and fails on any page error or console error. Run `npm run build` first; `npm test` does both.
 // Set SMOKE_SHOTS=<dir> to also save a screenshot of each scene, SMOKE_CHROMIUM=<path> to use a particular Chromium,
-// SMOKE_SCENES=<name,name> to open only those scenes (a quick pass after a change; the full run is the nightly check).
+// SMOKE_SCENES=<name,name> (or name;name, for names with commas) to open only those scenes (a quick pass after a change; the full run is the nightly check).
 /* global document, window */ // inside page.evaluate callbacks, which run in the browser
 import { preview } from 'vite';
 import { chromium } from 'playwright';
@@ -48,7 +48,7 @@ await probe.goto(url, { waitUntil: 'load' }); await probe.waitForTimeout(600);
 const total = await probe.evaluate(() => document.querySelectorAll('#nav button').length);
 const labels = await probe.evaluate(() => [...document.querySelectorAll('#nav button .lbl')].map(l => l.textContent));
 await probe.close();
-const only = process.env.SMOKE_SCENES ? new Set(process.env.SMOKE_SCENES.split(',').map(x => x.trim().toLowerCase())) : null;
+const only = process.env.SMOKE_SCENES ? new Set(process.env.SMOKE_SCENES.split(process.env.SMOKE_SCENES.includes(';') ? ';' : ',').map(x => x.trim().toLowerCase())) : null;
 const wanted = [...Array(total).keys()].filter(i => !only || only.has(labels[i].toLowerCase()));
 const split = list => Array.from({ length: workers }, (_, w) => list.filter((_, k) => k % workers === w)).filter(x => x.length);
 
