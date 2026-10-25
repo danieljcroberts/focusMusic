@@ -9,6 +9,7 @@ import { kvGet, kvSet } from './store.js';
 import { state, saveState } from './state.js';
 import { setStatus } from './status.js';
 import { registerMenu, closeMenus } from './menus.js';
+import { recRow, recGenre } from './recommend.js';
 
 const el = id => document.getElementById(id);
 const h = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids.filter(k => k != null)); return n; };
@@ -90,6 +91,8 @@ function fillMenu() {
     grid.append(b);
   }
   stMenu.append(grid, h('p', { className: 'mnote', textContent: 'Hold a genre to open the app with it.' }));
+  const recs = recRow(recGenre(ST.current()), closeMenus);   // tracks to buy for this genre, if it has any
+  if (recs) stMenu.append(recs);
 }
 // Each time it opens, the menu starts on the genres.
 stBtn.addEventListener('click', () => { menuView = 'genres'; }, true);

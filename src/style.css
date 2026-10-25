@@ -595,3 +595,20 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 .stmenu .genre .txt { display: grid; min-width: 0; }
 .stmenu .genre .def { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
 .stmenu .mnote { margin: 2px 4px 0; font-size: 11px; color: var(--muted); }
+/* Recommended to buy (recommend.js): a row of covers in the cover's menu, and a card for each. */
+.stmenu .recs { display: grid; gap: 6px; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.stmenu .recs .lbl { padding: 0 4px; }
+.recrow { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; overscroll-behavior-x: contain; }
+.recrow::-webkit-scrollbar { display: none; }
+.recrow .rec { flex: none; width: 84px; display: grid; gap: 2px; padding: 0; text-align: left; background: none; border: 0; color: var(--text); border-radius: 8px; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.recrow .rec img { width: 84px; height: 84px; border-radius: 8px; object-fit: cover; background: rgba(236, 230, 218, .06); }
+.recrow .rec .rt { font-size: 11px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.recrow .rec .ra { font-size: 10px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.recrow .rec.owned img { box-shadow: 0 0 0 2px var(--accent); }
+.reccard { z-index: 10; }
+.reccard .rhead { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; }
+.reccard .rhead img { width: 120px; height: 120px; border-radius: 10px; object-fit: cover; }
+.reccard .rhead b { display: block; font-size: 15px; font-weight: 500; }
+.reccard .rhead span { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 10px; }
+.reccard .rprog { flex: 1; height: 3px; border-radius: 2px; background: rgba(236, 230, 218, .12); overflow: hidden; margin-left: 10px; }
+.reccard .rprog i { display: block; height: 100%; width: 0; background: var(--accent); }

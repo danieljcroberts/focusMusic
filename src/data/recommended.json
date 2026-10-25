@@ -1,0 +1,682 @@
+{
+ "ambient": [
+  {
+   "k": "Brian Eno|An Ending (Ascent)",
+   "a": "Brian Eno",
+   "t": "An Ending (Ascent)",
+   "album": "Apollo: Atmospheres and Soundtracks",
+   "year": "1983",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/99/3b/d1/993bd1fa-13ab-7898-6993-bc4da32be961/00724356364752.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/39/f0/83/39f083d2-f807-039c-936c-819ff0fbb225/mzaf_2664632352612945926.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/an-ending-ascent/714861155?i=714861225",
+   "bandcamp": null
+  },
+  {
+   "k": "Stars of the Lid|Dungtitled (In A Major)",
+   "a": "Stars of the Lid",
+   "t": "Dungtitled (In A Major)",
+   "album": "And Their Refinement of the Decline",
+   "year": "2007",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Features115/v4/58/cf/4b/58cf4be7-3c52-66ad-2cef-01501cc647fd/dj.bwdoajsf.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8b/7d/63/8b7d6390-26b6-f702-4331-e137d9ffe570/mzaf_18274847645463080691.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/dungtitled-in-a-major/218111332?i=218111336",
+   "bandcamp": "https://starsofthelid.bandcamp.com/track/dungtitled-in-a-major"
+  },
+  {
+   "k": "Hammock|Then the Quiet Explosion",
+   "a": "Hammock",
+   "t": "Then the Quiet Explosion",
+   "album": "Oblivion Hymns (Deluxe Edition)",
+   "year": "2013",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/8d/53/6a/8d536a7c-1cd2-7bf1-e6fc-ec3700e98ae2/24153.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/08/22/6f/08226fd9-5a19-b9b3-5db5-801c62d048c8/mzaf_539313103577793670.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/then-the-quiet-explosion/1577255755?i=1577255760",
+   "bandcamp": null
+  },
+  {
+   "k": "Helios|Halving the Compass",
+   "a": "Helios",
+   "t": "Halving The Compass",
+   "album": "Eingya",
+   "year": "2006",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/33/41/b3/mzi.usyevncb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/3b/66/6d/3b666d58-5bb6-031c-c92f-b90c6bcf24f3/mzaf_12646282247921393462.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/halving-the-compass/387546921?i=387546964",
+   "bandcamp": "https://heliosmusic.bandcamp.com/track/halving-the-compass"
+  },
+  {
+   "k": "Loscil|Endless Falls",
+   "a": "Loscil",
+   "t": "Endless Falls",
+   "album": "Endless Falls",
+   "year": "2010",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/06/53/9b/06539b83-2776-fb42-2767-7883b6ddab2f/mzi.ilbbyuao.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/84/c5/2e/84c52e34-ec65-321e-ea8d-e5658c7b3ae6/mzaf_4063747230609150803.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/endless-falls/348748603?i=348748604",
+   "bandcamp": "https://loscil.bandcamp.com/track/endless-falls-2"
+  },
+  {
+   "k": "Julianna Barwick|Nebula",
+   "a": "Julianna Barwick",
+   "t": "Nebula",
+   "album": "Will",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music69/v4/e6/d1/79/e6d1792a-c273-5680-dccb-f38681ef0e84/656605141060.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/95/3f/6a/953f6a85-44bd-26fc-ccef-e1d76f986832/mzaf_5992131145339308379.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/nebula/1089208286?i=1089208548",
+   "bandcamp": "https://juliannabarwick.bandcamp.com/track/nebula"
+  }
+ ],
+ "downtempo": [
+  {
+   "k": "Bonobo|Kerala",
+   "a": "Bonobo",
+   "t": "Kerala",
+   "album": "Migration",
+   "year": "2017",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/be/f1/d0/bef1d063-ed73-bd7d-3899-2217762cdcda/5054429005721.png/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7b/50/f2/7b50f2d2-4ead-9f1c-986f-a780d26a9d12/mzaf_3026587138333977214.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/kerala/1169245868?i=1169246072",
+   "bandcamp": "https://bonobomusic.bandcamp.com/track/kerala"
+  },
+  {
+   "k": "Tycho|Awake",
+   "a": "Tycho",
+   "t": "Awake",
+   "album": "Awake - Single",
+   "year": "2013",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3d/af/7f/3daf7f4b-d958-f0a7-ee9f-a23c6198ac1b/cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/64/a0/54/64a05471-e227-be81-a329-532a4b4a8c4e/mzaf_5427552983858093423.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/awake/721849843?i=721850938",
+   "bandcamp": "https://tycho.bandcamp.com/track/awake"
+  },
+  {
+   "k": "Boards of Canada|Roygbiv",
+   "a": "Boards of Canada",
+   "t": "Roygbiv",
+   "album": "Music Has the Right to Children",
+   "year": "1998",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/b5/4c/c2/b54cc20d-03f5-f2c4-4a0d-9b51ad65af89/dj.txuslqgv.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f3/e0/de/f3e0def5-52bf-f0e1-beea-523cbf8f6c1e/mzaf_15520357652152223442.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/roygbiv/281116024?i=281116081",
+   "bandcamp": "https://boardsofcanada.bandcamp.com/track/roygbiv"
+  },
+  {
+   "k": "Emancipator|Soon It Will Be Cold Enough to Build Fires",
+   "a": "Emancipator",
+   "t": "Soon It Will Be Cold Enough to Build Fires",
+   "album": "Soon It Will Be Cold Enough",
+   "year": "2006",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/7d/11/0c/7d110c9d-6844-36be-75d9-126c792a10d1/859713069510_cover.tif/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/91/5c/13/915c131f-cd1a-38ed-699b-45d936ae3299/mzaf_2741502570728507573.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/soon-it-will-be-cold-enough-to-build-fires/905056226?i=905056524",
+   "bandcamp": "https://emancipator.bandcamp.com/track/soon-it-will-be-cold-enough-to-build-fires"
+  },
+  {
+   "k": "Thievery Corporation|Lebanese Blonde",
+   "a": "Thievery Corporation",
+   "t": "Lebanese Blonde",
+   "album": "Mirror Conspiracy",
+   "year": "1997",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/12/40/03/12400331-5482-2e41-3c7f-3326d43dac74/00792755856253_Cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/df/ab/5edfab13-049b-5c87-5758-c30e0b3d2826/mzaf_13588528417133395019.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/lebanese-blonde/1874945076?i=1874945300",
+   "bandcamp": "https://thieverycorporation.bandcamp.com/track/lebanese-blonde"
+  },
+  {
+   "k": "Nightmares on Wax|You Wish",
+   "a": "Nightmares On Wax",
+   "t": "You Wish",
+   "album": "In a Space Outta Sound",
+   "year": "2006",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b7/c0/0b/b7c00baf-9851-c684-6671-8901a2f5bb99/0801061013332.png/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/89/0e/68/890e684b-0273-5b3a-ddf4-99a47c3dfbd7/mzaf_11112914945559783035.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/you-wish/282007471?i=282007477",
+   "bandcamp": "https://nightmaresonwax.bandcamp.com/track/you-wish-2"
+  }
+ ],
+ "lofi": [
+  {
+   "k": "Nujabes|Aruarian Dance",
+   "a": "Nujabes",
+   "t": "Aruarian Dance",
+   "album": "Samurai Champloo Music Record Departure",
+   "year": "2004",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/be/59/2b/be592b54-496f-bd59-9e46-49fa2f45a717/VICL-61411.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b7/37/ae/b737ae78-5aee-043e-807a-af878993ca7e/mzaf_4175871691801697475.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/aruarian-dance/1721842998?i=1721843001",
+   "bandcamp": null
+  },
+  {
+   "k": "J Dilla|Last Donut of the Night",
+   "a": "J Dilla",
+   "t": "Last Donut of the Night",
+   "album": "Donuts",
+   "year": "2006",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/63/d3/c5/63d3c537-ac30-86e7-8e69-8a03a5346209/792.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/50/49/44/5049447a-093f-75e0-bfd7-c0727409f758/mzaf_12205223570945941607.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/last-donut-of-the-night/108233171?i=108232953",
+   "bandcamp": "https://dilla.bandcamp.com/track/last-donut-of-the-night"
+  },
+  {
+   "k": "Jinsang|Affection",
+   "a": "Jinsang",
+   "t": "Affection",
+   "album": "Life",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/33/a5/2f/33a52fc2-d77b-9408-6d5b-af389ee28c43/cover_4018939360092.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/27/7f/5a/277f5a90-6ca3-a8e8-931c-8dd7c1d472fd/mzaf_4569701282117560653.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/affection/1860643744?i=1860643762",
+   "bandcamp": "https://jinsangbeats.bandcamp.com/track/affection"
+  },
+  {
+   "k": "Idealism|Snowfall",
+   "a": "Idealism",
+   "t": "Snowfall",
+   "album": "Chillhop Essentials Winter 2016",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/89/52/39/8952396e-4365-d523-e98b-83c43cd7f5df/745051303556.png/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a0/25/fd/a025fd8c-339d-f073-ac06-7a9b90991648/mzaf_9544229003254018422.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/snowfall/1637604535?i=1637604542",
+   "bandcamp": "https://chillhop.bandcamp.com/track/snowfall"
+  },
+  {
+   "k": "Tomppabeats|Monday Loop",
+   "a": "tomppabeats",
+   "t": "Monday Loop",
+   "album": "Harbor",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a2/ec/13/a2ec13cf-9ee3-0b86-b69e-fb654e02736d/cover_4018939299866.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/47/f6/a1/47f6a1b7-ddce-c7f6-3144-e396c97e4f19/mzaf_5337517218296619561.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/monday-loop/1860221614?i=1860221675",
+   "bandcamp": null
+  },
+  {
+   "k": "Kupla|Owls of the Night",
+   "a": "Kupla",
+   "t": "Owls of the Night",
+   "album": "1 Am. Study Session",
+   "year": "2019",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/09/42/7c/09427c6d-462f-a256-58af-f710743d4684/859735893612.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/98/f9/97/98f9971a-b722-4b1e-5bf6-b5d38aef4e34/mzaf_8289394419209889471.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/owls-of-the-night/6787936686?i=6787937401",
+   "bandcamp": "https://lofigirl.bandcamp.com/track/kupla-owls-of-the-night"
+  }
+ ],
+ "minimalist": [
+  {
+   "k": "Steve Reich|Music for 18 Musicians: Pulses",
+   "a": "Steve Reich and Musicians",
+   "t": "Music for 18 Musicians: Pulses",
+   "album": "Phases",
+   "year": "1998",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/3b/ef/85/mzi.hhizsfqk.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/46/ef/c346ef0a-4a8d-4e62-b296-d7478c472153/mzaf_11249410055448960707.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/music-for-18-musicians-pulses/355026955?i=355026965",
+   "bandcamp": "https://stevereich.bandcamp.com/track/music-for-18-musicians-pulses"
+  },
+  {
+   "k": "Philip Glass|Opening",
+   "a": "Philip Glass, The Philip Glass Ensemble & Michael Riesman",
+   "t": "Opening",
+   "album": "Glassworks (Expanded Edition)",
+   "year": "1982",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Features115/v4/cf/07/b3/cf07b334-2a4c-a068-1794-feacd2a253f7/dj.pvjwdybz.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/00/8e/f6/008ef6a5-b267-adad-ad5c-b22e344e9bc1/mzaf_8545230674105960563.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/opening/203258539?i=203258554",
+   "bandcamp": null
+  },
+  {
+   "k": "Penguin Cafe Orchestra|Music for a Found Harmonium",
+   "a": "Penguin Cafe Orchestra",
+   "t": "Music For a Found Harmonium",
+   "album": "Preludes, Airs and Yodels (A Penguin Cafe Primer)",
+   "year": "1996",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/de/7a/73/de7a73c8-de62-032a-f39a-405dafc8917b/00724384201555.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f8/2a/d3/f82ad342-dbe0-bcda-fed1-4e23bb86710a/mzaf_6468697797769988666.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/music-for-a-found-harmonium/723397108?i=723397184",
+   "bandcamp": null
+  },
+  {
+   "k": "Michael Nyman|The Heart Asks Pleasure First",
+   "a": "Michael Nyman",
+   "t": "The Heart Asks Pleasure First",
+   "album": "The Piano",
+   "year": "1993",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b1/44/20/b14420f5-f047-f28d-ff10-d2a469df5147/00724383954957.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/fc/08/fa/fc08fa07-9734-b4b4-95d1-0be0f6e6eb33/mzaf_2806588947766967869.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/the-heart-asks-pleasure-first/724561511?i=724561744",
+   "bandcamp": null
+  },
+  {
+   "k": "Terry Riley|In C",
+   "a": "Terry Riley & Members of the Creative & Performing Arts at SUNY-Buffalo",
+   "t": "In C (Remastered 2009)",
+   "album": "Terry Riley: In C",
+   "year": "1999",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Features/17/bb/53/dj.caebhlex.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/83/b4/be/83b4be47-ee16-478f-31d3-85f84dddba6c/mzaf_6024183079752745087.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/in-c-remastered-2009/307564987?i=307565028",
+   "bandcamp": null
+  },
+  {
+   "k": "Hiroshi Yoshimura|Blink",
+   "a": "Hiroshi Yoshimura",
+   "t": "Blink",
+   "album": "Music for Nine Post Cards",
+   "year": "1982",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/16/ae/4f/16ae4ff4-508e-d447-9ce8-d02fbbae5364/9830.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/19/cf/22/19cf227f-fd13-7423-91dc-fd8405fb14e7/mzaf_14782839499791653386.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/blink/1790530039?i=1790530049",
+   "bandcamp": "https://kankyongaku.bandcamp.com/track/blink"
+  }
+ ],
+ "classical": [
+  {
+   "k": "Nils Frahm|Says",
+   "a": "Nils Frahm",
+   "t": "Says",
+   "album": "Spaces (Special Edition)",
+   "year": "2013",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9f/40/da/9f40da77-e818-f6f8-b252-d02a2ed7c89f/4050486115855_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/17/8d/8f/178d8f53-cc2a-f661-18b1-edabbddc3825/mzaf_9453340308397771459.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/says/1453571326?i=1453571333",
+   "bandcamp": "https://nilsfrahm.bandcamp.com/track/says"
+  },
+  {
+   "k": "Ólafur Arnalds|Near Light",
+   "a": "Ólafur Arnalds",
+   "t": "Near Light",
+   "album": "Living Room Songs",
+   "year": "2011",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0d/b4/30/0db43079-f941-81b4-7e90-1a7379cc1d82/4050486060186_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/20/ee/c5/20eec5f4-f3fc-746a-b443-b00d068f942e/mzaf_12291157273157330803.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/near-light/1451058763?i=1451058775",
+   "bandcamp": "https://olafurarnalds.bandcamp.com/track/near-light"
+  },
+  {
+   "k": "Max Richter|On the Nature of Daylight",
+   "a": "Max Richter, Louisa Fuller, Natalia Bonner, John Metcalfe, Philip Sheppard & Chris Worsey",
+   "t": "On The Nature Of Daylight",
+   "album": "The Blue Notebooks (15 Years)",
+   "year": "2004",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/58/ec/d7/58ecd75d-8df8-c05f-5e1a-b144292c6493/17UM1IM64259.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/85/ec/31/85ec3121-880e-8d05-70ee-a3f5cad67d29/mzaf_13875593167782602175.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/on-the-nature-of-daylight/1368089903?i=1368090483",
+   "bandcamp": null
+  },
+  {
+   "k": "Jóhann Jóhannsson|Flight From the City",
+   "a": "Jóhann Jóhannsson, Yuki Numata Resnick, Ben Russell, Clarice Jensen & Tarn Travers",
+   "t": "Flight from the City",
+   "album": "Orphée",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/11/12/7d/11127dd5-936e-4ef9-66fc-2a4760940859/16UMGIM02397.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1f/7a/11/1f7a11ef-93f5-f847-c0f2-5ec99850861e/mzaf_1984851975721376349.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/flight-from-the-city/1440775286?i=1440775291",
+   "bandcamp": "https://johannjohannsson.bandcamp.com/track/flight-from-the-city"
+  },
+  {
+   "k": "Hania Rani|Eden",
+   "a": "Hania Rani",
+   "t": "Eden",
+   "album": "Esja",
+   "year": "2019",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/7e/99/6a/7e996a6a-353e-2262-1df9-add09c8f889c/5050580701854_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/af/2e/e5/af2ee517-6fa4-f75f-2064-6d98e7adaaf2/mzaf_8805440281722710453.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/eden/1578451491?i=1578451497",
+   "bandcamp": "https://haniarani.bandcamp.com/track/eden"
+  },
+  {
+   "k": "Dustin O'Halloran|Opus 23",
+   "a": "Dustin O'Halloran",
+   "t": "Opus 23",
+   "album": "Piano Solos, Vol. 2",
+   "year": "2004",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/dc/1c/8d/dc1c8db5-1f35-3f65-eae9-aa1ec08c297f/artwork.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/7b/e2/b1/7be2b125-f9ba-3282-fb18-4177a3807da0/mzaf_14770223276217465153.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/opus-23/1682258546?i=1682258554",
+   "bandcamp": "https://dustinohalloran.bandcamp.com/track/opus-23"
+  }
+ ],
+ "postrock": [
+  {
+   "k": "Explosions in the Sky|Your Hand in Mine",
+   "a": "Explosions In the Sky",
+   "t": "Your Hand In Mine",
+   "album": "The Earth Is Not a Cold Dead Place",
+   "year": "2003",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/82/ea/6c/82ea6c96-4f61-9b4a-9fad-ce4bbef9f6ed/mzi.fntrndfr.tif/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/60/2c/3b/602c3bf0-3af7-83d8-6143-a58f97bc0ab7/mzaf_11439595106264992892.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/your-hand-in-mine/318951781?i=318951791",
+   "bandcamp": "https://explosionsinthesky.bandcamp.com/track/your-hand-in-mine"
+  },
+  {
+   "k": "Mogwai|Take Me Somewhere Nice",
+   "a": "Mogwai",
+   "t": "Take Me Somewhere Nice",
+   "album": "Rock Action",
+   "year": "2001",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/a4/37/13/mzi.kygcdihl.tif/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/36/68/79/366879dc-9781-ed7c-50c9-d37140ff2b02/mzaf_14409976839375510370.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/take-me-somewhere-nice/273164911?i=273165182",
+   "bandcamp": "https://mogwai.bandcamp.com/track/take-me-somewhere-nice"
+  },
+  {
+   "k": "Sigur Rós|Hoppípolla",
+   "a": "Sigur Rós",
+   "t": "Hoppípolla",
+   "album": "Takk...",
+   "year": "2005",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/ce/3e/b8/ce3eb805-fb13-0200-5856-081ed0014e13/190296926952.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ad/da/59/adda5942-513b-8cc7-c0b5-d580e19c37bc/mzaf_18208108812196817078.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/hopp%C3%ADpolla/1447486974?i=1447486980",
+   "bandcamp": null
+  },
+  {
+   "k": "God Is an Astronaut|All Is Violent, All Is Bright",
+   "a": "God Is an Astronaut",
+   "t": "All Is Violent, All Is Bright",
+   "album": "All Is Violent, All Is Bright (Remastered)",
+   "year": "2006",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/98/de/d0/98ded003-ecb3-dbcb-0143-9e6063909794/0013964381986_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/01/ac/c1/01acc104-37a9-cb3c-4cd6-20e86a72ca8b/mzaf_9747320050234632906.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/all-is-violent-all-is-bright/481699696?i=481699705",
+   "bandcamp": null
+  },
+  {
+   "k": "This Will Destroy You|The Mighty Rio Grande",
+   "a": "This Will Destroy You",
+   "t": "The Mighty Rio Grande",
+   "album": "This Will Destroy You",
+   "year": "2007",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Features115/v4/ae/a4/e0/aea4e08f-3c83-a8d9-b7ed-27499e9faf01/dj.bjzqhpzc.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/54/6a/86/546a86d2-70d7-eb0b-f5d7-073a88882df7/mzaf_1099955189937457128.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/the-mighty-rio-grande/266623593?i=266624571",
+   "bandcamp": "https://thiswilldestroyyou.bandcamp.com/track/the-mighty-rio-grande-2"
+  },
+  {
+   "k": "Caspian|Gone in Bloom and Bough",
+   "a": "Caspian",
+   "t": "Gone in Bloom and Bough",
+   "album": "Waking Season",
+   "year": "2012",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/f8/37/00/f8370029-ccaa-a8bf-5887-610e6f7726d9/646920315864.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/24/64/50/24645028-194a-7ea6-fa69-b1190b26ee91/mzaf_6980016948685320067.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/gone-in-bloom-and-bough/1278422113?i=1278422539",
+   "bandcamp": "https://caspiantheband.bandcamp.com/track/gone-in-bloom-and-bough"
+  }
+ ],
+ "synth": [
+  {
+   "k": "The Midnight|Sunset",
+   "a": "The Midnight",
+   "t": "Sunset",
+   "album": "Endless Summer",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/35/8c/46/358c46cf-6a73-7345-3541-ecdf4119efc9/859717991428_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c9/ec/25/c9ec2554-c6a1-01d1-4cfb-281cf1c98f44/mzaf_5199254239611369795.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/sunset/1758759164?i=1758759167",
+   "bandcamp": "https://themidnight.bandcamp.com/track/sunset-2"
+  },
+  {
+   "k": "FM-84|Running in the Night",
+   "a": "FM-84 & Ollie Wride",
+   "t": "Running in the Night",
+   "album": "Atlas",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/82/9a/7f/829a7f0d-7819-5e2a-7976-5a24e68450ae/872132121799_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a9/a5/61/a9a56117-e2f8-bedb-4691-4f4b666d8e12/mzaf_5875315175946443083.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/running-in-the-night/1842390497?i=1842390499",
+   "bandcamp": "https://fm84.bandcamp.com/track/running-in-the-night-feat-ollie-wride"
+  },
+  {
+   "k": "Kavinsky|Nightcall",
+   "a": "Kavinsky",
+   "t": "Nightcall",
+   "album": "Nightcall",
+   "year": "2010",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/c1/2d/fe/c12dfe8f-cdf6-e179-d69a-8ec35f760266/00602537248681.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/45/fb/d245fbf9-8570-fdc0-5e6b-aa528c130486/mzaf_11947081694159530687.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/nightcall/1442447952?i=1442447970",
+   "bandcamp": null
+  },
+  {
+   "k": "GUNSHIP|Tech Noir",
+   "a": "GUNSHIP",
+   "t": "Tech Noir",
+   "album": "GUNSHIP",
+   "year": "2015",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/14/82/82/14828219-fd3d-531f-2f05-8a40083fb07f/889326256694_Cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bd/06/dc/bd06dc70-e2b2-bc99-0947-0d10389a960a/mzaf_16486588803306493542.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/tech-noir/998104509?i=998104512",
+   "bandcamp": "https://gunshipmusic.bandcamp.com/track/tech-noir"
+  },
+  {
+   "k": "Timecop1983|On the Run",
+   "a": "Timecop1983",
+   "t": "On the Run",
+   "album": "Night Drive",
+   "year": "2018",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/5a/44/68/5a4468ef-ce33-9aea-1062-a6e9600b1321/859726345762_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/35/ae/63/35ae632c-4784-fb9f-7406-6bf811d940d6/mzaf_877880283455663903.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/on-the-run/1373807924?i=1373807927",
+   "bandcamp": "https://timecop1983.bandcamp.com/track/on-the-run"
+  },
+  {
+   "k": "Carpenter Brut|Turbo Killer",
+   "a": "Carpenter Brut",
+   "t": "Turbo Killer",
+   "album": "Trilogy",
+   "year": "2015",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/f3/67/b9/f367b929-406d-ef08-6b62-a4322c62c8da/00602557606782.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/72/ae/a2/72aea230-30e7-4452-0d87-21ce81bd10f2/mzaf_8745873185334459416.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/turbo-killer/1440894748?i=1440894872",
+   "bandcamp": "https://carpenterbrut.bandcamp.com/track/turbo-killer"
+  }
+ ],
+ "energy": [
+  {
+   "k": "Pendulum|Watercolour",
+   "a": "Pendulum",
+   "t": "Watercolour",
+   "album": "Immersion",
+   "year": "2010",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/d4/48/7e/mzi.mcaysnnz.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/30/fd/3c/30fd3c37-2f61-3cb2-768b-d6a5df9531af/mzaf_13384109462932555732.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/watercolour/369711549?i=369711557",
+   "bandcamp": null
+  },
+  {
+   "k": "Amelie Lens|Hypnotized",
+   "a": "Amelie Lens",
+   "t": "Hypnotized",
+   "album": "Hypnotized - Single",
+   "year": "2019",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/2a/9e/70/2a9e70ab-805a-3ada-7a16-f8ac12af0a3a/cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c5/55/5d/c5555d9e-f947-1c43-2ce5-e3de5631de25/mzaf_867928603655446903.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/hypnotized/1795515031?i=1795515032",
+   "bandcamp": "https://amelielens.bandcamp.com/track/hypnotized"
+  },
+  {
+   "k": "The Prodigy|Firestarter",
+   "a": "The Prodigy",
+   "t": "Firestarter",
+   "album": "The Fat of the Land",
+   "year": "1996",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/96/8b/08/968b08e4-cb2b-54c2-32bb-dba77ad1c2ca/634904912161.png/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/fe/f0/48/fef048ad-df35-bbce-dc88-05e424cadba7/mzaf_15874742277122495094.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/firestarter/500162127?i=500162235",
+   "bandcamp": null
+  },
+  {
+   "k": "Chase & Status|Blind Faith",
+   "a": "Chase & Status",
+   "t": "Blind Faith (feat. Liam Bailey)",
+   "album": "No More Idols",
+   "year": "2011",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3e/06/f2/3e06f23e-3722-42a8-64e2-ef12d872adcf/10UMGIM33675.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/34/5e/8d/345e8df7-9560-b934-e863-d9e14fa90da8/mzaf_12793952362841477633.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/blind-faith-feat-liam-bailey/1440717125?i=1440717200",
+   "bandcamp": null
+  },
+  {
+   "k": "Sub Focus|Endorphins",
+   "a": "Sub Focus",
+   "t": "Endorphins (feat. Alex Clare)",
+   "album": "Torus (Deluxe Version)",
+   "year": "2013",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/7c/fd/96/7cfd96ef-e2a3-c02f-cb85-2ba5e4bf28e8/00602537547661.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/17/6c/a5/176ca5ce-99b5-8482-9783-215dc602f794/mzaf_7799731399742221521.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/endorphins-feat-alex-clare/1443114630?i=1443114828",
+   "bandcamp": null
+  },
+  {
+   "k": "Netsky|Come Alive",
+   "a": "Netsky",
+   "t": "Come Alive",
+   "album": "Come Alive - EP",
+   "year": "2012",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/95/e7/66/95e76643-2267-bc05-bc29-7670d48b97df/NHS211-Packshot-1440px.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/74/f7/62/74f762ce-92f3-a73e-e154-32508ebe77a4/mzaf_7361199012621053192.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/come-alive/516569493?i=516569496",
+   "bandcamp": "https://netsky.bandcamp.com/album/come-alive"
+  }
+ ],
+ "jazz": [
+  {
+   "k": "BADBADNOTGOOD|Time Moves Slow",
+   "a": "BADBADNOTGOOD & Samuel T. Herring",
+   "t": "Time Moves Slow",
+   "album": "IV",
+   "year": "2016",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/cf/7a/c1/cf7ac163-867a-3d6a-6613-abb7d594aad0/196626360007.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/06/a8/65/06a86591-20cb-4c6e-ec2e-a88fee4e3838/mzaf_7792648677040532413.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/time-moves-slow/1608122086?i=1608122095",
+   "bandcamp": "https://badbadnotgoodofficial.bandcamp.com/track/time-moves-slow-feat-sam-herring"
+  },
+  {
+   "k": "GoGo Penguin|Hopopono",
+   "a": "GoGo Penguin",
+   "t": "Hopopono",
+   "album": "v2.0 (Deluxe Edition)",
+   "year": "2014",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/bd/b9/a4/bdb9a434-4ec4-3dcc-b72c-c7f02ed1f2de/5050580625426_cover.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/30/f1/19/30f11961-e050-b1f2-d52b-34cb93cac1d0/mzaf_238416260702611248.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/hopopono/1579118524?i=1579119136",
+   "bandcamp": "https://gogopenguin.bandcamp.com/track/hopopono-2"
+  },
+  {
+   "k": "Kamasi Washington|Truth",
+   "a": "Kamasi Washington",
+   "t": "Truth",
+   "album": "Truth - Single",
+   "year": "2017",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/84/ee/af/84eeafb5-41a4-cc73-d803-cae2a6fa12a7/889030017055.png/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ef/2b/f7/ef2bf718-020e-d7fc-083e-53153418cd7c/mzaf_10628426186343303494.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/truth/1222937790?i=1222937798",
+   "bandcamp": "https://kamasiwashington.bandcamp.com/track/truth"
+  },
+  {
+   "k": "Miles Davis|So What",
+   "a": "Miles Davis",
+   "t": "So What",
+   "album": "Kind of Blue",
+   "year": "1959",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/7f/9f/d6/mzi.vtnaewef.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/54/e8/0a/54e80a8b-1d60-6b59-e908-6fd65c4ff783/mzaf_2469862574651846302.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/so-what/268443092?i=268443097",
+   "bandcamp": null
+  },
+  {
+   "k": "The Dave Brubeck Quartet|Take Five",
+   "a": "The Dave Brubeck Quartet",
+   "t": "Take Five",
+   "album": "Time Out",
+   "year": "1959",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/7a/e3/06/7ae30672-0c73-a4d4-0a74-624eefc2843b/dj.ytdbjvto.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview123/v4/b6/dc/9c/b6dc9c11-2180-3e5d-eec1-154b60cf2d71/mzaf_212953303484588533.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/take-five/193085545?i=193085790",
+   "bandcamp": null
+  },
+  {
+   "k": "Bill Evans|Peace Piece",
+   "a": "Bill Evans",
+   "t": "Peace Piece",
+   "album": "Everybody Digs Bill Evans (Keepnews Collection)",
+   "year": "1959",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3a/7a/39/3a7a398f-28ab-9038-a372-40131b14256c/07UMGIM05289.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e1/5b/27/e15b2780-51a0-b418-cbb3-16e4a65a41fb/mzaf_4421605330193573032.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/peace-piece/1440926168?i=1440926603",
+   "bandcamp": null
+  }
+ ],
+ "french": [
+  {
+   "k": "Air|La femme d'argent",
+   "a": "Air",
+   "t": "La Femme d'argent",
+   "album": "Moon Safari",
+   "year": "1998",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/d1/f9/26/d1f926e7-e996-7166-3744-0710a82177ac/017046664455.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ab/65/30/ab65300f-3134-9391-4f1a-329e2bbd946b/mzaf_743568926842265821.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/la-femme-dargent/693063670?i=693063876",
+   "bandcamp": null
+  },
+  {
+   "k": "Françoise Hardy|Tous les garçons et les filles",
+   "a": "Françoise Hardy",
+   "t": "Tous les garçons et les filles (Stereo Mix)",
+   "album": "Tous les garçons et les filles (Legacy Edition)",
+   "year": "1962",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/90/5a/14/905a14ec-84dc-9835-6c5e-4cd264a0f2a4/196872921175.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f3/cb/48/f3cb4886-c518-2247-506c-99006fff5d3d/mzaf_4513702266158063524.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/tous-les-gar%C3%A7ons-et-les-filles-stereo-mix/1827462634?i=1827462637",
+   "bandcamp": null
+  },
+  {
+   "k": "Serge Gainsbourg|La javanaise",
+   "a": "Serge Gainsbourg",
+   "t": "La javanaise",
+   "album": "Comme un boomerang",
+   "year": "1962",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/51/0c/6d/510c6d88-ccc2-6002-9f0f-49e2a1383b78/18UMGIM31728.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9f/12/ee/9f12ee88-1860-fe2f-7063-b8233f990218/mzaf_3399724262759064359.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/la-javanaise/1391621152?i=1391621783",
+   "bandcamp": null
+  },
+  {
+   "k": "ZAZ|Je veux",
+   "a": "ZAZ",
+   "t": "Je veux",
+   "album": "Zaz",
+   "year": "2010",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/61/25/df/6125df84-b295-2378-fb64-9558873caed3/5099964436159.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/87/10/83/871083b9-3f9a-5cd0-38ae-a3fc1a6bdf95/mzaf_9494055021183912606.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/fr/album/je-veux/693461248?i=693461512",
+   "bandcamp": null
+  },
+  {
+   "k": "Stromae|Papaoutai",
+   "a": "Stromae",
+   "t": "Papaoutai",
+   "album": "Racine carrée",
+   "year": "2013",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/23/47/e3/2347e329-fe5a-eca4-2844-729d58f90daa/13UAAIM67450.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/20/69/f6206921-106b-5f68-ea61-2329050cd306/mzaf_4001545940005169400.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/us/album/papaoutai/1440862091?i=1440862113",
+   "bandcamp": null
+  },
+  {
+   "k": "Angèle|Balance ton quoi",
+   "a": "Angèle",
+   "t": "Balance ton quoi",
+   "album": "Brol",
+   "year": "2018",
+   "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/8a/98/d8/8a98d812-6cad-aa66-9b99-65bbeff0cdef/00602567977308.rgb.jpg/300x300bb.jpg",
+   "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d8/d2/0e/d8d20ea6-9555-aa33-ac00-582ab132663f/mzaf_1945413541248691973.plus.aac.p.m4a",
+   "itunes": "https://music.apple.com/fr/album/balance-ton-quoi/1434408195?i=1434408433",
+   "bandcamp": null
+  }
+ ]
+}
