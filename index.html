@@ -255,8 +255,15 @@
   <div class="row"><button type="button" class="pbtn primary" id="hint1Ok">Got it</button> <button type="button" class="pbtn" id="hint1Tour">Show me around</button></div>
 </div>
 <aside class="lib" id="lib" hidden aria-label="Music library">
-  <header><h2>Music</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
-  <p class="intro">Your own music, kept on this device, and Creative Commons tracks: the ones that appeared in the Music For Programming mixes (episode numbers show where), plus more from the same artists and from other netlabel releases on archive.org. For those, credit the artist, keep the app non-commercial for NC licences, and play ND tracks unedited.</p>
+  <header><h2>Library</h2><button type="button" class="pbtn" id="libClose">Close</button></header>
+  <div class="libtools">
+    <input type="search" id="libSearch" placeholder="Search tracks, artists, genres" aria-label="Search the library" autocomplete="off">
+    <div class="row"><div class="seg" id="libTabs" role="group" aria-label="Show"><button type="button" data-tab="all">All</button><button type="button" data-tab="mine">Yours</button><button type="button" data-tab="loved">Loved</button></div>
+      <select id="libSort" aria-label="Sort by"><option value="title">Title</option><option value="artist">Artist</option><option value="len">Longest</option><option value="energy">Most lively</option></select></div>
+    <div class="chips" id="libGenres" role="group" aria-label="Genre"></div>
+    <div class="libimport" id="libImportBox"></div>
+    <span class="note" id="libCount"></span>
+  </div>
   <div class="list" id="libList"></div>
 </aside>
 <script type="module" src="/src/main.js"></script>

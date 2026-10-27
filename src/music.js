@@ -6,7 +6,7 @@ import { M } from './assets.js';
 import { state, saveState } from './state.js';
 import { note } from './diag.js';
 import { setStatus } from './status.js';
-import { loadOwn, ownTracks, ownURL, removeOwn, clearOwn, ownBytes, keeps, fmtDur } from './mine.js';
+import { loadOwn, ownTracks, ownURL } from './mine.js';
 import * as ST from './soundtracks.js';
 import { trackWeight, pickWeighted, withSceneLove } from './shuffle.js';
 import { localTrack } from './downloads.js';
@@ -478,7 +478,7 @@ async function nextLive() {
 
 // Your music: shuffled, each track once before any repeats.
 let ownBlob = null;
-async function playOwn(e) {
+export async function playOwn(e) {
   const prevOwn = curTrack && curTrack.own;
   source = 'own'; setStatus('');
   curTrack = { own: true, id: e.id, a: e.a, t: e.t, lic: 'Your music', art: e.art || null };
@@ -704,92 +704,13 @@ ui.vol.addEventListener('input', () => { master = Number(ui.vol.value); players.
 el('who').addEventListener('click', () => playTrack(sceneTrack()));
 
 // The "Your music" part of the Library: add a folder or files, see what's there, play or remove a track.
-function ownSection() {
-  const sec = document.createElement('section'); sec.className = 'own';
-  const all = ownTracks();
-  const h = document.createElement('h3'); h.textContent = `Your music (${all.length})`;
-  const note = document.createElement('p'); note.className = 'note';
-  note.textContent = (keeps ? 'Copied into this app on this device, so it plays offline and stays after a restart. ' : 'Kept for this session only: this browser cannot store files for the app. ') +
-    'Nothing is uploaded.' + (all.length ? ` ${(ownBytes() / 1e6).toFixed(0)} MB.` : '');
-  const row = document.createElement('div'); row.className = 'row';
-  const add = document.createElement('button'); add.type = 'button'; add.className = 'pbtn'; add.textContent = 'Add your music…';
-  add.addEventListener('click', () => { openLib(false); window.dispatchEvent(new CustomEvent('sw-wizard')); });
-  row.append(add);
-  if (all.length) {
-    const c = document.createElement('button'); c.type = 'button'; c.className = 'pbtn'; c.textContent = 'Remove all';
-    let armed = false;
-    c.addEventListener('click', async () => {
-      if (!armed) { armed = true; c.textContent = 'Tap again to remove all'; setTimeout(() => { armed = false; c.textContent = 'Remove all'; }, 4000); return; }
-      await clearOwn(); ST.prune([]); renderLib(); setStatus('Your music was removed from this device.');
-    });
-    row.append(c);
-  }
-  const ol = document.createElement('ol');
-  for (const e of all) {
-    const li = document.createElement('li'); li.dataset.k = 'own:' + e.id;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'pl'; b.textContent = '▶'; b.setAttribute('aria-label', `Play ${e.t}`);
-    b.addEventListener('click', () => playOwn(e));
-    const qn = document.createElement('button'); qn.type = 'button'; qn.className = 'rm'; qn.textContent = 'play next'; qn.addEventListener('click', () => playNext({ own: true, id: e.id, t: e.t, a: e.a }));
-    const body = document.createElement('div');
-    const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${e.t} — ${e.a}`;
-    const mm = document.createElement('div'); mm.className = 'm';
-    const inSt = ST.memberOf(e.id).map(x => x.name);
-    mm.textContent = `${inSt.length ? inSt.join(', ') : 'in no soundtrack yet'} · ${(e.size / 1e6).toFixed(1)} MB`;
-    const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove ${e.t}`);
-    x.addEventListener('click', async () => { await removeOwn(e.id); ST.prune(ownTracks().map(x => x.id)); renderLib(); });
-    mm.append(' · ', qn, ' · ', x);
-    body.append(tt, mm); li.append(b, body); ol.append(li);
-  }
-  sec.append(h, note, row, ol);
-  return sec;
-}
-export function renderLib() {
-  const groups = [
-    ['Plays here', t => t.file],
-    ['Streams from archive.org or ccMixter', t => t.conf === 'confirmed' && !t.file && t.stream],
-    ["On the artist's or label's page", t => t.conf === 'confirmed' && !t.file && !t.stream],
-    ['Likely Creative Commons, not yet confirmed', t => t.conf === 'likely' && !t.file],
-  ];
-  ui.list.textContent = '';
-  // How much Creative Commons music there is to play, from the lengths kept in tracks.json (scripts/track-lengths.mjs).
-  const ready = TRACKS.filter(t => t.len), elsewhere = TRACKS.length - ready.length;
-  const sum = document.createElement('p'); sum.className = 'lib-total';
-  sum.textContent = `${ready.length} Creative Commons tracks to play here, ${fmtDur(ready.reduce((a, t) => a + t.len, 0))} of music in all.${elsewhere ? ` ${elsewhere} more are listed with links to where they're published.` : ''}`;
-  ui.list.append(sum, ownSection());
-  for (const [label, test] of groups) {
-    const items = TRACKS.filter(test); if (!items.length) continue;
-    const sec = document.createElement('section');
-    const secs = items.reduce((a, t) => a + (t.len || 0), 0);
-    const h = document.createElement('h3'); h.textContent = `${label} (${items.length}${secs ? ` · ${fmtDur(secs)}` : ''})`;
-    const ol = document.createElement('ol');
-    for (const t of items) {
-      const li = document.createElement('li'); li.dataset.k = key(t);
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'pl'; b.textContent = '▶'; b.disabled = !playable(t);
-      b.setAttribute('aria-label', `Play ${t.t} by ${t.a}`);
-      b.addEventListener('click', () => playTrack(t));
-      const body = document.createElement('div');
-      const tt = document.createElement('div'); tt.className = 't'; tt.textContent = `${t.t} — ${t.a}`;
-      const mm = document.createElement('div'); mm.className = 'm';
-      mm.append([t.len && `${Math.floor(t.len / 60)}:${String(t.len % 60).padStart(2, '0')}`, t.lic, eps(t)].filter(Boolean).join(' · '));
-      if (t.src) mm.append(' · ', link(t.src, 'Source ↗'));
-      if (t.stream && !t.file && iaOnline === false) { const e = document.createElement('em'); e.textContent = 'streams when run with a connection'; mm.append(' · ', e); }
-      if (t.note) mm.append(document.createElement('br'), t.note);
-      const qn = document.createElement('button'); qn.type = 'button'; qn.className = 'rm'; qn.textContent = 'play next'; qn.disabled = !playable(t);
-      qn.addEventListener('click', () => playNext(t)); mm.append(' · ', qn);
-      const nv = document.createElement('button'); nv.type = 'button'; nv.className = 'rm'; nv.textContent = never.has(key(t)) ? 'play again' : 'never play'; nv.title = 'Leave this track out of every soundtrack';
-      nv.addEventListener('click', () => setNever(t, !never.has(key(t)))); mm.append(' · ', nv);
-      if (never.has(key(t))) li.classList.add('never');
-      body.append(tt, mm); li.append(b, body); ol.append(li);
-    }
-    sec.append(h, ol); ui.list.append(sec);
-  }
-  markLib();
-}
-function markLib() {
-  const k = curTrack && !curTrack.live ? (curTrack.own ? 'own:' + curTrack.id : key(curTrack)) : null;
-  ui.list.querySelectorAll('li').forEach(li => li.classList.toggle('on', !!k && li.dataset.k === k));
-}
+// The library's list is drawn by library.js, which registers itself here (it imports this module, so not the other way).
+let libView = null;
+export function setLibView(v) { libView = v; v.render(); }
+export const trackKey = t => keyOf(t);
+export const currentKey = () => curTrack && !curTrack.live ? keyOf(curTrack) : null;
+export function renderLib() { if (libView) libView.render(); }
+function markLib() { if (libView) libView.mark(); }
 export const libOpen = () => !ui.lib.hidden;
 export function openLib(open) {
   ui.lib.hidden = !open; document.body.classList.toggle('lib-open', open);

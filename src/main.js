@@ -27,6 +27,7 @@ import { initBench, benching } from './bench.js';
 import './intervals.js';
 import './tasks.js';
 import './sync.js';
+import './library.js';
 import { initSceneMenu, openShelves, closeShelves, shelvesOpen, syncStrip, focusStrip, settleStrip, noteRecent } from './scene-menu.js';
 import { initNativeUi } from './native-ui.js';
 import { NATIVE, SITE, nativeKeepAwake, nativeSavePicture } from './native.js';

@@ -612,3 +612,40 @@ body.pip .ivpill, body.pip .ivglow { display: none !important; }
 .reccard .rhead span { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 10px; }
 .reccard .rprog { flex: 1; height: 3px; border-radius: 2px; background: rgba(236, 230, 218, .12); overflow: hidden; margin-left: 10px; }
 .reccard .rprog i { display: block; height: 100%; width: 0; background: var(--accent); }
+/* The library (library.js): tools on top, then rows of tracks with their covers. */
+.lib .libtools { display: grid; gap: 10px; padding: 12px 20px 0; }
+.lib .libtools input[type=search] { font: inherit; font-size: 15px; color: var(--text); background: rgba(236, 230, 218, .07); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.lib .libtools .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.lib .libtools select { font: inherit; font-size: 12px; color: var(--text); background: rgba(236, 230, 218, .07); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
+.lib .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.lib .chips::-webkit-scrollbar { display: none; }
+.lib .chips button { flex: none; padding: 6px 12px; font-size: 12px; border-radius: 999px; white-space: nowrap; }
+.lib .chips button[aria-pressed="true"] { background: var(--chip-on-bg); color: var(--chip-on-text); }
+.lib .libimport { display: grid; gap: 8px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 14px; }
+.lib .libimport .row { justify-content: flex-start; flex-wrap: wrap; }
+.lib .libimport .progress { height: 4px; border-radius: 2px; background: rgba(236, 230, 218, .1); overflow: hidden; }
+.lib .libimport .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.lib .libimport .review { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.lib .libimport .review li { display: flex; align-items: center; gap: 10px; border: 0; padding: 0; grid-template-columns: none; }
+.lib .libimport .review .tx { flex: 1; min-width: 0; }
+.lib .libimport .review select { font: inherit; font-size: 12px; color: var(--text); background: rgba(236, 230, 218, .07); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; max-width: 45%; }
+.lib.dropping { box-shadow: inset 0 0 0 3px var(--accent); }
+.lib .note { font-size: 11px; color: var(--muted); }
+.lib .tracks { list-style: none; margin: 0; padding: 0; display: grid; }
+.lib li.trk { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 32px; gap: 10px; align-items: center; padding: 7px 4px; border-top: 1px solid rgba(236, 230, 218, .06); border-radius: 10px; cursor: pointer; position: relative; }
+.lib li.trk:hover { background: rgba(236, 230, 218, .05); }
+.lib li.trk .cv { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: rgba(236, 230, 218, .06); }
+.lib .tx { display: grid; min-width: 0; }
+.lib .tx b { font-weight: 500; font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lib .tx span { font-size: 11px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lib li.trk .len { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lib li.trk .more { width: 32px; height: 32px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; border-radius: 50%; }
+.lib li.trk.on { background: rgba(236, 230, 218, .07); }
+.lib li.trk.on .tx b { color: var(--accent); }
+.lib li.trk.on .tx b::before { content: "♪ "; }
+.lib li.trk.off, .lib li.trk.never { opacity: .45; }
+.lib li.trk.never .tx b { text-decoration: line-through; }
+.lib .libmenu { position: absolute; right: 8px; top: 100%; z-index: 3; min-width: 200px; }
+.lib .libmenu .danger { color: #f08a7a; }
+.lib .empty, .lib .fine { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.lib .showlinks { justify-self: start; font-size: 12px; }
