@@ -723,8 +723,9 @@ const drawCap = () => capButtons.forEach(b => b.setAttribute('aria-pressed', Str
 capButtons.forEach(b => b.addEventListener('click', () => { setVolCap(+b.dataset.cap); drawCap(); })); drawCap();
 
 // The track info card: tap the track's name under Music (or press I).
-function openInfo() {
-  const info = trackInfo(); if (!info) { setStatus('Nothing playing yet.'); return; }
+// The track card: filled from the playing track, and filled again whenever the track changes while it is open.
+function fillInfo() {
+  const info = trackInfo(); if (!info) return false;
   el('tiTitle').textContent = info.t; el('tiArtist').textContent = info.a; el('tiKind').textContent = [info.kind, info.lic].filter(Boolean).join(' · ');
   const ul = el('tiLines'); ul.textContent = '';
   for (const l of info.lines) { const li = document.createElement('li'); li.textContent = l; ul.append(li); }
@@ -734,6 +735,10 @@ function openInfo() {
     const h = document.createElement('span'); h.className = 'lbl'; h.textContent = `More by ${info.a}`; more.append(h);
     for (const t of info.more) { const r = document.createElement('div'); r.className = 'row'; const n = document.createElement('span'); n.textContent = t.t; const b = document.createElement('button'); b.type = 'button'; b.textContent = 'play next'; b.addEventListener('click', () => { playNext(t); b.textContent = 'queued'; b.disabled = true; }); r.append(n, b); more.append(r); }
   }
+  return true;
+}
+function openInfo() {
+  if (!fillInfo()) { setStatus('Nothing playing yet.'); return; }
   el('trackInfo').hidden = false; el('tiClose').focus();
 }
 el('tiClose').addEventListener('click', () => { el('trackInfo').hidden = true; });
@@ -793,6 +798,7 @@ for (const bar of [el('playerBar')]) {
 el('barLove').addEventListener('click', () => love());
 function syncBar() {
   drawLove();
+  if (!el('trackInfo').hidden) fillInfo();   // an open track card follows the music
   const art = currentArt(), im = el('barArt');
   if (art) { if (im.getAttribute('src') !== art) im.src = art; im.hidden = false; } else im.hidden = true;
   const [name, artist] = el('npTitle').textContent.split(' — ');
